@@ -1,0 +1,1971 @@
+-- Shure MXA-710 Plugin
+-- by Indiana University - Joshua Foster
+-- June 2021
+
+-- Information block for the plugin
+PluginInfo = {
+  Name = "Shure~Shure MXA-710",
+  Version = "1.0",
+  BuildVersion = "1.0.0.0",
+  Id = "149f49b7-4696-42b2-99d2-b3c5f8cd5fc2",
+  Author = "Indiana_University",
+  Description = "IU QSYS Shure MXA-710 Plugin"  
+}
+
+-- Define the color of the plugin object in the design
+function GetColor(props)
+  return { 102, 102, 102 }
+end
+
+-- The name that will initially display when dragged into a design
+function GetPrettyName(props)
+  return "Shure MXA-710 Plugin " .. PluginInfo.Version
+end
+
+-- Optional function used if plugin has multiple pages
+PageNames = { "Coverage","Channels","IntelliMix","Information", "Setup" }  --List the pages within the plugin
+function GetPages(props)
+  local pages = {}
+  for ix,name in ipairs(PageNames) do
+    table.insert(pages, {name = PageNames[ix]})
+  end
+  return pages
+end
+
+-- Optional function to define model if plugin supports more than one model
+function GetModel(props)
+  local model = {}
+  if props.Model ~= nil and props.Model.Value ~= "" then
+    table.insert(model, { props.Model.Value } )
+  else
+    table.insert(model, { "Base Model" } )
+  end
+ return model
+end
+
+-- Define User configurable Properties of the plugin
+function GetProperties()
+  local props = {}
+  table.insert(props, {
+    Name = "Debug Print",
+    Type = "enum",
+    Choices = {"None", "Tx/Rx", "Tx", "Rx", "Function Calls","SVG Image Generation", "All"},
+    Value = "None"
+  })
+  return props
+end
+
+-- Optional function to define pins on the plugin that are not connected to a Control
+function GetPins(props)
+  local pins = {}
+  return pins
+end
+
+-- Optional function to update available properties when properties are altered by the user
+function RectifyProperties(props)
+  if props.plugin_show_debug.Value == false then 
+    props["Debug Print"].IsHidden = true 
+  end
+  return props
+end
+
+-- Optional function to define components used within the plugin
+function GetComponents(props)
+  local components = {}
+  return components
+end
+
+-- Optional function to define wiring of components used within the plugin
+function GetWiring(props)
+  local wiring = {}
+  return wiring
+end
+
+-- Defines the Controls used within the plugin
+function GetControls(props)
+  local ctrls = {}
+  local gaTextControls = {
+    Name = {"MODEL","SERIAL_NUM","FW_VER","IP_ADDR_NET_AUDIO_PRIMARY","IP_SUBNET_NET_AUDIO_PRIMARY","IP_GATEWAY_NET_AUDIO_PRIMARY",
+          "CONTROL_MAC_ADDR","DEVICE_ID","NA_DEVICE_NAME","CHAN_NAME","NA_CHAN_NAME","AUDIO_IN_RMS_LVL","AUDIO_IN_PEAK_LVL",
+          "PRESET","PRESET_NAME","NUM_ACTIVE_MICS","LAST_ERROR_EVENT"},
+    Count = {1,1,1,1,1,1,1,1,1,9,9,9,9,1,1,1,1}
+  }
+  local gaButtonControls = {
+    Name = {"FLASH","DEVICE_AUDIO_MUTE","AUDIO_MUTE","ENCRYPTION","PEQ_1","PEQ_2","PEQ_3","PEQ_4","CHAN_AUTOMIX_SOLO_EN",
+            "LED_STATE_MUTED","LED_STATE_UNMUTED","BYPASS_ALL_EQ","BYPASS_IMX","EQ_CONTOUR","ENABLE_METERING"},
+    Count = {1,1,9,1,9,9,9,9,8,1,1,1,1,1,1}
+  }
+  local gaIndicatorControls = {
+    Name = {"AUDIO_OUT_CLIP_INDICATOR","DEV_MUTE_STATUS_LED_STATE","DEV_LED_IN_STATE","AUTOMIX_GATE_OUT_EXT_SIG"},
+    Count = {9,1,1,8}
+  }
+  local gaKnobControls = {
+    Name = {"AUDIO_GAIN_HI_RES","AUDIO_GAIN_POSTGATE","BEAM_ANGLE","METER_RATE","POSTGATE_METER_RATE","AUTOMIXER_METER_RATE","AEC_REF_METER_RATE"},
+    Count = {9,8,8,9,8,8,1},
+    MinVal = {-110,-110,-90,-60,-60,-60,-60},
+    MaxVal = {20,20,90,0,0,0,0},
+    PinStyle = {"Output","Output","Both","Output","Output","Output","Output"}
+  }
+  local gaComboBoxControls = {
+    Name = {"LED_BRIGHTNESS","LED_COLOR_UNMUTED","LED_COLOR_MUTED","DEVICE_INSTALLATION","BEAM_W"},
+    Count = {1,1,1,1,8}
+  }
+  --Arrays of Controls
+  for i=1,#gaTextControls.Name do
+    table.insert(ctrls, {
+      Name = gaTextControls.Name[i],
+      ControlType = "Text",
+      Count = gaTextControls.Count[i],
+      UserPin = true,
+      PinStyle = "Output",
+    })
+  end
+  for i=1,#gaButtonControls.Name do
+    table.insert(ctrls, {
+      Name = gaButtonControls.Name[i],
+      ControlType = "Button",
+      ButtonType = "Toggle",
+      Count = gaButtonControls.Count[i],
+      UserPin = true,
+      PinStyle = "Both",
+    })
+  end
+  for i=1,#gaIndicatorControls.Name do
+    table.insert(ctrls, {
+      Name = gaIndicatorControls.Name[i],
+      ControlType = "Indicator",
+      IndicatorType = "Led",
+      Count = gaIndicatorControls.Count[i],
+      UserPin = true,
+      PinStyle = "Output",
+    })
+  end
+  for i=1,#gaKnobControls.Name do
+    table.insert(ctrls, {
+      Name = gaKnobControls.Name[i],
+      ControlType = "Knob",
+      ControlUnit = "Integer",
+      Min = gaKnobControls.MinVal[i],
+      Max = gaKnobControls.MaxVal[i],
+      Count = gaKnobControls.Count[i],
+      UserPin = true,
+      PinStyle = gaKnobControls.PinStyle[i],
+    })
+  end
+  for i=1,#gaComboBoxControls.Name do
+    table.insert(ctrls, {
+      Name = gaComboBoxControls.Name[i],
+      ControlType = "Text",
+      Count = gaComboBoxControls.Count[i],
+      UserPin = true,
+      PinStyle = "Both",
+    })
+  end
+  
+  --One off Controls
+  table.insert(ctrls, {
+    Name = "IPAddress",
+    ControlType = "Text",
+    Count = 1,
+    UserPin = true,
+    PinStyle = "Both",
+  })
+  table.insert(ctrls, {
+    Name = "Status",
+    ControlType = "Indicator",
+    IndicatorType = "Status",
+    Count = 1,
+    UserPin = true,
+    PinStyle = "Output",
+  })
+  table.insert(ctrls, {
+    Name = "PRESET",
+    ControlType = "Text",
+    Count = 1,
+    UserPin = true,
+    PinStyle = "Both",
+  })
+  table.insert(ctrls, {
+    Name = "Coverage_Map",
+    ControlType = "Button",
+    ButtonType = "Trigger",
+    Count = 1,
+    UserPin = false,
+    PinStyle = "None",
+  })
+  return ctrls
+end
+
+--Layout of controls and graphics for the plugin UI to display
+function GetControlLayout(props)
+  local layout = {}
+  local graphics = {}
+  local CurrentPage = PageNames[props["page_index"].Value]
+  local gaColor = {
+    Black = {0,0,0}, --Black
+    White = {255,255,255}, --White
+    Green = {178,255,51}, --Shure Green
+    LtGray = {204,204,204}, --Light Gray
+    LtBlue = {110,198,241}, --Light Blue
+    Red = {255,0,0}, -- Red
+    Yellow = {252,246,76}, --Yellow
+    Purple = {72,72,183}  --Purple
+  }
+  local gsCat1 = "Unit Information~"
+  local gsCat2 = "Coverage~"
+  local gsCat3 = "Channels~"
+  local gsCat4 = "Intellimix~"
+  local gsCat5 = "Setup~"
+  if CurrentPage == "Coverage" then
+      --All Basic Background and Header Graphics
+      table.insert(graphics,{
+        Type = "GroupBox",
+        Fill = gaColor.Black,
+        CornerRadius = 5,
+        StrokeWidth = 1,
+        Position = {5,5},
+        Size = {590,440}
+      })
+      Logo = "PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB3aWR0aD0iOTg1IiBoZWlnaHQ9IjM2MCIgdmlld0JveD0iMCAwIDk4NSAzNjAiPgogIDxpbWFnZSB4PSIxMjAiIHk9IjEyMCIgd2lkdGg9Ijc0NSIgaGVpZ2h0PSIxMzgiIHhsaW5rOmhyZWY9ImRhdGE6aW1nL3BuZztiYXNlNjQsaVZCT1J3MEtHZ29BQUFBTlNVaEVVZ0FBQXVrQUFBQ0tDQVlBQUFBWE85VFdBQUFnQUVsRVFWUjRuTzNkZTd4ZFJYVUg4TitZOEVwRTVTR1NBSDJvVkVIRTZsaTErS2phS2xoMHhBY2lsa3BGQkt6NlViRXFhRUZRUVd4clViQXFpb2dHOFlFUEhGRVU1Q1ZTUkJoOFVBVkVRU0FRSUR3TUFRSkp5UFF6WVM3ZVhNNjlkOCtlT2Z1MWZ0L1A1L3lYY3pKNzNYMzJXWHYybWpVS0hXTzlYaC9BMCtQcktRQWVEMkFiQUk4Qk1LOXI0NlYxZk1Fb3QwK2RrRml2VHdhd3A0QndIbTZVT3l6M1E2elhld0ZZVkdaSW5YYXRVZTR2TXVLMEI0Q3ZDb2dUQ3NUcVNBQUhseDFTcCsxcmxQdDgzUUZhcnk4RjhGUVpvZXE5MVFDV0FiZ2R3RzhBL0JMQXhRRE9Nc3F0Nk9yQldhOHRnSmQxWUNqVWpxVnp1eEI0Ni9YbUFGNEY0T1VBbmc5Z293NE1pOUw5SVNObXRaT0xucm11MEhDbHhDdm5uQXIrdk5BNCtpQTNWbExPcVFuWFpyNWZXcno2TE9RNm04WFh0akhYQ0ZaWXI4K0lFeDdmTWNxdDd0Z3gvbGtIeGtEdCtVTnJTYnIxT3N6aXZ4REFXK0tkWWlkdUdDZ0xrL1RaNVNaU0UzaFRVNDJrUkNyMzNKS1dFTlNPbC9YNjRRQTJLVHNjYXNGR01XRVByMnV0MThjQytCK2ozTDBkK1dQd1JsQzJQenlzamNPM1h1OEdJRHdxL0JHQVZ6QkJINHhhTTFPeHhHbUJrQmlWU3RLbHpCQnpkcmc2M3RCVTV6UGp4ZVJwZU1JMTliOEFYRzY5M3IzdG83TmVQd3JBSXdjWVo2cnUya2FUWSt0MXFEUC9CSUNkK0VjYXBMcVBqNlhNNEswQmNIMmh6MktTWG8yazJlR2NtZUZ3bzd5dzdIQTY3U2FqM01xTUFUSkpINjd3dC8yNjlmbzBBUHNZNVphMmRLU1NTdlZvdEdzYm1VbTNYcyt6WGg4RDRDSW02SU4xUDRERk5ROU95Zy9lRXFQY3F0d1BpYVZpVWk3Z3JCdXVMdWVHSml6Tzcxd2pnVEhpV2dlYXpVc0IvTXA2L2NLV0lzVnpqTVpmN21LOTFuRWw5ZHNBdEZKZVE0MVluTEhvaHZYb2FVSnAwUHBORGJwbHRaUDB1Q0I5L2xBQ1VVSE9EWTIwaElCSk9sV3hKWUFmV0svL3BZVm84V2tOalRkSnQxNkhkbndYeERhS05HdzU5WjFTU2hKS0plbFM0c1c2NGVwOFppa1ZPN3VrWVFJbHgzcWh2YkQxK3FDR2o1am5HRjAzbGlROVBJNjNYb2NGR0tFSDdRYml3eXdETzd2TUxqY3htQ0FsWGpkbTFnMUxxa2ZQalJXVDlEUk1vT1Q1aVBYNndBYVBtdTBYWmJ2REtIZG44U1RkZWowSHdCY0J2RXQ2aElWaGtqNDdKdWxwMksya09pNndUY040VVIwZmE3RDBoVGVDc3EyOVJoVk4wbU9DL2lVQS95dzl1Z0t4SG5aMjdKR2VodTBYcStNTlRacWNUamdieGgyd1NhYmpyTmZQYU9ESW1hVExWajVKQi9BcEFLK1RIbG1oNnZaSUQyMUF0eElTTXRha3ArSGl2dXA0UTVNbVoxS0J5Wk5zWWRIK042M1htNDByQ3RicitYRjNWSkpyN2NSTHNTUTlMcXJZanllVVdIV1RoSzBCekJFU3ROelp6Z2tzRDZxR1NYb0Y4UW5vMWswT3RtVkxqWElyTW9iQUpKM0M5K1dZTVVhQjNZT28zRXk2OVhwWEFFZUtENmxjT1YwNHBQemczVnh3cTJrbTZkV3dKcjJhclFUZEtJTlBhS2lRMThYZDA4ZUJONEpVSmttM1hvZE5NQllKMndpRDFyVWtvN01FNjlFVFdLOGZEV0NqcGdiZHNwelpZV2xiYXJOVlpYVjhRa09sZk54NlBZNE9ka3pTYWUxMUtpdEpqenNmbmdoZ0UvSGhsSTJMUm1kWHFoNmRKUnpWc0Z0SmRVelMwekNCb2duaGV2eldNVVNEM1lNb1Awa0hzQytBdHJiTXBlNWdnakE3dGw5TWMwdG1lWkNrUkNxM2xJbzNOR21ZcE5Oa0IxdXY1eFdPQ004eDJaWWI1VzVIVHBJZUh5Y2ZJVDJTdEJhVDlObVZTdEtsektSenRyTTZKcDFwMkNPZFN0cHNERzJubWFUTDl1QTFLbWNtL1RBQWo1WWVTVm9ycHg2VzdRVFRzRHlvR2tsbFFleVJucVoydkt6WG9mM2V3cGJHVGQzMTlzSWpZNUl1MjRQWHFGcEp1dlY2WEhWWTFFKzFFaXJyOWNPWXBDZmpSa2JWc0hhL09ta0xJWFBYT3JCSkFrMjFuZlZhbDRoS1hJakt6YkpreTU1Si96ZGhMYnRvWm5WLzlNS00xSHBDWXNzZTZXazRPMXhkVGhjY0pheDg0dzZqM0owWjcyZG5GNXJPN29VaXczT002aWZwMXV2TkFieFJmQWhwc3JwSmdwU0wwVzFHdWJzS2ZSYWZQRlFqS1VuUHFkOWZFSGRRbElMdEYybGNYbGJvYzFucVFnOWVwK3JNcE84bnFFOHp6VzVwUm1jSjFsY25FTmI3TzJkMmVKNndMYlc1eFgxMVhKQk00N0s5OVhyVEFwL05HMEhLU3RKTHIyS21mbU5ubDlteC9XSTZKcDdWNVh3SFdZK2Voa2s2emVSdkMwU0hTVHJWSzNleFhqOE53QlBGaDQ4bVk1SStPN1pmVEJQcWhwZG52RjlTSXBWYlNzVWtQUTNiTDlKTXRpc1FIZDRJeXJiQ0tIZkxSQVJTWjlKZkt6MTY5QkE1Q1NqcnE5T3dQS2dhdGwrc2p1MFgwekNCb3BrOHRrQjBlSTdKdGs1T2xacWtjM2RSbW9wbENiTmorOFUwWE54WEhjczMwdVNzZFpnTFlPdVd4azM5c0tEQUtQbTBScloxZnYvbVZnMUZYQkR4dEo2R2JrMDRCQURIQVBoNUI4WXpKUGRrSEF1VHpqU01WelZzdjFnZHkxMnF1eC9BNWswUGVNQStDT0J0QXp1OHJLWWExdXZRa25pcmNzUHB2TkNJNUJSQngxdkZ5c24vcG5LU0R1QzVQZDdFSVR3eDJDMitMb3pKK2plTmNxczZNRGFSck5kYkF0aEF5TEdYU3RKWkhsUU5GOWhXSnlsSnY4c29kM3ZkTnh2bFBJQS9saDJTWE5ickxRWjQ4QnRtdm4rYnpKM2crK1p5b3h5L1V6TklPUm1lMHZqb3hpT3N2djVLU0FTczE0ZFlyN216Vnp1a0pKekxDbDZFV0I1VWphVEVzM2FTSHBNa1NlMTBTOTBzVXhsRHZKNnR5SHcveTg5b0hTbEorbDhOTEhRTDQrTzI2NjNYaTZ6WHorakFtQ1Jod3BuQWV2MXdRYjIvYXkvdWkxdHFiMWwyT0ozRzdrclZNU0hvbGlHZWYzZGt2bDlTUGZwcUFFczZNSTVPUzBuU1M3UVc2cUpRQTdZWGdJdXMxeisxWHU5bHZaYTBBMTlidUwxOUdpNkdySVkxMXRWSlc2REdtZlNPc0Y2SHNwQWhQc1crTmZQOWttNmNyemZLM2QrQmNYUmFTcEl1NGNmdm1RQVd4ZG4xdzYzWEpWWnEwMmljU1U4akpmbGNubE0zTE94SGJubG1LUlYzRzZXMkRQWGM0M3FhNnZoa3E0S1VKUDNoclkyeWVhRlc4OUJ3VWJkZW4yeTkza25Rc1RlRml5RFRzTE5MTlpKbWg1a1FwR0ZTMEIxRC9aNWVuZmwrUGpHbGRWUkswbU5iSUNtZE9DWUx4NzBuZ0F1czE4NTZ2WGVzZWFWOFREclRNRjdWY0NhcU9wWUdVVnVHK2ozOVplYjd1UkVicmFQcVRQcDhobTF0ai9nVFl5bk1FZFpyYm1xUmgwbG5HajU1cUlaSmVuWFNrblFtQmQweHhPOXA2T1IxVGQwM1c2L254QmFNVXZDbXVRSkovVGhMZVRTQTk4VVdqbCszWGo5M0dJZlZIT3YxWm9KdS9GanVrb2FKWjNYYzRyNjYrNHh5Ti9WbHNBSU04ZHo3U2ViN3QwcmN1NmJ2bUtSWFVQV0V5TmxWY3FqQ1hlL3U0V1c5RG8rNGpnVndzbEV1dDArcUJGSVNxYnVOY3Jtci9TZXdHMDQxck9tc0lPNGd2WEdUZzIwWkU0SnVHZUwzOU56TTk3UGJFajFFcFpsMG85eEtKdW96Q2hzOUhROWdzZlg2S091MXRDOWJLaWFjQ1FiY3JteVVuTVJUMnBiYWJMOVlIWlAwYmhsaWt2Njl6UGRMZXJLMUp1UkxIUmhINTZXVXU5d29ORVlwd3V6VWU4TUtiK3YxdDYzWEwralAwQnZGMG8wMDdGaFNqYlF0dFhObW9xUjFkbUU5ZWtmRWZVZ1dEdXl3cmpUS1haNzVHWksra3pjWTVWWjFZQnlkbC9LRDludWhNYW9qbE1Mc0J1QnM2L1ZsMXV2OXJOZnorbmNZWThORmtHbWtYTHp2TmNyZGt2RitTVGN6SzR4eVN6UGV6L2FMMUpid1BWVURpLzdKQlQ2RHBYcjBFQ21MRks0QXNETkRtR3dIQU1jQitLajErZ1FBbjh4WkFUNFFVaEtFOWF6WHp5L3dPZjlRNERQNmdPMFhxK01DMnpSWjhiSmVQd3ZBaGkyTWU0aitlbURINUdQbnQxeVN2cE9yQy8wMkRzbGRScmxMcGg1UFNwTCtNK2tSelBRb0FBY0NlS2YxK3J0eG9lbFpSam5mNjZPcVIwb3l0Vzk4VVRWc3YxZ2RrL1EwdVRlQVp3UFlxT2xCVXkrY1pwUXJVVTRsNmZyMWd2aWlQemtmd1BPbXhpT2wzT1VDQnJPSThKalBBRGdUd1A5WnJ3OFFXQW9qTFVHZ2FwaDRWc2YyaTJscUorblc2eTJZb05NTS9qTTNPTlpyeGQ5RjhVYisvbFZPMG8xeTRTSjNwZlFvRnJZOWdFL0hyakQvSWFFcmpQWDZFZkdwQXRGVXViT2RyT21zVGxLU3ZpcXo4UUdUSjVyT2VVYTU4d3RFSjNUdldwOVJGaTB2U1krczlDaU95U1lBM2gyN3dueGo0QnNrU1p2Qm8rcFlrMTVkVHF2S2plTTFSNHJyakhKck1vNlZTVHBONStCQ2tlSHZJbzE4T3BxYXBKOGtQb3pqRmJyQ3ZBckFqNjNYbDFxdjk0N3Rxb2FFRnlPYVRrN2l5UzIxcTVPV2RMSTBpTWJoYTBhNUN3dDlMczh4eXA5Sk44cjlDc0RGNGtQWmpLZkdGZVBYVzY4UHQxNFBaVE1iemtyUmRISVN6d1hDdHRUT1NUelpmakVORXlpYWFqbUFkeFdNQ3M4eEtsTHVFaHd0UHBUTkNvdVdEbzNKK2lMcnRlNzU4VEJKcDFGQzNmQk5HWkdSOUNNWGRvQmVrdkYrSnVscHVJTTBUZlV1bzl3TkJhUENjNHlLbExzRXAzQmpvMWFFTGMvM0FuQ0o5Zm9DNi9WcnJOZDluRG5rakFHTmtsczNMT204dWphemRhdTBoSUJySGFpazBITHhjNFUvaytlWWJFdU1jaXRIUlNBNVNUZktyUVp3a1BTSXRteW5VQThINEJycjlVSFc2ODE2TkhaZWpHZ1V0bCtzamtsbkdzYUxTZ25uMHQ1amlDYlBNZG1tL2Yyck01TWVmQlBBT2RLajJnRmJBL2hJTElVNXpucjl4QjZNbVkvMWFCUzJYNnlPU1dlYW5BWEpvUXZPeGkyTm03cGxSV2pzWUpTN2ZReWpZaG1vYkdXVDlQaW9kZjk0MGxMN3drWWIrd0c0M0hwOXV2WDZSWEZ6aEU2Sm16WTltdWNMamNERXN6bytkYWd1bEZBdHpuZy9reWRDUEk5ZWE1UnpwYU5odmQ0Y2dMUU5EV2xkMHpZQ3FEdVRIaEwxcXdDOGc0SHVuRjBBbkFIZ1Y5YnJmYXpYRzNab2dIeWtSOU5oQjQ3cWNtYUdONHlMMGFXNElaWm8xc1ZyRmdYN0crWEd0VThNenpFcVh1NnlsbEh1c3dBV2lROXZOKzBBNFBQaERzMTYvWUY0dDk0MnprclJkRGc3WEIzYkwxYkhtei9LOWE5R3VlUEhHRVdlWXpTZUpEM2FOMnkrSXo3RTNSWEtTdzZMZGV1ZnNsNC9yc1dSTWttbjZkUk9QSzNYV3dyYlVqc244V1NTbm9acmFPUUtUMkJlYjVUNzlKZ2p3SE9NeHBla3g3WXhCa0R4V2kwcUtqem1mak9BcTZ6WHAxaXZuOUZDZURsalFLUGNuMWszTE9tOENvbERUbjltN2phYWh0Y3NtWllCMk5VbzEwU2xBTTh4S2wrVFBwbFJMcHpRZncvZ1orSkQzWDFoUWVtckFWeGt2ZjZCOWZwWkRZNllGeU1hWlRIcmhpdTczaWgzZjhiN3BTWHBMSGVoVkZjQ2VKWlI3b3lHSXNkelRMYWxScmw3cG90QWtTUWRmMHJVWHdqZ085SWozaU03QTdqUWV2MHQ2L1ZqR3hnMnkxMW9GTFpmckk0encybTQxb0ZTbkFoQUcrV3VhREJxUE1ka20vRWFWU3hKeHdPSit0MEFYZ25nd3dCeWRzU2pacjBpdG04TUMwelhHK1AveklzUmpjSWt2VHJPREtlcGZXNVpyeDhPWU5PV3hrM051akg4RGhybDNoRHptQ2J4ZDFHMkdhOVJSWk4wUEpDb3J6SEtIUUxnSCtLSlQvMndmbHhnZW9uMStrbWxSMnk5M2dEQUFwNExOQUlUeitxNEVESU5PK0hRVEVKQ2ZpU0FKeGpsVG0wNlV0YnJSd0Y0SlA5Q29qV2JwRTh3eXAwTllIc0FuK2FzZXEvc0dOWVdXSy8zS2p4b3poYlFkSmlrVjVjek14eHV4QmUyTU9hMkxESEszWmZ4ZnpOSkg2NTdBWHdDd09PTWN1ODN5dDNWMHBIeUhLUG15bDJtQ25YcVJybC9CZkJNQUdlTC8xUDBSOWo5YkZFb2Z5azRZcmFab3VuazFsbExPcmR5U29QK0xDNGNsK0thek9Qa3hNTHczQWJnQ0FCL2FaUjdoMUh1NXBhUGtMK0wxRjZTUHNFb2Q3RlJMblIvZVRHQTB6bXozaHVIV2ErUEtqUll6aGpRZEhKMjBKd1BZTDZneU9ZOGRaQ1dkUDQ2OC8xTTBvZmpVZ0Q3QWRqR0tQZnZScm1iT25Kay9GMmtHU2VwNWpZWkhxUGNtUURPdEY3L1pkaG1GOEErY2JNZDZxNzNXcS92Tk1vZG1UbENYb3hvRko4NWs3NmxvS2l1Q1MwWU05NHZMZW04TFBQOXZHYjEyeDBBdmdiZ2VLTmNWL2R4NFRsRzdjK2tUMldVdThZb2QxQzRxd1h3VHdCK0l2N1AxRzFIV0s5TjVnaDVNYUpSbHNRTjBlcmFRbEJVUTZ4V1pieGYybmZ3RjVudjV6V3JmOEpDMEsvRURSWWZZNVI3YzRjVGRQQnBqWGgzR09YdW5Da0lqYzZrVHhVWDlad2NYdGJySndNNEFNQS9BOWk0elhIUlNDZUV2NUZSYmtuTjhMRDJqa2JKYmIrNHVhQ29jb0Z0ZGZjWDJBV2IxNngrQ0VuTzkrTWVMZDh4eXEzbzBkaVpwTXMyNjFQa1ZtYlNSekhLWFdhVWV3dUFyZUwyOWIvc3l0aG9yYzBBZkN3akZKeVZvbEZ5RTg5NWdxTEtqWG1xKzhWTXUvak54bnE5WVppSjdkWWgwVFRDUm9ybkFmaFd6eEowOEhkUnZGbXY2WjFKMGljWTVaWWI1VDVqbFB0ckFNOEdjQktBbkRaYVZNNmUxdXVucDM1YTNDQnBLLzRkYUFRbTZkVngwNmZxenM5OFA1T24vdGdtdG5yK25mWDZqZGJyVmlzRXFvcWJaVzNXbnpEVEdQUXZTWi9NS1BlL1JybFEvckkxZ1BjQXVMbzdveFByZlRVT2ZPdXVuMnZVbXR6Mmk1STJBc25wa1Q0M2ZnK2xPQ3Z6T0ptazkwOUkxbzhIY0lYMStsOTZrS3l6bklwbXZhYjNJbkV5eXQxcWxQdFBBTnNDMkNYV25xM3B3TkFrTXRicjFJNGFyTHVqNmVUT3BFdVNFNnVRb004UkVxdlZBTTdOL0F3bVVQMzFPQUJmQVBBYjYvVnJyZGRkelhONEkwaXpKdW05ZUN3MHdTZ1hFdk1maHBmMU90dzF2eW0rSkxWaGExdjRvZDhqN3RaV0ZTOUdOQjBtNmRYbHhFcFMwbmxlZ1Iwa2VjM3F2MjFqcDVkRHJkY2ZETzBZalhKZDJxTkYwamtXZG5nOXJnUGo2SnBMWnh0UHI1TDB5WXh5MThjdjM0Y0E3QllYbTc2Z095TWN0SDlra2s2Rk1FbXZMcWMwU05KMzBCYjRERjZ6aG1PN21LeUhQVDhPangxZ3VwQ3NTM3JDZkhYWTRiVUQ0K2lkM3RjSmg3N0JScmxUakhJdmpGL0drRHorc1FOREc3S2RFaDhoOHRFeGpiTFVLSGR2Wm1TazdGNThjMmFzSkNXZHB4YjRESmJvRFU5b1J2SHRNSHRwdmQ2MUEwY242UnpMWGZRdTFxQVc4eG5scm9oM2E2R1R5QnNMOU1tbDBjS3E5Q2NteElhelVqUktpVm4wWlVJaXkvYUwxZnpVS0plN0dCbE0wZ2N0Sk91bldhOS9hcjNlcGNVRGxmUzd5Q2VtTlEyeTQwYm9qMnVVTzhFb0Y5b0YvazFjUk5LMy9xbGR0MjNDK0ppazB5Z2xMdHk1dGNkOXdTUzltaS9uZm9EMWVuMEFDeHNhTDdYbm1RQk90MTVmWUwxK2ZndWpZSkpPc3hwOFd6eWozQ1ZHdVgzaVJmZWRBSzdzd0xDR29GSUpTeXlMMlVaNnNHaWtFbzlBN3hZUzJ0elpZUWtKd2Fxd09MREE1NFJybXlyd09kUVBPd0U0eDNwOWJsUEp1c0ROc2xqdVVwT1kzdFZHdVQ4YTVUNGU2OWIvSHNBM1lxc3VxbWVMaXU5YTJPY0Z5b21XRlhwSnFiTXVjZUcrdWNCbjlFSHRtYWg0b3l4aFhjaXBScm1sQlQ2SGEyaGsrcnVZclAvQWV2MnNNVWRBMmpuR0pMMG1LY25UZytLcTdyUER5M3E5QU1DK0FQWVR0dEZIQ1J0WC9Bd3BqL1J1TThwdFh1S0RyTmQzSnNTM3owbzhBcjFSUUp5UUdhdlFvbmE5Z21QcHF1TUxqWXZsZWJMdEhGN1c2OUR1K2YxR3VYR3NiWk4yanJIY3BTYlJ1MEFhNVpZWTVUNFV2ekN2QUhDR29Gbk1wa2k1R0pWWXJCWVM5RTJGSk9nb2RPRmVLbVJqczV4WVNmZ08vaGJBandwOUZwTjBRa3pXTDdGZW4ycTlmbXJoaUVnNngrNHp5dDNVZ1hIMEVyZHFmeUJadjk4b0Z4NlY3aHdYUlA1WG1CbnR3TkM2ck9wVEdDbVA5VXJORkVoNkRKcDlZeE8rdTZWdWtEcU9QZEpuOXZHNDJWMEpRMXBrR3phUXVhY0Q0K2l6bDhlMmpkK3dYbTlmNkRna2RRL2lMSG9HSnVsVEdPVitiNVI3ZDJ6aitIb0FGM1pxZ04yeHZPSklwTXdZbExvUVNZblhIVWE1T3d0OTF0QVhnOStXdVlQbTBCT0NNS0h5eFlLZk42UjR2VGUyeS8xR0I4YlNkNjhDOEgvVzY2OFdTTmJaSTUwcUVWZVRYcFZSN2o0QWk4TExlaDM2cWg0QTRKOWlqM0Jpa2o0VmsvUTBKV2RYcm9xUHBvZnExbmdOcXF2MG8vcXVPU2EwM1MwNHBxRjhCNWNaNVNZV3MrOXV2WDRSZ0dNQlBLRURZK3VyMFBWbkR3Q3Z0bDZmQk9ERFJybmYxVGdXU2VVdVROSXpNRW12d0NqM2k1Q2tXNi9mQTJBdkFHOEdzRVBuQno1ZVROTFhWYXJrUXNvTVM4a1NsVjhWL0t3dUNrblZ6d2QrakhXRkJQU1lVaDltdlo0N29DWUM2OXdJRytYT3RGN3ZDT0JBQUljQW1OZmUwSHB2RG9DOVF6NFFrL1VQR09WU2tsSDJTS2RLV082U0lEeWVOOHA5eWlqM1pBRFBBL0FWQUN0N2N3QmxWVTJ5V0pPZVJrcVNYdkxDeloyRjVUbzZ0TmN0ZVBRTFl3STJCQS81amhubFZocmxqbUlKVERFVHlmcFYxdXZQV0s5bi9iMnpYb2RPU3d2NmM0alptS1JuWUpKZWsxSHVmS1BjNitKR1BRY0R1S2FYQjFMZnJJLzRyTmVoOWRzR0hUNkdrbGp1a3Fia2hmc3l3VGZMa3QwQzRHT0ZqMzlJMzc5cEoxS01jdGNiNVhZSDhHSnU4RmRFU0x6M0Q3K0wxdXRqWTN2bjZXd2pMUGRpdVVzR0p1bVpqSEszeEptSnh3UFlGY0JwQWxyQytTcEp1cUNFODg2Q3MzbFNZbGJzd20yVUN6dE5YbHpxODZnM1BwaTVvSGFVSVgzL1pyMFJEaVV3QUhhTUUwM3NBcE12Sk90dkJYQzE5ZnJqMHlUcjBscDhNa25Qc0U1TmVud004LzYrSFVUSGhFZnZ0d0o0ellCci9xNk9DMnRudzRRemdmVTZMRXJlcEtsQnQ2ejBoVHYweUg1Mjc2SkFkZjBtdGhjc1RWU1NqbGdDQStBbzYvV1hRL2xRN0dKQ2VjSzIvMjhIOEtZd3N4N2FPaHZsYm8yZktLbXpTN0NmOVZyQ1hoWXBqZ3Y3OUZUNTkxTVhqb2JITUI5b2RlalVCMVhiVXJJZVBRMFhFOVYzTHE5ZG9yek5LTGQ2REFjOHBHdFcwbzF3S0lHSlhVdDJpVjFnSGorK29Za3hMN2JCZkt2MStwUGhaa2hna241SUI4YlFOWit0T3A2cDVTNlNObEtoK241YzhaMnNyMDRqSlY3TGpYSzNGLzdNQ3dDVVhFQkkzZlZWbzl6Wll4cmRrTDZEdFo1V0dlVitFTHVYL1R1QUZlV0hKZEw4bUt6L0liWnlKcm5DazZ0S3MrZ1lrYVJ6TzJTcTR2eUsvNDd0RjlPdy9XSk5zUzc5dEtZT2dGb1RidTdlT2NiL2ZDalhyTHNubFZja0MrV01ScmtqQUd3SDROdnRIY2JnUEpKUEtNUUxpN1o5MVNBd1NhZFUxeG5scnFqNEhyWVRUTU40NWZsV1V3ZEFyVG5RS0hmVE9QNXo2N1VhME5Qa0l0K3gwUHZiS1BkS0FDK3AyQ3lBaUdhVzlOMmNtcVJMcTVXaWRGOUplQWVUempRc0Q4cnovVGpUU3NOMG1sR3U1UGIvVXkySTNUbUdvT2pDYkpiQUVCWERKSjNHNnBRcUgyNjkzanpXNFVuQUpEM05XRnB5eFk1RFh4N2p1S2s5b1NmNlBtUCszOFhYbzgrRUpUQkVSU1I5TjFudVFpbCtiNVNydXJ1amxITnBSVTd0NXhSU0ZtNlBzMi91NThiNDJkU2V2WTF5UzhmOHY0dHJ2MWdIUzJDSXN0UkwwcTNYYzJJTFJxTHBwUFFsWnZ2RkJOYnIwRmYzTVUwTnVtWGpUQ0RDN3FObjlTVVFWTWxIWXJuRnVBM3BtalgycmRoWkFrTlVTKzF5bHdVaitxWVRUUWk3MFoyUUVBM1dWNmRoai9SeVNtOFZUKzA1cThFK3kwUDZEaGJ2b0RRS1MyQ0lrdFZPMGxucVFqTTUzaWgzVzBLRVdGK2RSa3E4d28vNkxXUCtQOElNMzgvSC9IL1ErSVVmczljYTVlNXZLTllzZDZtSkpUQkVsWVJyMlkwcG9XS1NUbFhjQytDamlaRmlrcDZHNVVHRnhCNjA3MnZxZ0dnczdnVHcwb0xyUGFvWXlqWHJ2bkcxcVp3TlMyQ0laclE0ZGFma3lVazZPN3ZRZEk0MXlpWGQvVEhwVE1ieW9JSmlzbkJlVXdkRlJZV05xZll3eXYyNjRiQ3lSM29CVTBwZ3Z0dm1XSWc2SnZtN3lTU2RaaE5LRTQ2b0VTVW1uV2tZci9MZUhoOHZVcis4c2FHRm9nK3lYbThCWUtPQm5DZU4xS1BQSnBiQW1QQkVCTURWWFJnVFVjdVNuN3l6M0lWbTgyNmozTEtVS0Ztdkh4VzNQNWFnVkxtTGxKdmt4aElJbzl3dkFSelQxUDlIUllRZFJSZTFFRXJXbzQrSlVlNTdBSjRFNEFPeGRKSklLaWJwVk5UM2pYSmZxdkdCVWhMT2xRQksxWDV5ZDlieE9CVEFOUTMvbjFUUHdVYTVvMXVLM1pDK2Y1MUswdkZBb242dlVlNkRBTFpuQ1F3SmxsWHVJcVdHbUtvSm5WemVWRE5XVWhMT2ErTWl4U3pXNi9VQkxHejNVQnJUZE5lSnU4SkdPQURXdEh2WU5JdVFvQi9WWXBDR2RNMGE1MlpoV1l4eTE3QUVoZ1NybDZSYnI3Y0VzQUhQSEpwazd4cUxSU2V3dmpwTnVFRldUUTI2WlkwbkVFYTU4d0VjMmJWQTBJUGUxWEtDam9GZHN6cWJwRTlnQ1F3SmxWenVPVEdUemxJWG11endlQkd0aSswWDAwaDVpaFc2ZGl4cDZmOCtETUNaTGYzZk5GcDR1dkVHbzl4L2R5QStyRWx2R0V0Z1NCalBKSjFLT0RrazZabWZJeVhwNUVaR2FhNHp5clZTZGhJM3hObVRqOWc3STVRaHZjd29kMkpIQmpTVWE5YXExTTFTMnNZU0dCTGlScVBjeXRSRG5ValNXWTlPaUZ0d3Y2RkFuVFhMWGRJd1hnMklPK2J1QXFESkRYTG9vY0pzMG5PTWN0L3ZVR3lHOGgxYzNOYU5jQzZXd05EQTFaclU0MHc2VFRnblhDZnIzT21Od0tRekRkc3ZOc1FvZHhXQVhlT09sdFM4bndCNFpteVAyUW5XNjAwQmJEeVFjNkVYcFM3VFlRa01EUmlUZEtydHRMZ0Y5ejI1SWJSZXp3ZXdtWkEvUmFta2srMFhHMlNVK3htQUZ6TlJiMXlvUFg5Qlcxdld6NEQxNkIzREVoZ2FvRnJmellra25idU55blVjZ0ZlVVNOQWpLZWZTYWdBM0ZQb3NQbmxvbUZIdW9waW9KMjNVUmJYY0hxOHhvWXZMNmc2R2NFamxucDN2N0pKaVNnbk1mZjBaT2RGRE1FbW5KS0dzNVMxR3VRTUsvM0JLU1Rpdmo0c1JzMWl2NXdMWXV0MURhVXluRW9pWXFEODcvQzA3TUp5aCtpR0FKeHZsVHUzdzhiSDlZb2ROS29FSnlYcVgxakVRcGFqMTVQMWgxdXZOQWN4bnFFWDVIWUNkakhLZkdzTkJzLzFpbXJDSjBaeW1CdDJ5emlVUVJybGZBL2hiQUQvcndIQ0daRG1BTndONFNjWitDMDFodVVzUEdPVitiNVFMNjBsZVB1VGpwTUdxUFpQT2VuUTV3cXIvVHdCNGlsSE9qZW1vMlg0eGpaVHZYM2pxc0xnRDQzZ0lvMXdvVzNwZUxQMmlmR0hXZkR1ajNHZEs3TWpiZ0NFOVNSNTg4bXFVczNGaDZZZFlBa005VXV1N09aZnRGOFg0WHdCdk5jcjlmTXdIelBycU5GTGl0YmlqOWNockdlWENqLzBCMXV0ekFZUW5USnQwWUZoOTgxc0E3K3hZYThVcWhwS2tyK25xalhCcFJya1ZBQTYxWG44UndERUEvbkZZUjBnRGMzTW8yNnB6U0p4Skg3NWZBTmpOS1Bmc0JoSjBNRWxQSnVVbXVmWDJpMVVZNWI0YWFxaGpMVFZWRS9yUEh3aGdoeDRtNkJqUU5ldUdMdDhJandOTFlLZ25hdi8rTVVrZkpoKzNRQSt6QzA4enluMm53YU1VczN0bW9jL2hUVTNIaFBJWG8xelk5R2lQdnUzZTJMQmxjWGZpeHhubGpqYktyZXJiQVZpdkh6R2dweVppazFTV3dGREgxZjV1em1WbmwwRzVFa0NZQ2Z5U1VhN3gzckxXNncwQVBHYllJWDRReTEzUzlDNkJNTXA5M1hwOU9vQjN4NWxpTHJCL1FKZzUvMlI0R2VYNnZudnJrSjVraVo1Slpna01kUmlUZEtIK0NPQkNBRDhDY0xwUjd2S1d3eURsWEZwVHNHMmZsSmoxc2pXY1VXNTUvT0VQZGVvSEFkZ2Z3SVlkR0ZvYnJvb0x6NzlRY0YrRnRnM3BKcmtYSldYakZrcGd3cTdDMW1zVHoxZFdDMURiYXYvK3plVUozR2sremxxRnpVQnVqbmRqNFhWWmZQM1dLTGVtUXdjZzVWeTZvY1NqZmV1MVlqZWNmb2k3Wkw3RGV2MWhBRytQN1FVbDdLd2JhcHkvSFR2Zm5OMlRiaTBwMkg1eG9FSUpqUFU2bEgwZURPQTlBRGFRSGhOcURaUDBnYm03ai9XZEFNNFIwaFVqZXhPalNhU1VCeTN2d0JpeXhmS09RMkt5dm51Y1dYOU96dzlybE5BTjZzc0FUakhLTGUzZThJbzVIc0JKQXptV3V6c3docW5ybzhrQUFBSVpTVVJCVkU3cFNBbk0xK04xZ3VTNnErNlJLNTQwUkVUMVdhOGZDK0ExQVBZRXNHTlBReGttQmM0RGNGcVlPVGZLc1hTQ0JxZWxFcGlQR09YZXg3T0o2bUNTVGtSVWlQVTYvUGkvSk03WWhRMlNIdEhoMkliZFZzK09yM09NY3NzNk1DYWlzYkplYndUZy9YRkIrUG9OUkh0L285eG4rVmVsT3Bpa0V4R05nZlY2VHB4WmZ5NkFwd040YXRpSkU4Q2NGdUlkV2tsZUN1QmlBR0czNFlzRzBKbUZxRGJyOWJZQWpnV3c4NWlqdUxOUjdneitwYWdPSnVsRVJBMnhYb2ZPTUU4QThIZ0FJVWtJcFRKYkE5Z1N3TUs0cHFQTzdONWRNUkZmSEYraCs5RHZBSVNPVDFkd2xweG9OT3YxS3dFY1BjWkYvRTgweWwzSjhGTWRUTktKaURva0p2S1BCTEJSbkhYZmVKclJyWWlkbis2UXR0TWtVVW5XNjNteEJPYmZ4bEFDczFIZExlR0ptS1FURVJHUmVHTW9nYm5aS0xlbDlMaFNmUTlqN0lpSWlFZzZvOXhWUnJsZEFMeXEwT1pRN0YxUFdaaWtFeEVSRVVWR3VXL0ZSZDVIQWxpWkVSY202WlNGU1RvUkVSSFJKRWE1ZTR4eW9VNTlCd0EvckJrYjdqZEFXWmlrRXhFUkVZMlFXUUxEbVhUS3dpU2RpSWlJYUFZMVMyQ1lwRk1XSnVsRVJFUkVzNmhSQXNNa25iS3dCU01SRVJGUm9nb2JJVzFzbEx1TGNhVzZPSk5PUkVSRWxHaFNDY3hIQWF5YTh1N2JtS0JUTGlicFJFUkVSRFhFRXBpREFPd0k0RWVUUG9HbExwU05TVG9SRVJGUkJxUGNGVWE1RndGNERZREZBSzVsUEltSWlJaUlPc0o2UGQ5Ni9SeitQU2dMZ1A4SEpNRlF2dEt5MDlRQUFBQUFTVVZPUks1Q1lJST0iLz4KPC9zdmc+Cg=="
+      table.insert(graphics,{
+        Type = "Svg",
+        Image = Logo,
+        Position = {20,5},
+        Size = {300,64},
+        ZOrder = 1000
+      })
+      table.insert(graphics,{
+        Type = "Text",
+        Text = "MXA-710",
+        Position = {320, 5},
+        Color = gaColor.Green,
+        Size = {185,64},
+        FontSize = 40,
+        Font = "Open Sans",
+        FontStyle = "Extrabold",
+        HTextAlign = "Left"
+      })
+      table.insert(graphics,{
+        Type = "Text",
+        Text = "©",
+        Position = {500, 20},
+        Color = gaColor.Green,
+        Size = {20,20},
+        FontSize = 16,
+        Font = "Open Sans",
+        FontStyle = "Extrabold",
+        HTextAlign = "Left"
+      })
+      table.insert(graphics,{
+        Type = "Header",
+        Text = "Coverage",
+        Position = {15,70},
+        Size = {570,11},
+        Color = gaColor.Green,
+        FontSize = 16,
+        Font = "Roboto",
+        FontStyle = "Bold",
+        HTextAlign = "Center",
+      })
+      local gaLabels = {
+        Pos = {X={15,149,385,10,500},Y={90,90,90,424,424}},
+        Text = {"Beam Width","Beam Angle","Coverage Map","Device Mute","Version "..PluginInfo.Version,}
+      }
+      local gaLayouts = {
+        KnobPos = {X={110,110,110,110,110,110,110,110},Y={120,156,192,228,264,300,336,372}},
+        ComboPos = {X={20,20,20,20,20,20,20,20},Y={130,166,202,238,274,310,346,382}},
+        KnobText = {"BEAM_ANGLE "},
+        ComboText = {"BEAM_W "},
+        KnobPrettyName = {"Beam Angle "},
+        ComboPrettyName = {"Beam Width "}
+      }
+          --Basic Labels
+      for i=1,#gaLabels.Pos.X do
+        table.insert(graphics,{
+          Type = "Text",
+          Text = gaLabels.Text[i],
+          Position = { gaLabels.Pos.X[i], gaLabels.Pos.Y[i]},
+          Color = gaColor.White,
+          Size = {90,16},
+          FontSize = 12,
+          HTextAlign = "Center"
+        })
+      end
+      for j=1,#gaLayouts.ComboPos.X do
+        table.insert(graphics,{
+          Type = "Text",
+          Text = tostring(j),
+          Position = { 7 , gaLayouts.ComboPos.Y[j]},
+          Color = gaColor.White,
+          Size = {10,16},
+          FontSize = 10,
+          HTextAlign = "Center"
+        })
+      end
+      for k=1,#gaLayouts.ComboPos.X do
+        layout[gaLayouts.ComboText[1]..k] = {
+          PrettyName = "Channel "..k.."~"..gaLayouts.ComboPrettyName[1],
+          Style = "ComboBox",
+          Position = { gaLayouts.ComboPos.X[k], gaLayouts.ComboPos.Y[k]},
+          Size = {80,16},
+          Color = gaColor.White,
+          FontSize = 14,
+          HTextAlign = "Center",
+          IsReadOnly = false
+        }
+      end
+      for j=1,#gaLayouts.KnobPos.X do 
+        layout[gaLayouts.KnobText[1]..j] = {
+          PrettyName = "Channel "..j.."~"..gaLayouts.KnobPrettyName[1],
+          Style = "Fader",
+          ShowTextbox = true,
+          Position = {gaLayouts.KnobPos.X[j],gaLayouts.KnobPos.Y[j]},
+          Size = {168,36},
+          Color = gaColor.Green,
+        }
+      end
+      layout["Coverage_Map"] = {
+        PrettyName = "Coverage Map",
+        Style = "Button",
+        ButtonStyle = "Trigger",
+        ButtonVisualStyle = "Flat",
+        CornerRadius = 0,
+        Margin = 1,
+        Position = { 280, 120},
+        Size = {300,300},
+        DrawChrome = false,
+        UnlinkOffColor = true,
+        Color = "#00000000",
+        OffColor = "#00000000",
+        StrokeWidth = 0,
+        IsReadOnly=true
+      }
+      ShureArraySVG = "PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB3aWR0aD0iMTk5Ljk1NSIgaGVpZ2h0PSIyNS4xMiIgdmlld0JveD0iMCAwIDE1OTIgMjAwIj4KICA8ZGVmcz4KICAgIDxzdHlsZT4KICAgICAgLmNscy0xIHsKICAgICAgICBmaWxsOiAjZTdlN2U4OwogICAgICB9CgogICAgICAuY2xzLTEsIC5jbHMtMiB7CiAgICAgICAgc3Ryb2tlOiAjMDAwOwogICAgICAgIHN0cm9rZS13aWR0aDogMXB4OwogICAgICAgIGZpbGwtcnVsZTogZXZlbm9kZDsKICAgICAgfQoKICAgICAgLmNscy0yIHsKICAgICAgICBmaWxsOiAjYTdhOWFjOwogICAgICB9CiAgICA8L3N0eWxlPgogICAgPGltYWdlIGlkPSJpbWFnZSIgd2lkdGg9IjE1MTAiIGhlaWdodD0iNyIgeGxpbms6aHJlZj0iZGF0YTppbWcvcG5nO2Jhc2U2NCxpVkJPUncwS0dnb0FBQUFOU1VoRVVnQUFBTDRBQUFBQkNBWUFBQUJnNkJROUFBQUF1VWxFUVZRb2taM1J3WTdDTUF3RTBOaHhTaGUxVGUrSS80RnYzVC9iQ3hRYVdtckhSb2dicDVYblBrOGpEWnhPNTk5eHpPTzI4UktjUVFTYTUvSm5wandNdzVGWlZxOEZBUHA4cnNvc2IydlB6T0sxVkd0dDI3WVZxYlZXRVRPdjlMRzZyaHZmUmluekZURkdyMldtMXZmOUhoSHhjcm5lVTBya1gyWWhwYVloaWxUSzQwNUV6WCtiekx6a1BCeEVaRjJXZFFJSTZMVytnd2dnSWtwRTBjd1VBTkZyRWNVNFRkTXRoQkJ6emo4aTFmMmttZTVTYXJZWDJDeG51QnYyclprQUFBQUFTVVZPUks1Q1lJST0iLz4KICA8L2RlZnM+CiAgPHBhdGggaWQ9IlJvdW5kZWRfUmVjdGFuZ2xlXzEiIGRhdGEtbmFtZT0iUm91bmRlZCBSZWN0YW5nbGUgMSIgY2xhc3M9ImNscy0xIiBkPSJNMzcsMTVIMTU2MGEyNSwyNSwwLDAsMSwyNSwyNVYxNjFhMjUsMjUsMCwwLDEtMjUsMjVIMzdhMjUsMjUsMCwwLDEtMjUtMjVWNDBBMjUsMjUsMCwwLDEsMzcsMTVaIi8+CiAgPHBhdGggaWQ9IlJvdW5kZWRfUmVjdGFuZ2xlXzEtMiIgZGF0YS1uYW1lPSJSb3VuZGVkIFJlY3RhbmdsZSAxIiBjbGFzcz0iY2xzLTIiIGQ9Ik0zNywxNUgxNTYwYTI1LDI1LDAsMCwxLDI1LDI1VjE2MWEyNSwyNSwwLDAsMS0yNSwyNUgzN2EyNSwyNSwwLDAsMS0yNS0yNVY0MEEyNSwyNSwwLDAsMSwzNywxNVoiLz4KICA8cGF0aCBpZD0iUm91bmRlZF9SZWN0YW5nbGVfMiIgZGF0YS1uYW1lPSJSb3VuZGVkIFJlY3RhbmdsZSAyIiBjbGFzcz0iY2xzLTEiIGQ9Ik00OS4xMywzMS4wMzdoMTUwMGEyNSwyNSwwLDAsMSwyNSwyNXY5MWEyNSwyNSwwLDAsMS0yNSwyNUg0OS4xM2EyNSwyNSwwLDAsMS0yNS0yNXYtOTFBMjUsMjUsMCwwLDEsNDkuMTMsMzEuMDM3WiIvPgogIDx1c2UgaWQ9IlJvd18xIiBkYXRhLW5hbWU9IlJvdyAxIiB4PSI0MiIgeT0iMzIiIHhsaW5rOmhyZWY9IiNpbWFnZSIvPgogIDx1c2UgaWQ9IlJvd18xLTIiIGRhdGEtbmFtZT0iUm93IDEiIHg9IjQyIiB5PSIzOSIgeGxpbms6aHJlZj0iI2ltYWdlIi8+CiAgPHVzZSBpZD0iUm93XzEtMyIgZGF0YS1uYW1lPSJSb3cgMSIgeD0iNDIiIHk9IjQ2IiB4bGluazpocmVmPSIjaW1hZ2UiLz4KICA8dXNlIGlkPSJSb3dfMS00IiBkYXRhLW5hbWU9IlJvdyAxIiB4PSI0MiIgeT0iNTMiIHhsaW5rOmhyZWY9IiNpbWFnZSIvPgogIDx1c2UgaWQ9IlJvd18xLTUiIGRhdGEtbmFtZT0iUm93IDEiIHg9IjQyIiB5PSI2MCIgeGxpbms6aHJlZj0iI2ltYWdlIi8+CiAgPHVzZSBpZD0iUm93XzEtNiIgZGF0YS1uYW1lPSJSb3cgMSIgeD0iNDIiIHk9IjY3IiB4bGluazpocmVmPSIjaW1hZ2UiLz4KICA8dXNlIGlkPSJSb3dfMS03IiBkYXRhLW5hbWU9IlJvdyAxIiB4PSI0MiIgeT0iNzQiIHhsaW5rOmhyZWY9IiNpbWFnZSIvPgogIDx1c2UgaWQ9IlJvd18xLTgiIGRhdGEtbmFtZT0iUm93IDEiIHg9IjQyIiB5PSI4MSIgeGxpbms6aHJlZj0iI2ltYWdlIi8+CiAgPHVzZSBpZD0iUm93XzEtOSIgZGF0YS1uYW1lPSJSb3cgMSIgeD0iNDIiIHk9Ijg4IiB4bGluazpocmVmPSIjaW1hZ2UiLz4KICA8dXNlIGlkPSJSb3dfMS0xMCIgZGF0YS1uYW1lPSJSb3cgMSIgeD0iNDIiIHk9Ijk1IiB4bGluazpocmVmPSIjaW1hZ2UiLz4KICA8dXNlIGlkPSJSb3dfMS0xMSIgZGF0YS1uYW1lPSJSb3cgMSIgeD0iNDIiIHk9IjEwMiIgeGxpbms6aHJlZj0iI2ltYWdlIi8+CiAgPHVzZSBpZD0iUm93XzEtMTIiIGRhdGEtbmFtZT0iUm93IDEiIHg9IjQyIiB5PSIxMDkiIHhsaW5rOmhyZWY9IiNpbWFnZSIvPgogIDx1c2UgaWQ9IlJvd18xLTEzIiBkYXRhLW5hbWU9IlJvdyAxIiB4PSI0MiIgeT0iMTE2IiB4bGluazpocmVmPSIjaW1hZ2UiLz4KICA8dXNlIGlkPSJSb3dfMS0xNCIgZGF0YS1uYW1lPSJSb3cgMSIgeD0iNDIiIHk9IjEyMyIgeGxpbms6aHJlZj0iI2ltYWdlIi8+CiAgPHVzZSBpZD0iUm93XzEtMTUiIGRhdGEtbmFtZT0iUm93IDEiIHg9IjQyIiB5PSIxMzAiIHhsaW5rOmhyZWY9IiNpbWFnZSIvPgogIDx1c2UgaWQ9IlJvd18xLTE2IiBkYXRhLW5hbWU9IlJvdyAxIiB4PSI0MiIgeT0iMTM3IiB4bGluazpocmVmPSIjaW1hZ2UiLz4KICA8dXNlIGlkPSJSb3dfMS0xNyIgZGF0YS1uYW1lPSJSb3cgMSIgeD0iNDIiIHk9IjE0NCIgeGxpbms6aHJlZj0iI2ltYWdlIi8+CiAgPHVzZSBpZD0iUm93XzEtMTgiIGRhdGEtbmFtZT0iUm93IDEiIHg9IjQyIiB5PSIxNTEiIHhsaW5rOmhyZWY9IiNpbWFnZSIvPgogIDx1c2UgaWQ9IlJvd18xLTE5IiBkYXRhLW5hbWU9IlJvdyAxIiB4PSI0MiIgeT0iMTU4IiB4bGluazpocmVmPSIjaW1hZ2UiLz4KICA8dXNlIGlkPSJSb3dfMS0yMCIgZGF0YS1uYW1lPSJSb3cgMSIgeD0iNDIiIHk9IjE2NSIgeGxpbms6aHJlZj0iI2ltYWdlIi8+Cjwvc3ZnPgo="
+      table.insert(graphics,{
+        Type = "Svg",
+        Image = ShureArraySVG,
+        Position = {375,263},
+        Size = {110,15},
+        ZOrder = 1001
+      })
+      layout["DEVICE_AUDIO_MUTE"] = {
+        PrettyName = "Device Audio Mute",
+        Style = "Button",
+        ButtonStyle = "Toggle",
+        ButtonVisualStyle = "Flat",
+        CornerRadius = 5,
+        Margin = 1,
+        Position = {100,424},
+        Size = {50,16},
+        Color = gaColor.Red,
+        OffColor = gaColor.LtGray,
+        UnlinkOffColor = true,
+      }    
+      layout["DEV_MUTE_STATUS_LED_STATE"] = {
+        PrettyName = "Device Muted State",
+        Style = "Led",
+        Position = {155,424},
+        Size = {16,16},
+        Color = gaColor.Red,
+        OffColor = gaColor.Green,
+        UnlinkOffColor = true,
+        Margin = 3,
+        IsReadOnly = true,
+      }      
+      table.insert(graphics,{
+        Type = "Text",
+        Text = "Current Preset Loaded",
+        Position = {180,424 },
+        Color = gaColor.White,
+        Size = {125,16},
+        FontSize = 12,
+        HTextAlign = "Right"
+      })
+      table.insert(graphics,{
+        Type = "Text",
+        Text = "Recall Preset",
+        Position = {335,424 },
+        Color = gaColor.White,
+        Size = {80,16},
+        FontSize = 12,
+        HTextAlign = "Right"
+      })
+      layout["PRESET"] = {
+        PrettyName = "Current Preset Loaded",
+        Style = "Indicator",
+        Position = {305,424},
+        Size = {25,16},
+        Color = gaColor.LtGray,
+        FontSize = 14,
+        HTextAlign = "Center",
+        IsReadOnly = true
+      }
+      layout["PRESET_NAME"] = {
+        PrettyName = "Recall Preset",
+        Style = "ComboBox",
+        Position = {415,424},
+        Size = {90,16},
+        Color = gaColor.White,
+        FontSize = 14,
+        HTextAlign = "Center",
+        IsReadOnly = false
+      }
+      layout["Status"] = {
+        PrettyName = "Connection Info~Connection Status",
+        Style = "Led",
+        Position = {10,10},
+        Size = {16,16},
+        Margin = 3,
+        IsReadOnly = true,
+      }
+  elseif CurrentPage == "Channels" then
+      --All Basic Background and Header Graphics
+      table.insert(graphics,{
+        Type = "GroupBox",
+        Fill = gaColor.Black,
+        CornerRadius = 5,
+        StrokeWidth = 1,
+        Position = {5,5},
+        Size = {1100,430}
+      })
+      Logo = "PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB3aWR0aD0iOTg1IiBoZWlnaHQ9IjM2MCIgdmlld0JveD0iMCAwIDk4NSAzNjAiPgogIDxpbWFnZSB4PSIxMjAiIHk9IjEyMCIgd2lkdGg9Ijc0NSIgaGVpZ2h0PSIxMzgiIHhsaW5rOmhyZWY9ImRhdGE6aW1nL3BuZztiYXNlNjQsaVZCT1J3MEtHZ29BQUFBTlNVaEVVZ0FBQXVrQUFBQ0tDQVlBQUFBWE85VFdBQUFnQUVsRVFWUjRuTzNkZTd4ZFJYVUg4TitZOEVwRTVTR1NBSDJvVkVIRTZsaTErS2phS2xoMHhBY2lsa3BGQkt6NlViRXFhRUZRUVd4clViQXFpb2dHOFlFUEhGRVU1Q1ZTUkJoOFVBVkVRU0FRSUR3TUFRSkp5UFF6WVM3ZVhNNjlkOCtlT2Z1MWZ0L1A1L3lYY3pKNzNYMzJXWHYybWpVS0hXTzlYaC9BMCtQcktRQWVEMkFiQUk4Qk1LOXI0NlYxZk1Fb3QwK2RrRml2VHdhd3A0QndIbTZVT3l6M1E2elhld0ZZVkdaSW5YYXRVZTR2TXVLMEI0Q3ZDb2dUQ3NUcVNBQUhseDFTcCsxcmxQdDgzUUZhcnk4RjhGUVpvZXE5MVFDV0FiZ2R3RzhBL0JMQXhRRE9Nc3F0Nk9yQldhOHRnSmQxWUNqVWpxVnp1eEI0Ni9YbUFGNEY0T1VBbmc5Z293NE1pOUw5SVNObXRaT0xucm11MEhDbHhDdm5uQXIrdk5BNCtpQTNWbExPcVFuWFpyNWZXcno2TE9RNm04WFh0akhYQ0ZaWXI4K0lFeDdmTWNxdDd0Z3gvbGtIeGtEdCtVTnJTYnIxT3N6aXZ4REFXK0tkWWlkdUdDZ0xrL1RaNVNaU0UzaFRVNDJrUkNyMzNKS1dFTlNPbC9YNjRRQTJLVHNjYXNGR01XRVByMnV0MThjQytCK2ozTDBkK1dQd1JsQzJQenlzamNPM1h1OEdJRHdxL0JHQVZ6QkJINHhhTTFPeHhHbUJrQmlWU3RLbHpCQnpkcmc2M3RCVTV6UGp4ZVJwZU1JMTliOEFYRzY5M3IzdG83TmVQd3JBSXdjWVo2cnUya2FUWSt0MXFEUC9CSUNkK0VjYXBMcVBqNlhNNEswQmNIMmh6MktTWG8yazJlR2NtZUZ3bzd5dzdIQTY3U2FqM01xTUFUSkpINjd3dC8yNjlmbzBBUHNZNVphMmRLU1NTdlZvdEdzYm1VbTNYcyt6WGg4RDRDSW02SU4xUDRERk5ROU95Zy9lRXFQY3F0d1BpYVZpVWk3Z3JCdXVMdWVHSml6Tzcxd2pnVEhpV2dlYXpVc0IvTXA2L2NLV0lzVnpqTVpmN21LOTFuRWw5ZHNBdEZKZVE0MVluTEhvaHZYb2FVSnAwUHBORGJwbHRaUDB1Q0I5L2xBQ1VVSE9EWTIwaElCSk9sV3hKWUFmV0svL3BZVm84V2tOalRkSnQxNkhkbndYeERhS05HdzU5WjFTU2hKS0plbFM0c1c2NGVwOFppa1ZPN3VrWVFJbHgzcWh2YkQxK3FDR2o1am5HRjAzbGlROVBJNjNYb2NGR0tFSDdRYml3eXdETzd2TUxqY3htQ0FsWGpkbTFnMUxxa2ZQalJXVDlEUk1vT1Q1aVBYNndBYVBtdTBYWmJ2REtIZG44U1RkZWowSHdCY0J2RXQ2aElWaGtqNDdKdWxwMksya09pNndUY040VVIwZmE3RDBoVGVDc3EyOVJoVk4wbU9DL2lVQS95dzl1Z0t4SG5aMjdKR2VodTBYcStNTlRacWNUamdieGgyd1NhYmpyTmZQYU9ESW1hVExWajVKQi9BcEFLK1RIbG1oNnZaSUQyMUF0eElTTXRha3ArSGl2dXA0UTVNbVoxS0J5Wk5zWWRIK042M1htNDByQ3RicitYRjNWSkpyN2NSTHNTUTlMcXJZanllVVdIV1RoSzBCekJFU3ROelp6Z2tzRDZxR1NYb0Y4UW5vMWswT3RtVkxqWElyTW9iQUpKM0M5K1dZTVVhQjNZT28zRXk2OVhwWEFFZUtENmxjT1YwNHBQemczVnh3cTJrbTZkV3dKcjJhclFUZEtJTlBhS2lRMThYZDA4ZUJONEpVSmttM1hvZE5NQllKMndpRDFyVWtvN01FNjlFVFdLOGZEV0NqcGdiZHNwelpZV2xiYXJOVlpYVjhRa09sZk54NlBZNE9ka3pTYWUxMUtpdEpqenNmbmdoZ0UvSGhsSTJMUm1kWHFoNmRKUnpWc0Z0SmRVelMwekNCb2duaGV2eldNVVNEM1lNb1Awa0hzQytBdHJiTXBlNWdnakE3dGw5TWMwdG1lWkNrUkNxM2xJbzNOR21ZcE5Oa0IxdXY1eFdPQ004eDJaWWI1VzVIVHBJZUh5Y2ZJVDJTdEJhVDlObVZTdEtsektSenRyTTZKcDFwMkNPZFN0cHNERzJubWFUTDl1QTFLbWNtL1RBQWo1WWVTVm9ycHg2VzdRVFRzRHlvR2tsbFFleVJucVoydkt6WG9mM2V3cGJHVGQzMTlzSWpZNUl1MjRQWHFGcEp1dlY2WEhWWTFFKzFFaXJyOWNPWXBDZmpSa2JWc0hhL09ta0xJWFBYT3JCSkFrMjFuZlZhbDRoS1hJakt6YkpreTU1Si96ZGhMYnRvWm5WLzlNS00xSHBDWXNzZTZXazRPMXhkVGhjY0pheDg0dzZqM0owWjcyZG5GNXJPN29VaXczT002aWZwMXV2TkFieFJmQWhwc3JwSmdwU0wwVzFHdWJzS2ZSYWZQRlFqS1VuUHFkOWZFSGRRbElMdEYybGNYbGJvYzFucVFnOWVwK3JNcE84bnFFOHp6VzVwUm1jSjFsY25FTmI3TzJkMmVKNndMYlc1eFgxMVhKQk00N0s5OVhyVEFwL05HMEhLU3RKTHIyS21mbU5ubDlteC9XSTZKcDdWNVh3SFdZK2Voa2s2emVSdkMwU0hTVHJWSzNleFhqOE53QlBGaDQ4bVk1SStPN1pmVEJQcWhwZG52RjlTSXBWYlNzVWtQUTNiTDlKTXRpc1FIZDRJeXJiQ0tIZkxSQVJTWjlKZkt6MTY5QkE1Q1NqcnE5T3dQS2dhdGwrc2p1MFgwekNCb3BrOHRrQjBlSTdKdGs1T2xacWtjM2RSbW9wbENiTmorOFUwWE54WEhjczMwdVNzZFpnTFlPdVd4azM5c0tEQUtQbTBScloxZnYvbVZnMUZYQkR4dEo2R2JrMDRCQURIQVBoNUI4WXpKUGRrSEF1VHpqU01WelZzdjFnZHkxMnF1eC9BNWswUGVNQStDT0J0QXp1OHJLWWExdXZRa25pcmNzUHB2TkNJNUJSQngxdkZ5c24vcG5LU0R1QzVQZDdFSVR3eDJDMitMb3pKK2plTmNxczZNRGFSck5kYkF0aEF5TEdYU3RKWkhsUU5GOWhXSnlsSnY4c29kM3ZkTnh2bFBJQS9saDJTWE5ickxRWjQ4QnRtdm4rYnpKM2crK1p5b3h5L1V6TklPUm1lMHZqb3hpT3N2djVLU0FTczE0ZFlyN216Vnp1a0pKekxDbDZFV0I1VWphVEVzM2FTSHBNa1NlMTBTOTBzVXhsRHZKNnR5SHcveTg5b0hTbEorbDhOTEhRTDQrTzI2NjNYaTZ6WHorakFtQ1Jod3BuQWV2MXdRYjIvYXkvdWkxdHFiMWwyT0ozRzdrclZNU0hvbGlHZWYzZGt2bDlTUGZwcUFFczZNSTVPUzBuU1M3UVc2cUpRQTdZWGdJdXMxeisxWHU5bHZaYTBBMTlidUwxOUdpNkdySVkxMXRWSlc2REdtZlNPc0Y2SHNwQWhQc1crTmZQOWttNmNyemZLM2QrQmNYUmFTcEl1NGNmdm1RQVd4ZG4xdzYzWEpWWnEwMmljU1U4akpmbGNubE0zTE94SGJubG1LUlYzRzZXMkRQWGM0M3FhNnZoa3E0S1VKUDNoclkyeWVhRlc4OUJ3VWJkZW4yeTkza25Rc1RlRml5RFRzTE5MTlpKbWg1a1FwR0ZTMEIxRC9aNWVuZmwrUGpHbGRWUkswbU5iSUNtZE9DWUx4NzBuZ0F1czE4NTZ2WGVzZWFWOFREclRNRjdWY0NhcU9wWUdVVnVHK2ozOVplYjd1UkVicmFQcVRQcDhobTF0ai9nVFl5bk1FZFpyYm1xUmgwbG5HajU1cUlaSmVuWFNrblFtQmQweHhPOXA2T1IxVGQwM1c2L254QmFNVXZDbXVRSkovVGhMZVRTQTk4VVdqbCszWGo5M0dJZlZIT3YxWm9KdS9GanVrb2FKWjNYYzRyNjYrNHh5Ti9WbHNBSU04ZHo3U2ViN3QwcmN1NmJ2bUtSWFVQV0V5TmxWY3FqQ1hlL3U0V1c5RG8rNGpnVndzbEV1dDArcUJGSVNxYnVOY3Jtci9TZXdHMDQxck9tc0lPNGd2WEdUZzIwWkU0SnVHZUwzOU56TTk3UGJFajFFcFpsMG85eEtKdW96Q2hzOUhROWdzZlg2S091MXRDOWJLaWFjQ1FiY3JteVVuTVJUMnBiYWJMOVlIWlAwYmhsaWt2Njl6UGRMZXJLMUp1UkxIUmhINTZXVXU5d29ORVlwd3V6VWU4TUtiK3YxdDYzWEwralAwQnZGMG8wMDdGaFNqYlF0dFhObW9xUjFkbUU5ZWtmRWZVZ1dEdXl3cmpUS1haNzVHWksra3pjWTVWWjFZQnlkbC9LRDludWhNYW9qbE1Mc0J1QnM2L1ZsMXV2OXJOZnorbmNZWThORmtHbWtYTHp2TmNyZGt2RitTVGN6SzR4eVN6UGV6L2FMMUpid1BWVURpLzdKQlQ2RHBYcjBFQ21MRks0QXNETkRtR3dIQU1jQitLajErZ1FBbjh4WkFUNFFVaEtFOWF6WHp5L3dPZjlRNERQNmdPMFhxK01DMnpSWjhiSmVQd3ZBaGkyTWU0aitlbURINUdQbnQxeVN2cE9yQy8wMkRzbGRScmxMcGg1UFNwTCtNK2tSelBRb0FBY0NlS2YxK3J0eG9lbFpSam5mNjZPcVIwb3l0Vzk4VVRWc3YxZ2RrL1EwdVRlQVp3UFlxT2xCVXkrY1pwUXJVVTRsNmZyMWd2aWlQemtmd1BPbXhpT2wzT1VDQnJPSThKalBBRGdUd1A5WnJ3OFFXQW9qTFVHZ2FwaDRWc2YyaTJscUorblc2eTJZb05NTS9qTTNPTlpyeGQ5RjhVYisvbFZPMG8xeTRTSjNwZlFvRnJZOWdFL0hyakQvSWFFcmpQWDZFZkdwQXRGVXViT2RyT21zVGxLU3ZpcXo4UUdUSjVyT2VVYTU4d3RFSjNUdldwOVJGaTB2U1krczlDaU95U1lBM2gyN3dueGo0QnNrU1p2Qm8rcFlrMTVkVHF2S2plTTFSNHJyakhKck1vNlZTVHBONStCQ2tlSHZJbzE4T3BxYXBKOGtQb3pqRmJyQ3ZBckFqNjNYbDFxdjk0N3Rxb2FFRnlPYVRrN2l5UzIxcTVPV2RMSTBpTWJoYTBhNUN3dDlMczh4eXA5Sk44cjlDc0RGNGtQWmpLZkdGZVBYVzY4UHQxNFBaVE1iemtyUmRISVN6d1hDdHRUT1NUelpmakVORXlpYWFqbUFkeFdNQ3M4eEtsTHVFaHd0UHBUTkNvdVdEbzNKK2lMcnRlNzU4VEJKcDFGQzNmQk5HWkdSOUNNWGRvQmVrdkYrSnVscHVJTTBUZlV1bzl3TkJhUENjNHlLbExzRXAzQmpvMWFFTGMvM0FuQ0o5Zm9DNi9WcnJOZDluRG5rakFHTmtsczNMT204dWphemRhdTBoSUJySGFpazBITHhjNFUvaytlWWJFdU1jaXRIUlNBNVNUZktyUVp3a1BTSXRteW5VQThINEJycjlVSFc2ODE2TkhaZWpHZ1V0bCtzamtsbkdzYUxTZ25uMHQ1amlDYlBNZG1tL2Yyck01TWVmQlBBT2RLajJnRmJBL2hJTElVNXpucjl4QjZNbVkvMWFCUzJYNnlPU1dlYW5BWEpvUXZPeGkyTm03cGxSV2pzWUpTN2ZReWpZaG1vYkdXVDlQaW9kZjk0MGxMN3drWWIrd0c0M0hwOXV2WDZSWEZ6aEU2Sm16WTltdWNMamNERXN6bytkYWd1bEZBdHpuZy9reWRDUEk5ZWE1UnpwYU5odmQ0Y2dMUU5EV2xkMHpZQ3FEdVRIaEwxcXdDOGc0SHVuRjBBbkFIZ1Y5YnJmYXpYRzNab2dIeWtSOU5oQjQ3cWNtYUdONHlMMGFXNElaWm8xc1ZyRmdYN0crWEd0VThNenpFcVh1NnlsbEh1c3dBV2lROXZOKzBBNFBQaERzMTYvWUY0dDk0MnprclJkRGc3WEIzYkwxYkhtei9LOWE5R3VlUEhHRVdlWXpTZUpEM2FOMnkrSXo3RTNSWEtTdzZMZGV1ZnNsNC9yc1dSTWttbjZkUk9QSzNYV3dyYlVqc244V1NTbm9acmFPUUtUMkJlYjVUNzlKZ2p3SE9NeHBla3g3WXhCa0R4V2kwcUtqem1mak9BcTZ6WHAxaXZuOUZDZURsalFLUGNuMWszTE9tOENvbERUbjltN2phYWh0Y3NtWllCMk5VbzEwU2xBTTh4S2wrVFBwbFJMcHpRZncvZ1orSkQzWDFoUWVtckFWeGt2ZjZCOWZwWkRZNllGeU1hWlRIcmhpdTczaWgzZjhiN3BTWHBMSGVoVkZjQ2VKWlI3b3lHSXNkelRMYWxScmw3cG90QWtTUWRmMHJVWHdqZ085SWozaU03QTdqUWV2MHQ2L1ZqR3hnMnkxMW9GTFpmckk0encybTQxb0ZTbkFoQUcrV3VhREJxUE1ka20vRWFWU3hKeHdPSit0MEFYZ25nd3dCeWRzU2pacjBpdG04TUMwelhHK1AveklzUmpjSWt2VHJPREtlcGZXNVpyeDhPWU5PV3hrM051akg4RGhybDNoRHptQ2J4ZDFHMkdhOVJSWk4wUEpDb3J6SEtIUUxnSCtLSlQvMndmbHhnZW9uMStrbWxSMnk5M2dEQUFwNExOQUlUeitxNEVESU5PK0hRVEVKQ2ZpU0FKeGpsVG0wNlV0YnJSd0Y0SlA5Q29qV2JwRTh3eXAwTllIc0FuK2FzZXEvc0dOWVdXSy8zS2p4b3poYlFkSmlrVjVjek14eHV4QmUyTU9hMkxESEszWmZ4ZnpOSkg2NTdBWHdDd09PTWN1ODN5dDNWMHBIeUhLUG15bDJtQ25YcVJybC9CZkJNQUdlTC8xUDBSOWo5YkZFb2Z5azRZcmFab3VuazFsbExPcmR5U29QK0xDNGNsK0thek9Qa3hNTHczQWJnQ0FCL2FaUjdoMUh1NXBhUGtMK0wxRjZTUHNFb2Q3RlJMblIvZVRHQTB6bXozaHVIV2ErUEtqUll6aGpRZEhKMjBKd1BZTDZneU9ZOGRaQ1dkUDQ2OC8xTTBvZmpVZ0Q3QWRqR0tQZnZScm1iT25Kay9GMmtHU2VwNWpZWkhxUGNtUURPdEY3L1pkaG1GOEErY2JNZDZxNzNXcS92Tk1vZG1UbENYb3hvRko4NWs3NmxvS2l1Q1MwWU05NHZMZW04TFBQOXZHYjEyeDBBdmdiZ2VLTmNWL2R4NFRsRzdjK2tUMldVdThZb2QxQzRxd1h3VHdCK0l2N1AxRzFIV0s5TjVnaDVNYUpSbHNRTjBlcmFRbEJVUTZ4V1pieGYybmZ3RjVudjV6V3JmOEpDMEsvRURSWWZZNVI3YzRjVGRQQnBqWGgzR09YdW5Da0lqYzZrVHhVWDlad2NYdGJySndNNEFNQS9BOWk0elhIUlNDZUV2NUZSYmtuTjhMRDJqa2JKYmIrNHVhQ29jb0Z0ZGZjWDJBV2IxNngrQ0VuTzkrTWVMZDh4eXEzbzBkaVpwTXMyNjFQa1ZtYlNSekhLWFdhVWV3dUFyZUwyOWIvc3l0aG9yYzBBZkN3akZKeVZvbEZ5RTg5NWdxTEtqWG1xKzhWTXUvak54bnE5WVppSjdkWWgwVFRDUm9ybkFmaFd6eEowOEhkUnZGbXY2WjFKMGljWTVaWWI1VDVqbFB0ckFNOEdjQktBbkRaYVZNNmUxdXVucDM1YTNDQnBLLzRkYUFRbTZkVngwNmZxenM5OFA1T24vdGdtdG5yK25mWDZqZGJyVmlzRXFvcWJaVzNXbnpEVEdQUXZTWi9NS1BlL1JybFEvckkxZ1BjQXVMbzdveFByZlRVT2ZPdXVuMnZVbXR6Mmk1STJBc25wa1Q0M2ZnK2xPQ3Z6T0ptazkwOUkxbzhIY0lYMStsOTZrS3l6bklwbXZhYjNJbkV5eXQxcWxQdFBBTnNDMkNYV25xM3B3TkFrTXRicjFJNGFyTHVqNmVUT3BFdVNFNnVRb004UkVxdlZBTTdOL0F3bVVQMzFPQUJmQVBBYjYvVnJyZGRkelhONEkwaXpKdW05ZUN3MHdTZ1hFdk1maHBmMU90dzF2eW0rSkxWaGExdjRvZDhqN3RaV0ZTOUdOQjBtNmRYbHhFcFMwbmxlZ1Iwa2VjM3F2MjFqcDVkRHJkY2ZETzBZalhKZDJxTkYwamtXZG5nOXJnUGo2SnBMWnh0UHI1TDB5WXh5MThjdjM0Y0E3QllYbTc2Z095TWN0SDlra2s2Rk1FbXZMcWMwU05KMzBCYjRERjZ6aG1PN21LeUhQVDhPangxZ3VwQ3NTM3JDZkhYWTRiVUQ0K2lkM3RjSmg3N0JScmxUakhJdmpGL0drRHorc1FOREc3S2RFaDhoOHRFeGpiTFVLSGR2Wm1TazdGNThjMmFzSkNXZHB4YjRESmJvRFU5b1J2SHRNSHRwdmQ2MUEwY242UnpMWGZRdTFxQVc4eG5scm9oM2E2R1R5QnNMOU1tbDBjS3E5Q2NteElhelVqUktpVm4wWlVJaXkvYUwxZnpVS0plN0dCbE0wZ2N0Sk91bldhOS9hcjNlcGNVRGxmUzd5Q2VtTlEyeTQwYm9qMnVVTzhFb0Y5b0YvazFjUk5LMy9xbGR0MjNDK0ppazB5Z2xMdHk1dGNkOXdTUzltaS9uZm9EMWVuMEFDeHNhTDdYbm1RQk90MTVmWUwxK2ZndWpZSkpPc3hwOFd6eWozQ1ZHdVgzaVJmZWRBSzdzd0xDR29GSUpTeXlMMlVaNnNHaWtFbzlBN3hZUzJ0elpZUWtKd2Fxd09MREE1NFJybXlyd09kUVBPd0U0eDNwOWJsUEp1c0ROc2xqdVVwT1kzdFZHdVQ4YTVUNGU2OWIvSHNBM1lxc3VxbWVMaXU5YTJPY0Z5b21XRlhwSnFiTXVjZUcrdWNCbjlFSHRtYWg0b3l4aFhjaXBScm1sQlQ2SGEyaGsrcnVZclAvQWV2MnNNVWRBMmpuR0pMMG1LY25UZytLcTdyUER5M3E5QU1DK0FQWVR0dEZIQ1J0WC9Bd3BqL1J1TThwdFh1S0RyTmQzSnNTM3owbzhBcjFSUUp5UUdhdlFvbmE5Z21QcHF1TUxqWXZsZWJMdEhGN1c2OUR1K2YxR3VYR3NiWk4yanJIY3BTYlJ1MEFhNVpZWTVUNFV2ekN2QUhDR29Gbk1wa2k1R0pWWXJCWVM5RTJGSk9nb2RPRmVLbVJqczV4WVNmZ08vaGJBandwOUZwTjBRa3pXTDdGZW4ycTlmbXJoaUVnNngrNHp5dDNVZ1hIMEVyZHFmeUJadjk4b0Z4NlY3aHdYUlA1WG1CbnR3TkM2ck9wVEdDbVA5VXJORkVoNkRKcDlZeE8rdTZWdWtEcU9QZEpuOXZHNDJWMEpRMXBrR3phUXVhY0Q0K2l6bDhlMmpkK3dYbTlmNkRna2RRL2lMSG9HSnVsVEdPVitiNVI3ZDJ6aitIb0FGM1pxZ04yeHZPSklwTXdZbExvUVNZblhIVWE1T3d0OTF0QVhnOStXdVlQbTBCT0NNS0h5eFlLZk42UjR2VGUyeS8xR0I4YlNkNjhDOEgvVzY2OFdTTmJaSTUwcUVWZVRYcFZSN2o0QWk4TExlaDM2cWg0QTRKOWlqM0Jpa2o0VmsvUTBKV2RYcm9xUHBvZnExbmdOcXF2MG8vcXVPU2EwM1MwNHBxRjhCNWNaNVNZV3MrOXV2WDRSZ0dNQlBLRURZK3VyMFBWbkR3Q3Z0bDZmQk9ERFJybmYxVGdXU2VVdVROSXpNRW12d0NqM2k1Q2tXNi9mQTJBdkFHOEdzRVBuQno1ZVROTFhWYXJrUXNvTVM4a1NsVjhWL0t3dUNrblZ6d2QrakhXRkJQU1lVaDltdlo0N29DWUM2OXdJRytYT3RGN3ZDT0JBQUljQW1OZmUwSHB2RG9DOVF6NFFrL1VQR09WU2tsSDJTS2RLV082U0lEeWVOOHA5eWlqM1pBRFBBL0FWQUN0N2N3QmxWVTJ5V0pPZVJrcVNYdkxDeloyRjVUbzZ0TmN0ZVBRTFl3STJCQS81amhubFZocmxqbUlKVERFVHlmcFYxdXZQV0s5bi9iMnpYb2RPU3d2NmM0alptS1JuWUpKZWsxSHVmS1BjNitKR1BRY0R1S2FYQjFMZnJJLzRyTmVoOWRzR0hUNkdrbGp1a3Fia2hmc3l3VGZMa3QwQzRHT0ZqMzlJMzc5cEoxS01jdGNiNVhZSDhHSnU4RmRFU0x6M0Q3K0wxdXRqWTN2bjZXd2pMUGRpdVVzR0p1bVpqSEszeEptSnh3UFlGY0JwQWxyQytTcEp1cUNFODg2Q3MzbFNZbGJzd20yVUN6dE5YbHpxODZnM1BwaTVvSGFVSVgzL1pyMFJEaVV3QUhhTUUwM3NBcE12Sk90dkJYQzE5ZnJqMHlUcjBscDhNa25Qc0U1TmVud004LzYrSFVUSGhFZnZ0d0o0ellCci9xNk9DMnRudzRRemdmVTZMRXJlcEtsQnQ2ejBoVHYweUg1Mjc2SkFkZjBtdGhjc1RWU1NqbGdDQStBbzYvV1hRL2xRN0dKQ2VjSzIvMjhIOEtZd3N4N2FPaHZsYm8yZktLbXpTN0NmOVZyQ1hoWXBqZ3Y3OUZUNTkxTVhqb2JITUI5b2RlalVCMVhiVXJJZVBRMFhFOVYzTHE5ZG9yek5LTGQ2REFjOHBHdFcwbzF3S0lHSlhVdDJpVjFnSGorK29Za3hMN2JCZkt2MStwUGhaa2hna241SUI4YlFOWit0T3A2cDVTNlNObEtoK241YzhaMnNyMDRqSlY3TGpYSzNGLzdNQ3dDVVhFQkkzZlZWbzl6Wll4cmRrTDZEdFo1V0dlVitFTHVYL1R1QUZlV0hKZEw4bUt6L0liWnlKcm5DazZ0S3MrZ1lrYVJ6TzJTcTR2eUsvNDd0RjlPdy9XSk5zUzc5dEtZT2dGb1RidTdlT2NiL2ZDalhyTHNubFZja0MrV01ScmtqQUd3SDROdnRIY2JnUEpKUEtNUUxpN1o5MVNBd1NhZFUxeG5scnFqNEhyWVRUTU40NWZsV1V3ZEFyVG5RS0hmVE9QNXo2N1VhME5Qa0l0K3gwUHZiS1BkS0FDK3AyQ3lBaUdhVzlOMmNtcVJMcTVXaWRGOUplQWVUempRc0Q4cnovVGpUU3NOMG1sR3U1UGIvVXkySTNUbUdvT2pDYkpiQUVCWERKSjNHNnBRcUgyNjkzanpXNFVuQUpEM05XRnB5eFk1RFh4N2p1S2s5b1NmNlBtUCszOFhYbzgrRUpUQkVSU1I5TjFudVFpbCtiNVNydXJ1amxITnBSVTd0NXhSU0ZtNlBzMi91NThiNDJkU2V2WTF5UzhmOHY0dHJ2MWdIUzJDSXN0UkwwcTNYYzJJTFJxTHBwUFFsWnZ2RkJOYnIwRmYzTVUwTnVtWGpUQ0RDN3FObjlTVVFWTWxIWXJuRnVBM3BtalgycmRoWkFrTlVTKzF5bHdVaitxWVRUUWk3MFoyUUVBM1dWNmRoai9SeVNtOFZUKzA1cThFK3kwUDZEaGJ2b0RRS1MyQ0lrdFZPMGxucVFqTTUzaWgzVzBLRVdGK2RSa3E4d28vNkxXUCtQOElNMzgvSC9IL1ErSVVmczljYTVlNXZLTllzZDZtSkpUQkVsWVJyMlkwcG9XS1NUbFhjQytDamlaRmlrcDZHNVVHRnhCNjA3MnZxZ0dnczdnVHcwb0xyUGFvWXlqWHJ2bkcxcVp3TlMyQ0laclE0ZGFma3lVazZPN3ZRZEk0MXlpWGQvVEhwVE1ieW9JSmlzbkJlVXdkRlJZV05xZll3eXYyNjRiQ3lSM29CVTBwZ3Z0dm1XSWc2SnZtN3lTU2RaaE5LRTQ2b0VTVW1uV2tZci9MZUhoOHZVcis4c2FHRm9nK3lYbThCWUtPQm5DZU4xS1BQSnBiQW1QQkVCTURWWFJnVFVjdVNuN3l6M0lWbTgyNmozTEtVS0Ztdkh4VzNQNWFnVkxtTGxKdmt4aElJbzl3dkFSelQxUDlIUllRZFJSZTFFRXJXbzQrSlVlNTdBSjRFNEFPeGRKSklLaWJwVk5UM2pYSmZxdkdCVWhMT2xRQksxWDV5ZDlieE9CVEFOUTMvbjFUUHdVYTVvMXVLM1pDK2Y1MUswdkZBb242dlVlNkRBTFpuQ1F3SmxsWHVJcVdHbUtvSm5WemVWRE5XVWhMT2ErTWl4U3pXNi9VQkxHejNVQnJUZE5lSnU4SkdPQURXdEh2WU5JdVFvQi9WWXBDR2RNMGE1MlpoV1l4eTE3QUVoZ1NybDZSYnI3Y0VzQUhQSEpwazd4cUxSU2V3dmpwTnVFRldUUTI2WlkwbkVFYTU4d0VjMmJWQTBJUGUxWEtDam9GZHN6cWJwRTlnQ1F3SmxWenVPVEdUemxJWG11endlQkd0aSswWDAwaDVpaFc2ZGl4cDZmOCtETUNaTGYzZk5GcDR1dkVHbzl4L2R5QStyRWx2R0V0Z1NCalBKSjFLT0RrazZabWZJeVhwNUVaR2FhNHp5clZTZGhJM3hObVRqOWc3STVRaHZjd29kMkpIQmpTVWE5YXExTTFTMnNZU0dCTGlScVBjeXRSRG5ValNXWTlPaUZ0d3Y2RkFuVFhMWGRJd1hnMklPK2J1QXFESkRYTG9vY0pzMG5PTWN0L3ZVR3lHOGgxYzNOYU5jQzZXd05EQTFaclU0MHc2VFRnblhDZnIzT21Od0tRekRkc3ZOc1FvZHhXQVhlT09sdFM4bndCNFpteVAyUW5XNjAwQmJEeVFjNkVYcFM3VFlRa01EUmlUZEtydHRMZ0Y5ejI1SWJSZXp3ZXdtWkEvUmFta2srMFhHMlNVK3htQUZ6TlJiMXlvUFg5Qlcxdld6NEQxNkIzREVoZ2FvRnJmellra25idU55blVjZ0ZlVVNOQWpLZWZTYWdBM0ZQb3NQbmxvbUZIdW9waW9KMjNVUmJYY0hxOHhvWXZMNmc2R2NFamxucDN2N0pKaVNnbk1mZjBaT2RGRE1FbW5KS0dzNVMxR3VRTUsvM0JLU1Rpdmo0c1JzMWl2NXdMWXV0MURhVXluRW9pWXFEODcvQzA3TUp5aCtpR0FKeHZsVHUzdzhiSDlZb2ROS29FSnlYcVgxakVRcGFqMTVQMWgxdXZOQWN4bnFFWDVIWUNkakhLZkdzTkJzLzFpbXJDSjBaeW1CdDJ5emlVUVJybGZBL2hiQUQvcndIQ0daRG1BTndONFNjWitDMDFodVVzUEdPVitiNVFMNjBsZVB1VGpwTUdxUFpQT2VuUTV3cXIvVHdCNGlsSE9qZW1vMlg0eGpaVHZYM2pxc0xnRDQzZ0lvMXdvVzNwZUxQMmlmR0hXZkR1ajNHZEs3TWpiZ0NFOVNSNTg4bXFVczNGaDZZZFlBa005VXV1N09aZnRGOFg0WHdCdk5jcjlmTXdIelBycU5GTGl0YmlqOWNockdlWENqLzBCMXV0ekFZUW5USnQwWUZoOTgxc0E3K3hZYThVcWhwS2tyK25xalhCcFJya1ZBQTYxWG44UndERUEvbkZZUjBnRGMzTW8yNnB6U0p4Skg3NWZBTmpOS1Bmc0JoSjBNRWxQSnVVbXVmWDJpMVVZNWI0YWFxaGpMVFZWRS9yUEh3aGdoeDRtNkJqUU5ldUdMdDhJandOTFlLZ25hdi8rTVVrZkpoKzNRQSt6QzA4enluMm53YU1VczN0bW9jL2hUVTNIaFBJWG8xelk5R2lQdnUzZTJMQmxjWGZpeHhubGpqYktyZXJiQVZpdkh6R2dweVppazFTV3dGREgxZjV1em1WbmwwRzVFa0NZQ2Z5U1VhN3gzckxXNncwQVBHYllJWDRReTEzUzlDNkJNTXA5M1hwOU9vQjN4NWxpTHJCL1FKZzUvMlI0R2VYNnZudnJrSjVraVo1Slpna01kUmlUZEtIK0NPQkNBRDhDY0xwUjd2S1d3eURsWEZwVHNHMmZsSmoxc2pXY1VXNTUvT0VQZGVvSEFkZ2Z3SVlkR0ZvYnJvb0x6NzlRY0YrRnRnM3BKcmtYSldYakZrcGd3cTdDMW1zVHoxZFdDMURiYXYvK3plVUozR2sremxxRnpVQnVqbmRqNFhWWmZQM1dLTGVtUXdjZzVWeTZvY1NqZmV1MVlqZWNmb2k3Wkw3RGV2MWhBRytQN1FVbDdLd2JhcHkvSFR2Zm5OMlRiaTBwMkg1eG9FSUpqUFU2bEgwZURPQTlBRGFRSGhOcURaUDBnYm03ai9XZEFNNFIwaFVqZXhPalNhU1VCeTN2d0JpeXhmS09RMkt5dm51Y1dYOU96dzlybE5BTjZzc0FUakhLTGUzZThJbzVIc0JKQXptV3V6c3docW5ybzhrQUFBSVpTVVJCVkU3cFNBbk0xK04xZ3VTNnErNlJLNTQwUkVUMVdhOGZDK0ExQVBZRXNHTlBReGttQmM0RGNGcVlPVGZLc1hTQ0JxZWxFcGlQR09YZXg3T0o2bUNTVGtSVWlQVTYvUGkvSk03WWhRMlNIdEhoMkliZFZzK09yM09NY3NzNk1DYWlzYkplYndUZy9YRkIrUG9OUkh0L285eG4rVmVsT3Bpa0V4R05nZlY2VHB4WmZ5NkFwd040YXRpSkU4Q2NGdUlkV2tsZUN1QmlBR0czNFlzRzBKbUZxRGJyOWJZQWpnV3c4NWlqdUxOUjdneitwYWdPSnVsRVJBMnhYb2ZPTUU4QThIZ0FJVWtJcFRKYkE5Z1N3TUs0cHFQTzdONWRNUkZmSEYraCs5RHZBSVNPVDFkd2xweG9OT3YxS3dFY1BjWkYvRTgweWwzSjhGTWRUTktKaURva0p2S1BCTEJSbkhYZmVKclJyWWlkbis2UXR0TWtVVW5XNjNteEJPYmZ4bEFDczFIZExlR0ptS1FURVJHUmVHTW9nYm5aS0xlbDlMaFNmUTlqN0lpSWlFZzZvOXhWUnJsZEFMeXEwT1pRN0YxUFdaaWtFeEVSRVVWR3VXL0ZSZDVIQWxpWkVSY202WlNGU1RvUkVSSFJKRWE1ZTR4eW9VNTlCd0EvckJrYjdqZEFXWmlrRXhFUkVZMlFXUUxEbVhUS3dpU2RpSWlJYUFZMVMyQ1lwRk1XSnVsRVJFUkVzNmhSQXNNa25iS3dCU01SRVJGUm9nb2JJVzFzbEx1TGNhVzZPSk5PUkVSRWxHaFNDY3hIQWF5YTh1N2JtS0JUTGlicFJFUkVSRFhFRXBpREFPd0k0RWVUUG9HbExwU05TVG9SRVJGUkJxUGNGVWE1RndGNERZREZBSzVsUEltSWlJaUlPc0o2UGQ5Ni9SeitQU2dMZ1A4SEpNRlF2dEt5MDlRQUFBQUFTVVZPUks1Q1lJST0iLz4KPC9zdmc+Cg=="
+      table.insert(graphics,{
+        Type = "Svg",
+        Image = Logo,
+        Position = {280,5},
+        Size = {300,64},
+        ZOrder = 1000
+      })
+      table.insert(graphics,{
+        Type = "Text",
+        Text = "MXA-710",
+        Position = {580, 5},
+        Color = gaColor.Green,
+        Size = {185,64},
+        FontSize = 40,
+        Font = "Open Sans",
+        FontStyle = "Extrabold",
+        HTextAlign = "Left"
+      })
+      table.insert(graphics,{
+        Type = "Text",
+        Text = "©",
+        Position = {760, 20},
+        Color = gaColor.Green,
+        Size = {20,20},
+        FontSize = 16,
+        Font = "Open Sans",
+        FontStyle = "Extrabold",
+        HTextAlign = "Left"
+      })
+      table.insert(graphics,{
+        Type = "Header",
+        Text = "Channels",
+        Position = {15,70},
+        Size = {1080,11},
+        Color = gaColor.Green,
+        FontSize = 16,
+        Font = "Roboto",
+        FontStyle = "Bold",
+        HTextAlign = "Center",
+      })
+      local gaLabels = {
+        Pos = {X={10,10,10,10,10,10,10,10,10,1000},Y={90,110,130,150,170,250,270,378,410,410}},
+        Text = {"Channel Name","Dante Ch Name","RMS Level","Peak Level","Clip Indicator","Audio Gain","Audio Levels",
+                "Channel Mute","Device Mute","Version "..PluginInfo.Version,}
+      }
+      local gaLegend = {
+        Text = {"0","-12","-24","-36","-48","-60"},
+        Pos = {X={193,303,413,523,633,743,853,963,1073},Y={186,219,253,284,319,351}}
+      }
+      local gaLayouts = {
+        Pos = {X={110,220,330,440,550,660,770,880,990}},
+        LabelText = {"CHAN_NAME ","NA_CHAN_NAME ","AUDIO_IN_RMS_LVL ","AUDIO_IN_PEAK_LVL "},
+        ButtonText = {"AUDIO_MUTE "},
+        IndicText = {"AUDIO_OUT_CLIP_INDICATOR "},
+        KnobText = {"AUDIO_GAIN_HI_RES ","METER_RATE "},
+        KnobStyle = {"Fader","Meter"},
+        KnobSize = {X={36,18},Y={168,168}},
+        KnobTextBox = {true,false},
+        LabelPrettyName = {"Channel Name ","Dante Channel Name ","Audio In RMS Level ","Audio In Peak Level "},
+        ButtonPrettyName = {"Channel Mute "},
+        IndicPrettyName = {"Channel Clip Indicator "},
+        KnobPrettyName = {"Channel Gain ","Channel Meter Level "}
+      }
+      --Basic Labels
+      for i=1,#gaLabels.Pos.X do
+        table.insert(graphics,{
+          Type = "Text",
+          Text = gaLabels.Text[i],
+          Position = { gaLabels.Pos.X[i], gaLabels.Pos.Y[i]},
+          Color = gaColor.White,
+          Size = {100,16},
+          FontSize = 12,
+          HTextAlign = "Right"
+        })
+      end
+      --Level Legend
+      for i=1,#gaLayouts.Pos.X do
+        for p=1,#gaLegend.Text do
+          table.insert(graphics,{
+            Type = "Text",
+            Text = gaLegend.Text[p],
+            Position = { gaLegend.Pos.X[i], gaLegend.Pos.Y[p]},
+            Color = gaColor.White,
+            Size = {20,10},
+            FontSize = 9.5,
+            HTextAlign = "Left"
+          })
+        end
+      end
+      --Named Text Components Layouts
+      for i=1,#gaLayouts.Pos.X do
+        for k=1,#gaLayouts.LabelText do 
+          layout[gaLayouts.LabelText[k]..i] = {
+            PrettyName = "Channel "..i.."~"..gaLayouts.LabelPrettyName[k],
+            Style = "Indicator",
+            Position = { gaLayouts.Pos.X[i], 70+(k*20)},
+            Size = {100,16},
+            Color = gaColor.LtGray,
+            FontSize = 14,
+            HTextAlign = "Center",
+            IsReadOnly = true
+          }
+        end
+        for j=1,#gaLayouts.KnobText do 
+          layout[gaLayouts.KnobText[j]..i] = {
+            PrettyName = "Channel "..i.."~"..gaLayouts.KnobPrettyName[j],
+            Style = gaLayouts.KnobStyle[j],
+            ShowTextbox = gaLayouts.KnobTextBox[j],
+            TextBoxHeight = 16,
+            Position = {gaLayouts.Pos.X[i]+50*(j-1)+15,190},
+            Size = {gaLayouts.KnobSize.X[j],gaLayouts.KnobSize.Y[j]},
+            Color = gaColor.Green,
+          }
+        end
+        layout[gaLayouts.ButtonText[1]..i] = {
+          PrettyName = "Channel "..i.."~"..gaLayouts.ButtonPrettyName[1],
+          Style = "Button",
+          ButtonStyle = "Toggle",
+          ButtonVisualStyle = "Flat",
+          CornerRadius = 5,
+          Margin = 1,
+          Position = { gaLayouts.Pos.X[i], 370},
+          Size = {100,32},
+          Color = gaColor.Red,
+          OffColor = gaColor.LtBlue,
+          UnlinkOffColor = true,
+          Legend = "MUTE",
+          TextFontSize = 20,
+          IsBold = true
+        }
+        layout[gaLayouts.IndicText[1]..i] = {
+          PrettyName = "Channel "..i.."~"..gaLayouts.IndicPrettyName[1],
+          Style = "Led",
+          Position = { gaLayouts.Pos.X[i]+66, 170},
+          Size = {16,16},
+          Color = gaColor.Red,
+          UnlinkOffColor = false,
+          Margin = 3,
+          IsReadOnly = true,
+        }
+      end
+      layout["EQ_CONTOUR"] = {
+        PrettyName = gsCat5.."EQ CONTOUR",
+        Style = "Button",
+        ButtonStyle = "Toggle",
+        ButtonVisualStyle = "Flat",
+        CornerRadius = 5,
+        Margin = 1,
+        Position = { 10, 30},
+        Size = {100,32},
+        Color = gaColor.Purple,
+        OffColor = gaColor.LtGray,
+        UnlinkOffColor = true,
+        Legend = "EQ CONTOUR",
+        TextFontSize = 14,
+        IsBold = false
+      }
+      layout["DEVICE_AUDIO_MUTE"] = {
+        PrettyName = "Device Audio Mute",
+        Style = "Button",
+        ButtonStyle = "Toggle",
+        ButtonVisualStyle = "Flat",
+        CornerRadius = 5,
+        Margin = 1,
+        Position = {110,410},
+        Size = {50,16},
+        Color = gaColor.Red,
+        OffColor = gaColor.LtGray,
+        UnlinkOffColor = true,
+      }    
+      layout["DEV_MUTE_STATUS_LED_STATE"] = {
+        PrettyName = "Device Muted State",
+        Style = "Led",
+        Position = {165,410},
+        Size = {16,16},
+        Color = gaColor.Red,
+        OffColor = gaColor.Green,
+        UnlinkOffColor = true,
+        Margin = 3,
+        IsReadOnly = true,
+      }
+      layout["Status"] = {
+        PrettyName = "Connection Info~Connection Status",
+        Style = "Led",
+        Position = {10,10},
+        Size = {16,16},
+        Margin = 3,
+        IsReadOnly = true,
+      }
+  elseif CurrentPage == "IntelliMix" then
+      --All Basic Background and Header Graphics
+      table.insert(graphics,{
+        Type = "GroupBox",
+        Fill = gaColor.Black,
+        CornerRadius = 5,
+        StrokeWidth = 1,
+        Position = {5,5},
+        Size = {1100,550}
+      })
+      Logo = "PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB3aWR0aD0iOTg1IiBoZWlnaHQ9IjM2MCIgdmlld0JveD0iMCAwIDk4NSAzNjAiPgogIDxpbWFnZSB4PSIxMjAiIHk9IjEyMCIgd2lkdGg9Ijc0NSIgaGVpZ2h0PSIxMzgiIHhsaW5rOmhyZWY9ImRhdGE6aW1nL3BuZztiYXNlNjQsaVZCT1J3MEtHZ29BQUFBTlNVaEVVZ0FBQXVrQUFBQ0tDQVlBQUFBWE85VFdBQUFnQUVsRVFWUjRuTzNkZTd4ZFJYVUg4TitZOEVwRTVTR1NBSDJvVkVIRTZsaTErS2phS2xoMHhBY2lsa3BGQkt6NlViRXFhRUZRUVd4clViQXFpb2dHOFlFUEhGRVU1Q1ZTUkJoOFVBVkVRU0FRSUR3TUFRSkp5UFF6WVM3ZVhNNjlkOCtlT2Z1MWZ0L1A1L3lYY3pKNzNYMzJXWHYybWpVS0hXTzlYaC9BMCtQcktRQWVEMkFiQUk4Qk1LOXI0NlYxZk1Fb3QwK2RrRml2VHdhd3A0QndIbTZVT3l6M1E2elhld0ZZVkdaSW5YYXRVZTR2TXVLMEI0Q3ZDb2dUQ3NUcVNBQUhseDFTcCsxcmxQdDgzUUZhcnk4RjhGUVpvZXE5MVFDV0FiZ2R3RzhBL0JMQXhRRE9Nc3F0Nk9yQldhOHRnSmQxWUNqVWpxVnp1eEI0Ni9YbUFGNEY0T1VBbmc5Z293NE1pOUw5SVNObXRaT0xucm11MEhDbHhDdm5uQXIrdk5BNCtpQTNWbExPcVFuWFpyNWZXcno2TE9RNm04WFh0akhYQ0ZaWXI4K0lFeDdmTWNxdDd0Z3gvbGtIeGtEdCtVTnJTYnIxT3N6aXZ4REFXK0tkWWlkdUdDZ0xrL1RaNVNaU0UzaFRVNDJrUkNyMzNKS1dFTlNPbC9YNjRRQTJLVHNjYXNGR01XRVByMnV0MThjQytCK2ozTDBkK1dQd1JsQzJQenlzamNPM1h1OEdJRHdxL0JHQVZ6QkJINHhhTTFPeHhHbUJrQmlWU3RLbHpCQnpkcmc2M3RCVTV6UGp4ZVJwZU1JMTliOEFYRzY5M3IzdG83TmVQd3JBSXdjWVo2cnUya2FUWSt0MXFEUC9CSUNkK0VjYXBMcVBqNlhNNEswQmNIMmh6MktTWG8yazJlR2NtZUZ3bzd5dzdIQTY3U2FqM01xTUFUSkpINjd3dC8yNjlmbzBBUHNZNVphMmRLU1NTdlZvdEdzYm1VbTNYcyt6WGg4RDRDSW02SU4xUDRERk5ROU95Zy9lRXFQY3F0d1BpYVZpVWk3Z3JCdXVMdWVHSml6Tzcxd2pnVEhpV2dlYXpVc0IvTXA2L2NLV0lzVnpqTVpmN21LOTFuRWw5ZHNBdEZKZVE0MVluTEhvaHZYb2FVSnAwUHBORGJwbHRaUDB1Q0I5L2xBQ1VVSE9EWTIwaElCSk9sV3hKWUFmV0svL3BZVm84V2tOalRkSnQxNkhkbndYeERhS05HdzU5WjFTU2hKS0plbFM0c1c2NGVwOFppa1ZPN3VrWVFJbHgzcWh2YkQxK3FDR2o1am5HRjAzbGlROVBJNjNYb2NGR0tFSDdRYml3eXdETzd2TUxqY3htQ0FsWGpkbTFnMUxxa2ZQalJXVDlEUk1vT1Q1aVBYNndBYVBtdTBYWmJ2REtIZG44U1RkZWowSHdCY0J2RXQ2aElWaGtqNDdKdWxwMksya09pNndUY040VVIwZmE3RDBoVGVDc3EyOVJoVk4wbU9DL2lVQS95dzl1Z0t4SG5aMjdKR2VodTBYcStNTlRacWNUamdieGgyd1NhYmpyTmZQYU9ESW1hVExWajVKQi9BcEFLK1RIbG1oNnZaSUQyMUF0eElTTXRha3ArSGl2dXA0UTVNbVoxS0J5Wk5zWWRIK042M1htNDByQ3RicitYRjNWSkpyN2NSTHNTUTlMcXJZanllVVdIV1RoSzBCekJFU3ROelp6Z2tzRDZxR1NYb0Y4UW5vMWswT3RtVkxqWElyTW9iQUpKM0M5K1dZTVVhQjNZT28zRXk2OVhwWEFFZUtENmxjT1YwNHBQemczVnh3cTJrbTZkV3dKcjJhclFUZEtJTlBhS2lRMThYZDA4ZUJONEpVSmttM1hvZE5NQllKMndpRDFyVWtvN01FNjlFVFdLOGZEV0NqcGdiZHNwelpZV2xiYXJOVlpYVjhRa09sZk54NlBZNE9ka3pTYWUxMUtpdEpqenNmbmdoZ0UvSGhsSTJMUm1kWHFoNmRKUnpWc0Z0SmRVelMwekNCb2duaGV2eldNVVNEM1lNb1Awa0hzQytBdHJiTXBlNWdnakE3dGw5TWMwdG1lWkNrUkNxM2xJbzNOR21ZcE5Oa0IxdXY1eFdPQ004eDJaWWI1VzVIVHBJZUh5Y2ZJVDJTdEJhVDlObVZTdEtsektSenRyTTZKcDFwMkNPZFN0cHNERzJubWFUTDl1QTFLbWNtL1RBQWo1WWVTVm9ycHg2VzdRVFRzRHlvR2tsbFFleVJucVoydkt6WG9mM2V3cGJHVGQzMTlzSWpZNUl1MjRQWHFGcEp1dlY2WEhWWTFFKzFFaXJyOWNPWXBDZmpSa2JWc0hhL09ta0xJWFBYT3JCSkFrMjFuZlZhbDRoS1hJakt6YkpreTU1Si96ZGhMYnRvWm5WLzlNS00xSHBDWXNzZTZXazRPMXhkVGhjY0pheDg0dzZqM0owWjcyZG5GNXJPN29VaXczT002aWZwMXV2TkFieFJmQWhwc3JwSmdwU0wwVzFHdWJzS2ZSYWZQRlFqS1VuUHFkOWZFSGRRbElMdEYybGNYbGJvYzFucVFnOWVwK3JNcE84bnFFOHp6VzVwUm1jSjFsY25FTmI3TzJkMmVKNndMYlc1eFgxMVhKQk00N0s5OVhyVEFwL05HMEhLU3RKTHIyS21mbU5ubDlteC9XSTZKcDdWNVh3SFdZK2Voa2s2emVSdkMwU0hTVHJWSzNleFhqOE53QlBGaDQ4bVk1SStPN1pmVEJQcWhwZG52RjlTSXBWYlNzVWtQUTNiTDlKTXRpc1FIZDRJeXJiQ0tIZkxSQVJTWjlKZkt6MTY5QkE1Q1NqcnE5T3dQS2dhdGwrc2p1MFgwekNCb3BrOHRrQjBlSTdKdGs1T2xacWtjM2RSbW9wbENiTmorOFUwWE54WEhjczMwdVNzZFpnTFlPdVd4azM5c0tEQUtQbTBScloxZnYvbVZnMUZYQkR4dEo2R2JrMDRCQURIQVBoNUI4WXpKUGRrSEF1VHpqU01WelZzdjFnZHkxMnF1eC9BNWswUGVNQStDT0J0QXp1OHJLWWExdXZRa25pcmNzUHB2TkNJNUJSQngxdkZ5c24vcG5LU0R1QzVQZDdFSVR3eDJDMitMb3pKK2plTmNxczZNRGFSck5kYkF0aEF5TEdYU3RKWkhsUU5GOWhXSnlsSnY4c29kM3ZkTnh2bFBJQS9saDJTWE5ickxRWjQ4QnRtdm4rYnpKM2crK1p5b3h5L1V6TklPUm1lMHZqb3hpT3N2djVLU0FTczE0ZFlyN216Vnp1a0pKekxDbDZFV0I1VWphVEVzM2FTSHBNa1NlMTBTOTBzVXhsRHZKNnR5SHcveTg5b0hTbEorbDhOTEhRTDQrTzI2NjNYaTZ6WHorakFtQ1Jod3BuQWV2MXdRYjIvYXkvdWkxdHFiMWwyT0ozRzdrclZNU0hvbGlHZWYzZGt2bDlTUGZwcUFFczZNSTVPUzBuU1M3UVc2cUpRQTdZWGdJdXMxeisxWHU5bHZaYTBBMTlidUwxOUdpNkdySVkxMXRWSlc2REdtZlNPc0Y2SHNwQWhQc1crTmZQOWttNmNyemZLM2QrQmNYUmFTcEl1NGNmdm1RQVd4ZG4xdzYzWEpWWnEwMmljU1U4akpmbGNubE0zTE94SGJubG1LUlYzRzZXMkRQWGM0M3FhNnZoa3E0S1VKUDNoclkyeWVhRlc4OUJ3VWJkZW4yeTkza25Rc1RlRml5RFRzTE5MTlpKbWg1a1FwR0ZTMEIxRC9aNWVuZmwrUGpHbGRWUkswbU5iSUNtZE9DWUx4NzBuZ0F1czE4NTZ2WGVzZWFWOFREclRNRjdWY0NhcU9wWUdVVnVHK2ozOVplYjd1UkVicmFQcVRQcDhobTF0ai9nVFl5bk1FZFpyYm1xUmgwbG5HajU1cUlaSmVuWFNrblFtQmQweHhPOXA2T1IxVGQwM1c2L254QmFNVXZDbXVRSkovVGhMZVRTQTk4VVdqbCszWGo5M0dJZlZIT3YxWm9KdS9GanVrb2FKWjNYYzRyNjYrNHh5Ti9WbHNBSU04ZHo3U2ViN3QwcmN1NmJ2bUtSWFVQV0V5TmxWY3FqQ1hlL3U0V1c5RG8rNGpnVndzbEV1dDArcUJGSVNxYnVOY3Jtci9TZXdHMDQxck9tc0lPNGd2WEdUZzIwWkU0SnVHZUwzOU56TTk3UGJFajFFcFpsMG85eEtKdW96Q2hzOUhROWdzZlg2S091MXRDOWJLaWFjQ1FiY3JteVVuTVJUMnBiYWJMOVlIWlAwYmhsaWt2Njl6UGRMZXJLMUp1UkxIUmhINTZXVXU5d29ORVlwd3V6VWU4TUtiK3YxdDYzWEwralAwQnZGMG8wMDdGaFNqYlF0dFhObW9xUjFkbUU5ZWtmRWZVZ1dEdXl3cmpUS1haNzVHWksra3pjWTVWWjFZQnlkbC9LRDludWhNYW9qbE1Mc0J1QnM2L1ZsMXV2OXJOZnorbmNZWThORmtHbWtYTHp2TmNyZGt2RitTVGN6SzR4eVN6UGV6L2FMMUpid1BWVURpLzdKQlQ2RHBYcjBFQ21MRks0QXNETkRtR3dIQU1jQitLajErZ1FBbjh4WkFUNFFVaEtFOWF6WHp5L3dPZjlRNERQNmdPMFhxK01DMnpSWjhiSmVQd3ZBaGkyTWU0aitlbURINUdQbnQxeVN2cE9yQy8wMkRzbGRScmxMcGg1UFNwTCtNK2tSelBRb0FBY0NlS2YxK3J0eG9lbFpSam5mNjZPcVIwb3l0Vzk4VVRWc3YxZ2RrL1EwdVRlQVp3UFlxT2xCVXkrY1pwUXJVVTRsNmZyMWd2aWlQemtmd1BPbXhpT2wzT1VDQnJPSThKalBBRGdUd1A5WnJ3OFFXQW9qTFVHZ2FwaDRWc2YyaTJscUorblc2eTJZb05NTS9qTTNPTlpyeGQ5RjhVYisvbFZPMG8xeTRTSjNwZlFvRnJZOWdFL0hyakQvSWFFcmpQWDZFZkdwQXRGVXViT2RyT21zVGxLU3ZpcXo4UUdUSjVyT2VVYTU4d3RFSjNUdldwOVJGaTB2U1krczlDaU95U1lBM2gyN3dueGo0QnNrU1p2Qm8rcFlrMTVkVHF2S2plTTFSNHJyakhKck1vNlZTVHBONStCQ2tlSHZJbzE4T3BxYXBKOGtQb3pqRmJyQ3ZBckFqNjNYbDFxdjk0N3Rxb2FFRnlPYVRrN2l5UzIxcTVPV2RMSTBpTWJoYTBhNUN3dDlMczh4eXA5Sk44cjlDc0RGNGtQWmpLZkdGZVBYVzY4UHQxNFBaVE1iemtyUmRISVN6d1hDdHRUT1NUelpmakVORXlpYWFqbUFkeFdNQ3M4eEtsTHVFaHd0UHBUTkNvdVdEbzNKK2lMcnRlNzU4VEJKcDFGQzNmQk5HWkdSOUNNWGRvQmVrdkYrSnVscHVJTTBUZlV1bzl3TkJhUENjNHlLbExzRXAzQmpvMWFFTGMvM0FuQ0o5Zm9DNi9WcnJOZDluRG5rakFHTmtsczNMT204dWphemRhdTBoSUJySGFpazBITHhjNFUvaytlWWJFdU1jaXRIUlNBNVNUZktyUVp3a1BTSXRteW5VQThINEJycjlVSFc2ODE2TkhaZWpHZ1V0bCtzamtsbkdzYUxTZ25uMHQ1amlDYlBNZG1tL2Yyck01TWVmQlBBT2RLajJnRmJBL2hJTElVNXpucjl4QjZNbVkvMWFCUzJYNnlPU1dlYW5BWEpvUXZPeGkyTm03cGxSV2pzWUpTN2ZReWpZaG1vYkdXVDlQaW9kZjk0MGxMN3drWWIrd0c0M0hwOXV2WDZSWEZ6aEU2Sm16WTltdWNMamNERXN6bytkYWd1bEZBdHpuZy9reWRDUEk5ZWE1UnpwYU5odmQ0Y2dMUU5EV2xkMHpZQ3FEdVRIaEwxcXdDOGc0SHVuRjBBbkFIZ1Y5YnJmYXpYRzNab2dIeWtSOU5oQjQ3cWNtYUdONHlMMGFXNElaWm8xc1ZyRmdYN0crWEd0VThNenpFcVh1NnlsbEh1c3dBV2lROXZOKzBBNFBQaERzMTYvWUY0dDk0MnprclJkRGc3WEIzYkwxYkhtei9LOWE5R3VlUEhHRVdlWXpTZUpEM2FOMnkrSXo3RTNSWEtTdzZMZGV1ZnNsNC9yc1dSTWttbjZkUk9QSzNYV3dyYlVqc244V1NTbm9acmFPUUtUMkJlYjVUNzlKZ2p3SE9NeHBla3g3WXhCa0R4V2kwcUtqem1mak9BcTZ6WHAxaXZuOUZDZURsalFLUGNuMWszTE9tOENvbERUbjltN2phYWh0Y3NtWllCMk5VbzEwU2xBTTh4S2wrVFBwbFJMcHpRZncvZ1orSkQzWDFoUWVtckFWeGt2ZjZCOWZwWkRZNllGeU1hWlRIcmhpdTczaWgzZjhiN3BTWHBMSGVoVkZjQ2VKWlI3b3lHSXNkelRMYWxScmw3cG90QWtTUWRmMHJVWHdqZ085SWozaU03QTdqUWV2MHQ2L1ZqR3hnMnkxMW9GTFpmckk0encybTQxb0ZTbkFoQUcrV3VhREJxUE1ka20vRWFWU3hKeHdPSit0MEFYZ25nd3dCeWRzU2pacjBpdG04TUMwelhHK1AveklzUmpjSWt2VHJPREtlcGZXNVpyeDhPWU5PV3hrM051akg4RGhybDNoRHptQ2J4ZDFHMkdhOVJSWk4wUEpDb3J6SEtIUUxnSCtLSlQvMndmbHhnZW9uMStrbWxSMnk5M2dEQUFwNExOQUlUeitxNEVESU5PK0hRVEVKQ2ZpU0FKeGpsVG0wNlV0YnJSd0Y0SlA5Q29qV2JwRTh3eXAwTllIc0FuK2FzZXEvc0dOWVdXSy8zS2p4b3poYlFkSmlrVjVjek14eHV4QmUyTU9hMkxESEszWmZ4ZnpOSkg2NTdBWHdDd09PTWN1ODN5dDNWMHBIeUhLUG15bDJtQ25YcVJybC9CZkJNQUdlTC8xUDBSOWo5YkZFb2Z5azRZcmFab3VuazFsbExPcmR5U29QK0xDNGNsK0thek9Qa3hNTHczQWJnQ0FCL2FaUjdoMUh1NXBhUGtMK0wxRjZTUHNFb2Q3RlJMblIvZVRHQTB6bXozaHVIV2ErUEtqUll6aGpRZEhKMjBKd1BZTDZneU9ZOGRaQ1dkUDQ2OC8xTTBvZmpVZ0Q3QWRqR0tQZnZScm1iT25Kay9GMmtHU2VwNWpZWkhxUGNtUURPdEY3L1pkaG1GOEErY2JNZDZxNzNXcS92Tk1vZG1UbENYb3hvRko4NWs3NmxvS2l1Q1MwWU05NHZMZW04TFBQOXZHYjEyeDBBdmdiZ2VLTmNWL2R4NFRsRzdjK2tUMldVdThZb2QxQzRxd1h3VHdCK0l2N1AxRzFIV0s5TjVnaDVNYUpSbHNRTjBlcmFRbEJVUTZ4V1pieGYybmZ3RjVudjV6V3JmOEpDMEsvRURSWWZZNVI3YzRjVGRQQnBqWGgzR09YdW5Da0lqYzZrVHhVWDlad2NYdGJySndNNEFNQS9BOWk0elhIUlNDZUV2NUZSYmtuTjhMRDJqa2JKYmIrNHVhQ29jb0Z0ZGZjWDJBV2IxNngrQ0VuTzkrTWVMZDh4eXEzbzBkaVpwTXMyNjFQa1ZtYlNSekhLWFdhVWV3dUFyZUwyOWIvc3l0aG9yYzBBZkN3akZKeVZvbEZ5RTg5NWdxTEtqWG1xKzhWTXUvak54bnE5WVppSjdkWWgwVFRDUm9ybkFmaFd6eEowOEhkUnZGbXY2WjFKMGljWTVaWWI1VDVqbFB0ckFNOEdjQktBbkRaYVZNNmUxdXVucDM1YTNDQnBLLzRkYUFRbTZkVngwNmZxenM5OFA1T24vdGdtdG5yK25mWDZqZGJyVmlzRXFvcWJaVzNXbnpEVEdQUXZTWi9NS1BlL1JybFEvckkxZ1BjQXVMbzdveFByZlRVT2ZPdXVuMnZVbXR6Mmk1STJBc25wa1Q0M2ZnK2xPQ3Z6T0ptazkwOUkxbzhIY0lYMStsOTZrS3l6bklwbXZhYjNJbkV5eXQxcWxQdFBBTnNDMkNYV25xM3B3TkFrTXRicjFJNGFyTHVqNmVUT3BFdVNFNnVRb004UkVxdlZBTTdOL0F3bVVQMzFPQUJmQVBBYjYvVnJyZGRkelhONEkwaXpKdW05ZUN3MHdTZ1hFdk1maHBmMU90dzF2eW0rSkxWaGExdjRvZDhqN3RaV0ZTOUdOQjBtNmRYbHhFcFMwbmxlZ1Iwa2VjM3F2MjFqcDVkRHJkY2ZETzBZalhKZDJxTkYwamtXZG5nOXJnUGo2SnBMWnh0UHI1TDB5WXh5MThjdjM0Y0E3QllYbTc2Z095TWN0SDlra2s2Rk1FbXZMcWMwU05KMzBCYjRERjZ6aG1PN21LeUhQVDhPangxZ3VwQ3NTM3JDZkhYWTRiVUQ0K2lkM3RjSmg3N0JScmxUakhJdmpGL0drRHorc1FOREc3S2RFaDhoOHRFeGpiTFVLSGR2Wm1TazdGNThjMmFzSkNXZHB4YjRESmJvRFU5b1J2SHRNSHRwdmQ2MUEwY242UnpMWGZRdTFxQVc4eG5scm9oM2E2R1R5QnNMOU1tbDBjS3E5Q2NteElhelVqUktpVm4wWlVJaXkvYUwxZnpVS0plN0dCbE0wZ2N0Sk91bldhOS9hcjNlcGNVRGxmUzd5Q2VtTlEyeTQwYm9qMnVVTzhFb0Y5b0YvazFjUk5LMy9xbGR0MjNDK0ppazB5Z2xMdHk1dGNkOXdTUzltaS9uZm9EMWVuMEFDeHNhTDdYbm1RQk90MTVmWUwxK2ZndWpZSkpPc3hwOFd6eWozQ1ZHdVgzaVJmZWRBSzdzd0xDR29GSUpTeXlMMlVaNnNHaWtFbzlBN3hZUzJ0elpZUWtKd2Fxd09MREE1NFJybXlyd09kUVBPd0U0eDNwOWJsUEp1c0ROc2xqdVVwT1kzdFZHdVQ4YTVUNGU2OWIvSHNBM1lxc3VxbWVMaXU5YTJPY0Z5b21XRlhwSnFiTXVjZUcrdWNCbjlFSHRtYWg0b3l4aFhjaXBScm1sQlQ2SGEyaGsrcnVZclAvQWV2MnNNVWRBMmpuR0pMMG1LY25UZytLcTdyUER5M3E5QU1DK0FQWVR0dEZIQ1J0WC9Bd3BqL1J1TThwdFh1S0RyTmQzSnNTM3owbzhBcjFSUUp5UUdhdlFvbmE5Z21QcHF1TUxqWXZsZWJMdEhGN1c2OUR1K2YxR3VYR3NiWk4yanJIY3BTYlJ1MEFhNVpZWTVUNFV2ekN2QUhDR29Gbk1wa2k1R0pWWXJCWVM5RTJGSk9nb2RPRmVLbVJqczV4WVNmZ08vaGJBandwOUZwTjBRa3pXTDdGZW4ycTlmbXJoaUVnNngrNHp5dDNVZ1hIMEVyZHFmeUJadjk4b0Z4NlY3aHdYUlA1WG1CbnR3TkM2ck9wVEdDbVA5VXJORkVoNkRKcDlZeE8rdTZWdWtEcU9QZEpuOXZHNDJWMEpRMXBrR3phUXVhY0Q0K2l6bDhlMmpkK3dYbTlmNkRna2RRL2lMSG9HSnVsVEdPVitiNVI3ZDJ6aitIb0FGM1pxZ04yeHZPSklwTXdZbExvUVNZblhIVWE1T3d0OTF0QVhnOStXdVlQbTBCT0NNS0h5eFlLZk42UjR2VGUyeS8xR0I4YlNkNjhDOEgvVzY2OFdTTmJaSTUwcUVWZVRYcFZSN2o0QWk4TExlaDM2cWg0QTRKOWlqM0Jpa2o0VmsvUTBKV2RYcm9xUHBvZnExbmdOcXF2MG8vcXVPU2EwM1MwNHBxRjhCNWNaNVNZV3MrOXV2WDRSZ0dNQlBLRURZK3VyMFBWbkR3Q3Z0bDZmQk9ERFJybmYxVGdXU2VVdVROSXpNRW12d0NqM2k1Q2tXNi9mQTJBdkFHOEdzRVBuQno1ZVROTFhWYXJrUXNvTVM4a1NsVjhWL0t3dUNrblZ6d2QrakhXRkJQU1lVaDltdlo0N29DWUM2OXdJRytYT3RGN3ZDT0JBQUljQW1OZmUwSHB2RG9DOVF6NFFrL1VQR09WU2tsSDJTS2RLV082U0lEeWVOOHA5eWlqM1pBRFBBL0FWQUN0N2N3QmxWVTJ5V0pPZVJrcVNYdkxDeloyRjVUbzZ0TmN0ZVBRTFl3STJCQS81amhubFZocmxqbUlKVERFVHlmcFYxdXZQV0s5bi9iMnpYb2RPU3d2NmM0alptS1JuWUpKZWsxSHVmS1BjNitKR1BRY0R1S2FYQjFMZnJJLzRyTmVoOWRzR0hUNkdrbGp1a3Fia2hmc3l3VGZMa3QwQzRHT0ZqMzlJMzc5cEoxS01jdGNiNVhZSDhHSnU4RmRFU0x6M0Q3K0wxdXRqWTN2bjZXd2pMUGRpdVVzR0p1bVpqSEszeEptSnh3UFlGY0JwQWxyQytTcEp1cUNFODg2Q3MzbFNZbGJzd20yVUN6dE5YbHpxODZnM1BwaTVvSGFVSVgzL1pyMFJEaVV3QUhhTUUwM3NBcE12Sk90dkJYQzE5ZnJqMHlUcjBscDhNa25Qc0U1TmVud004LzYrSFVUSGhFZnZ0d0o0ellCci9xNk9DMnRudzRRemdmVTZMRXJlcEtsQnQ2ejBoVHYweUg1Mjc2SkFkZjBtdGhjc1RWU1NqbGdDQStBbzYvV1hRL2xRN0dKQ2VjSzIvMjhIOEtZd3N4N2FPaHZsYm8yZktLbXpTN0NmOVZyQ1hoWXBqZ3Y3OUZUNTkxTVhqb2JITUI5b2RlalVCMVhiVXJJZVBRMFhFOVYzTHE5ZG9yek5LTGQ2REFjOHBHdFcwbzF3S0lHSlhVdDJpVjFnSGorK29Za3hMN2JCZkt2MStwUGhaa2hna241SUI4YlFOWit0T3A2cDVTNlNObEtoK241YzhaMnNyMDRqSlY3TGpYSzNGLzdNQ3dDVVhFQkkzZlZWbzl6Wll4cmRrTDZEdFo1V0dlVitFTHVYL1R1QUZlV0hKZEw4bUt6L0liWnlKcm5DazZ0S3MrZ1lrYVJ6TzJTcTR2eUsvNDd0RjlPdy9XSk5zUzc5dEtZT2dGb1RidTdlT2NiL2ZDalhyTHNubFZja0MrV01ScmtqQUd3SDROdnRIY2JnUEpKUEtNUUxpN1o5MVNBd1NhZFUxeG5scnFqNEhyWVRUTU40NWZsV1V3ZEFyVG5RS0hmVE9QNXo2N1VhME5Qa0l0K3gwUHZiS1BkS0FDK3AyQ3lBaUdhVzlOMmNtcVJMcTVXaWRGOUplQWVUempRc0Q4cnovVGpUU3NOMG1sR3U1UGIvVXkySTNUbUdvT2pDYkpiQUVCWERKSjNHNnBRcUgyNjkzanpXNFVuQUpEM05XRnB5eFk1RFh4N2p1S2s5b1NmNlBtUCszOFhYbzgrRUpUQkVSU1I5TjFudVFpbCtiNVNydXJ1amxITnBSVTd0NXhSU0ZtNlBzMi91NThiNDJkU2V2WTF5UzhmOHY0dHJ2MWdIUzJDSXN0UkwwcTNYYzJJTFJxTHBwUFFsWnZ2RkJOYnIwRmYzTVUwTnVtWGpUQ0RDN3FObjlTVVFWTWxIWXJuRnVBM3BtalgycmRoWkFrTlVTKzF5bHdVaitxWVRUUWk3MFoyUUVBM1dWNmRoai9SeVNtOFZUKzA1cThFK3kwUDZEaGJ2b0RRS1MyQ0lrdFZPMGxucVFqTTUzaWgzVzBLRVdGK2RSa3E4d28vNkxXUCtQOElNMzgvSC9IL1ErSVVmczljYTVlNXZLTllzZDZtSkpUQkVsWVJyMlkwcG9XS1NUbFhjQytDamlaRmlrcDZHNVVHRnhCNjA3MnZxZ0dnczdnVHcwb0xyUGFvWXlqWHJ2bkcxcVp3TlMyQ0laclE0ZGFma3lVazZPN3ZRZEk0MXlpWGQvVEhwVE1ieW9JSmlzbkJlVXdkRlJZV05xZll3eXYyNjRiQ3lSM29CVTBwZ3Z0dm1XSWc2SnZtN3lTU2RaaE5LRTQ2b0VTVW1uV2tZci9MZUhoOHZVcis4c2FHRm9nK3lYbThCWUtPQm5DZU4xS1BQSnBiQW1QQkVCTURWWFJnVFVjdVNuN3l6M0lWbTgyNmozTEtVS0Ztdkh4VzNQNWFnVkxtTGxKdmt4aElJbzl3dkFSelQxUDlIUllRZFJSZTFFRXJXbzQrSlVlNTdBSjRFNEFPeGRKSklLaWJwVk5UM2pYSmZxdkdCVWhMT2xRQksxWDV5ZDlieE9CVEFOUTMvbjFUUHdVYTVvMXVLM1pDK2Y1MUswdkZBb242dlVlNkRBTFpuQ1F3SmxsWHVJcVdHbUtvSm5WemVWRE5XVWhMT2ErTWl4U3pXNi9VQkxHejNVQnJUZE5lSnU4SkdPQURXdEh2WU5JdVFvQi9WWXBDR2RNMGE1MlpoV1l4eTE3QUVoZ1NybDZSYnI3Y0VzQUhQSEpwazd4cUxSU2V3dmpwTnVFRldUUTI2WlkwbkVFYTU4d0VjMmJWQTBJUGUxWEtDam9GZHN6cWJwRTlnQ1F3SmxWenVPVEdUemxJWG11endlQkd0aSswWDAwaDVpaFc2ZGl4cDZmOCtETUNaTGYzZk5GcDR1dkVHbzl4L2R5QStyRWx2R0V0Z1NCalBKSjFLT0RrazZabWZJeVhwNUVaR2FhNHp5clZTZGhJM3hObVRqOWc3STVRaHZjd29kMkpIQmpTVWE5YXExTTFTMnNZU0dCTGlScVBjeXRSRG5ValNXWTlPaUZ0d3Y2RkFuVFhMWGRJd1hnMklPK2J1QXFESkRYTG9vY0pzMG5PTWN0L3ZVR3lHOGgxYzNOYU5jQzZXd05EQTFaclU0MHc2VFRnblhDZnIzT21Od0tRekRkc3ZOc1FvZHhXQVhlT09sdFM4bndCNFpteVAyUW5XNjAwQmJEeVFjNkVYcFM3VFlRa01EUmlUZEtydHRMZ0Y5ejI1SWJSZXp3ZXdtWkEvUmFta2srMFhHMlNVK3htQUZ6TlJiMXlvUFg5Qlcxdld6NEQxNkIzREVoZ2FvRnJmellra25idU55blVjZ0ZlVVNOQWpLZWZTYWdBM0ZQb3NQbmxvbUZIdW9waW9KMjNVUmJYY0hxOHhvWXZMNmc2R2NFamxucDN2N0pKaVNnbk1mZjBaT2RGRE1FbW5KS0dzNVMxR3VRTUsvM0JLU1Rpdmo0c1JzMWl2NXdMWXV0MURhVXluRW9pWXFEODcvQzA3TUp5aCtpR0FKeHZsVHUzdzhiSDlZb2ROS29FSnlYcVgxakVRcGFqMTVQMWgxdXZOQWN4bnFFWDVIWUNkakhLZkdzTkJzLzFpbXJDSjBaeW1CdDJ5emlVUVJybGZBL2hiQUQvcndIQ0daRG1BTndONFNjWitDMDFodVVzUEdPVitiNVFMNjBsZVB1VGpwTUdxUFpQT2VuUTV3cXIvVHdCNGlsSE9qZW1vMlg0eGpaVHZYM2pxc0xnRDQzZ0lvMXdvVzNwZUxQMmlmR0hXZkR1ajNHZEs3TWpiZ0NFOVNSNTg4bXFVczNGaDZZZFlBa005VXV1N09aZnRGOFg0WHdCdk5jcjlmTXdIelBycU5GTGl0YmlqOWNockdlWENqLzBCMXV0ekFZUW5USnQwWUZoOTgxc0E3K3hZYThVcWhwS2tyK25xalhCcFJya1ZBQTYxWG44UndERUEvbkZZUjBnRGMzTW8yNnB6U0p4Skg3NWZBTmpOS1Bmc0JoSjBNRWxQSnVVbXVmWDJpMVVZNWI0YWFxaGpMVFZWRS9yUEh3aGdoeDRtNkJqUU5ldUdMdDhJandOTFlLZ25hdi8rTVVrZkpoKzNRQSt6QzA4enluMm53YU1VczN0bW9jL2hUVTNIaFBJWG8xelk5R2lQdnUzZTJMQmxjWGZpeHhubGpqYktyZXJiQVZpdkh6R2dweVppazFTV3dGREgxZjV1em1WbmwwRzVFa0NZQ2Z5U1VhN3gzckxXNncwQVBHYllJWDRReTEzUzlDNkJNTXA5M1hwOU9vQjN4NWxpTHJCL1FKZzUvMlI0R2VYNnZudnJrSjVraVo1Slpna01kUmlUZEtIK0NPQkNBRDhDY0xwUjd2S1d3eURsWEZwVHNHMmZsSmoxc2pXY1VXNTUvT0VQZGVvSEFkZ2Z3SVlkR0ZvYnJvb0x6NzlRY0YrRnRnM3BKcmtYSldYakZrcGd3cTdDMW1zVHoxZFdDMURiYXYvK3plVUozR2sremxxRnpVQnVqbmRqNFhWWmZQM1dLTGVtUXdjZzVWeTZvY1NqZmV1MVlqZWNmb2k3Wkw3RGV2MWhBRytQN1FVbDdLd2JhcHkvSFR2Zm5OMlRiaTBwMkg1eG9FSUpqUFU2bEgwZURPQTlBRGFRSGhOcURaUDBnYm03ai9XZEFNNFIwaFVqZXhPalNhU1VCeTN2d0JpeXhmS09RMkt5dm51Y1dYOU96dzlybE5BTjZzc0FUakhLTGUzZThJbzVIc0JKQXptV3V6c3docW5ybzhrQUFBSVpTVVJCVkU3cFNBbk0xK04xZ3VTNnErNlJLNTQwUkVUMVdhOGZDK0ExQVBZRXNHTlBReGttQmM0RGNGcVlPVGZLc1hTQ0JxZWxFcGlQR09YZXg3T0o2bUNTVGtSVWlQVTYvUGkvSk03WWhRMlNIdEhoMkliZFZzK09yM09NY3NzNk1DYWlzYkplYndUZy9YRkIrUG9OUkh0L285eG4rVmVsT3Bpa0V4R05nZlY2VHB4WmZ5NkFwd040YXRpSkU4Q2NGdUlkV2tsZUN1QmlBR0czNFlzRzBKbUZxRGJyOWJZQWpnV3c4NWlqdUxOUjdneitwYWdPSnVsRVJBMnhYb2ZPTUU4QThIZ0FJVWtJcFRKYkE5Z1N3TUs0cHFQTzdONWRNUkZmSEYraCs5RHZBSVNPVDFkd2xweG9OT3YxS3dFY1BjWkYvRTgweWwzSjhGTWRUTktKaURva0p2S1BCTEJSbkhYZmVKclJyWWlkbis2UXR0TWtVVW5XNjNteEJPYmZ4bEFDczFIZExlR0ptS1FURVJHUmVHTW9nYm5aS0xlbDlMaFNmUTlqN0lpSWlFZzZvOXhWUnJsZEFMeXEwT1pRN0YxUFdaaWtFeEVSRVVWR3VXL0ZSZDVIQWxpWkVSY202WlNGU1RvUkVSSFJKRWE1ZTR4eW9VNTlCd0EvckJrYjdqZEFXWmlrRXhFUkVZMlFXUUxEbVhUS3dpU2RpSWlJYUFZMVMyQ1lwRk1XSnVsRVJFUkVzNmhSQXNNa25iS3dCU01SRVJGUm9nb2JJVzFzbEx1TGNhVzZPSk5PUkVSRWxHaFNDY3hIQWF5YTh1N2JtS0JUTGlicFJFUkVSRFhFRXBpREFPd0k0RWVUUG9HbExwU05TVG9SRVJGUkJxUGNGVWE1RndGNERZREZBSzVsUEltSWlJaUlPc0o2UGQ5Ni9SeitQU2dMZ1A4SEpNRlF2dEt5MDlRQUFBQUFTVVZPUks1Q1lJST0iLz4KPC9zdmc+Cg=="
+      table.insert(graphics,{
+        Type = "Svg",
+        Image = Logo,
+        Position = {280,5},
+        Size = {300,64},
+        ZOrder = 1000
+      })
+      table.insert(graphics,{
+        Type = "Text",
+        Text = "MXA-710",
+        Position = {580, 5},
+        Color = gaColor.Green,
+        Size = {185,64},
+        FontSize = 40,
+        Font = "Open Sans",
+        FontStyle = "Extrabold",
+        HTextAlign = "Left"
+      })
+      table.insert(graphics,{
+        Type = "Text",
+        Text = "©",
+        Position = {760, 20},
+        Color = gaColor.Green,
+        Size = {20,20},
+        FontSize = 16,
+        Font = "Open Sans",
+        FontStyle = "Extrabold",
+        HTextAlign = "Left"
+      })
+      table.insert(graphics,{
+        Type = "Header",
+        Text = "Channels",
+        Position = {15,70},
+        Size = {1080,11},
+        Color = gaColor.Green,
+        FontSize = 16,
+        Font = "Roboto",
+        FontStyle = "Bold",
+        HTextAlign = "Center",
+      })
+      local gaLabels = {
+        Pos = {X={10,10,10,10,10,10,10,10,10,10,10,1000},Y={90,143,170,250,270,378,410,442,474,506,536,536}},
+        Text = {"Channel Name","AutoMix Solo","AutoMix Gate Ind","Post Gate Gain","Post Gate Levels","Channel Mute","PEQ Filter 1",
+                "PEQ Filter 2","PEQ Filter 3","PEQ Filter 4","Device Mute","Version "..PluginInfo.Version,}
+      }
+      local gaLegend = {
+        Text = {"0","-12","-24","-36","-48","-60"},
+        Pos = {X={193,303,413,523,633,743,853,963,1073},Y={186,219,253,284,319,351}}
+      }
+      local gaLayouts = {
+        Pos = {X={110,220,330,440,550,660,770,880,990}},
+        LabelText = {"CHAN_NAME "},
+        ButtonText = {"AUDIO_MUTE ","PEQ_1 ","PEQ_2 ","PEQ_3 ","PEQ_4 ","CHAN_AUTOMIX_SOLO_EN "},
+        ButtonOnColor = {gaColor.Red,gaColor.Purple,gaColor.Purple,gaColor.Purple,gaColor.Purple,gaColor.Yellow},
+        ButtonOffColor = {gaColor.LtBlue,gaColor.LtGray,gaColor.LtGray,gaColor.LtGray,gaColor.LtGray,gaColor.LtGray},
+        ButtonLegend = {"MUTE", "ENABLE","ENABLE","ENABLE","ENABLE","SOLO"},
+        ButtonPos = {Y={370,402,434,466,498,135}},
+        IndicText = {"AUTOMIX_GATE_OUT_EXT_SIG "},
+        KnobText = {"AUDIO_GAIN_POSTGATE ","POSTGATE_METER_RATE "},
+        KnobStyle = {"Fader","Meter"},
+        KnobSize = {X={36,18},Y={168,168}},
+        KnobTextBox = {true,false},
+        LabelPrettyName = {"Channel Name "},
+        ButtonPrettyName = {"Channel Mute ","1st PEQ Filter ","2nd PEQ Filter ","3rd PEQ Filter ","4th PEQ Filter ", "Automix Solo "},
+        KnobPrettyName = {"Post Gate Gain ","Post Gate Meter Level "},
+        IndicPrettyName = {"AutoMixer Gate Indicator "}
+      }
+      --Basic Labels
+      for i=1,#gaLabels.Pos.X do
+        table.insert(graphics,{
+          Type = "Text",
+          Text = gaLabels.Text[i],
+          Position = { gaLabels.Pos.X[i], gaLabels.Pos.Y[i]},
+          Color = gaColor.White,
+          Size = {100,16},
+          FontSize = 12,
+          HTextAlign = "Right"
+        })
+      end
+        --Level Legend
+        for i=1,#gaLayouts.Pos.X do
+          for p=1,#gaLegend.Text do
+            table.insert(graphics,{
+              Type = "Text",
+              Text = gaLegend.Text[p],
+              Position = { gaLegend.Pos.X[i], gaLegend.Pos.Y[p]},
+              Color = gaColor.White,
+              Size = {20,10},
+              FontSize = 9.5,
+              HTextAlign = "Left"
+            })
+          end
+        end
+      --Named Text Components Layouts
+      for i=1,#gaLayouts.Pos.X do
+          layout[gaLayouts.LabelText[1]..i] = {
+            PrettyName = "Channel "..i.."~"..gaLayouts.LabelPrettyName[1],
+            Style = "Indicator",
+            Position = { gaLayouts.Pos.X[i], 90},
+            Size = {100,16},
+            Color = gaColor.LtGray,
+            FontSize = 14,
+            HTextAlign = "Center",
+            IsReadOnly = true
+          }
+        for j=1,#gaLayouts.KnobText do 
+          layout[gaLayouts.KnobText[j]..i] = {
+            PrettyName = "Channel "..i.."~"..gaLayouts.KnobPrettyName[j],
+            Style = gaLayouts.KnobStyle[j],
+            ShowTextbox = gaLayouts.KnobTextBox[j],
+            Position = {gaLayouts.Pos.X[i]+50*(j-1)+15,190},
+            Size = {gaLayouts.KnobSize.X[j],gaLayouts.KnobSize.Y[j]},
+            Color = gaColor.Green,
+          }
+        end
+        for x=1,#gaLayouts.ButtonText do
+          layout[gaLayouts.ButtonText[x]..i] = {
+            PrettyName = "Channel "..i.."~"..gaLayouts.ButtonPrettyName[x],
+            Style = "Button",
+            ButtonStyle = "Toggle",
+            ButtonVisualStyle = "Flat",
+            CornerRadius = 5,
+            Margin = 1,
+            Position = { gaLayouts.Pos.X[i], gaLayouts.ButtonPos.Y[x]},
+            Size = {100,32},
+            Color = gaLayouts.ButtonOnColor[x],
+            OffColor = gaLayouts.ButtonOffColor[x],
+            UnlinkOffColor = true,
+            Legend = gaLayouts.ButtonLegend[x],
+            TextFontSize = 20,
+            IsBold = true
+          }
+          layout[gaLayouts.IndicText[1]..i] = {
+            PrettyName = "Channel "..i.."~"..gaLayouts.IndicPrettyName[1],
+            Style = "Led",
+            Position = { gaLayouts.Pos.X[i]+66, 170},
+            Size = {16,16},
+            Color = gaColor.Red,
+            UnlinkOffColor = false,
+            Margin = 3,
+            IsReadOnly = true,
+          }
+        end
+        layout["METER_RATE 9"] = {
+          PrettyName = "Channel 9~Channel Meter Level",
+          Style = "Meter",
+          ShowTextbox = false,
+          Position = {1055,190},
+          Size = {18,168},
+          Color = gaColor.Green,
+        }
+      end
+      layout["BYPASS_IMX"] = {
+        PrettyName = gsCat5.."Bypass IntelliMix",
+        Style = "Button",
+        ButtonStyle = "Toggle",
+        ButtonVisualStyle = "Flat",
+        CornerRadius = 5,
+        Margin = 1,
+        Position = { 10, 30},
+        Size = {100,32},
+        Color = gaColor.Purple,
+        OffColor = gaColor.LtGray,
+        UnlinkOffColor = true,
+        Legend = "Bypass IntelliMix",
+        TextFontSize = 14,
+        IsBold = false
+      }
+      layout["BYPASS_ALL_EQ"] = {
+        PrettyName = gsCat5.."Bypass All EQ",
+        Style = "Button",
+        ButtonStyle = "Toggle",
+        ButtonVisualStyle = "Flat",
+        CornerRadius = 5,
+        Margin = 1,
+        Position = { 990, 30},
+        Size = {100,32},
+        Color = gaColor.Purple,
+        OffColor = gaColor.LtGray,
+        UnlinkOffColor = true,
+        Legend = "Bypass \rAll EQ",
+        TextFontSize = 14,
+        IsBold = false
+      }
+      layout["DEVICE_AUDIO_MUTE"] = {
+        PrettyName = "Device Audio Mute",
+        Style = "Button",
+        ButtonStyle = "Toggle",
+        ButtonVisualStyle = "Flat",
+        CornerRadius = 5,
+        Margin = 1,
+        Position = {110,536},
+        Size = {50,16},
+        Color = gaColor.Red,
+        OffColor = gaColor.LtGray,
+        UnlinkOffColor = true,
+      }    
+      layout["DEV_MUTE_STATUS_LED_STATE"] = {
+        PrettyName = "Device Muted State",
+        Style = "Led",
+        Position = {165,536},
+        Size = {16,16},
+        Color = gaColor.Red,
+        OffColor = gaColor.Green,
+        UnlinkOffColor = true,
+        Margin = 3,
+        IsReadOnly = true,
+      }
+      layout["Status"] = {
+        PrettyName = "Connection Info~Connection Status",
+        Style = "Led",
+        Position = {10,10},
+        Size = {16,16},
+        Margin = 3,
+        IsReadOnly = true,
+      }
+  elseif CurrentPage == "Information" then
+      --All Basic Background and Header Graphics
+      table.insert(graphics,{
+        Type = "GroupBox",
+        Fill = gaColor.Black,
+        CornerRadius = 5,
+        StrokeWidth = 1,
+        Position = {5,5},
+        Size = {550,370}
+      })
+      Logo = "PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB3aWR0aD0iOTg1IiBoZWlnaHQ9IjM2MCIgdmlld0JveD0iMCAwIDk4NSAzNjAiPgogIDxpbWFnZSB4PSIxMjAiIHk9IjEyMCIgd2lkdGg9Ijc0NSIgaGVpZ2h0PSIxMzgiIHhsaW5rOmhyZWY9ImRhdGE6aW1nL3BuZztiYXNlNjQsaVZCT1J3MEtHZ29BQUFBTlNVaEVVZ0FBQXVrQUFBQ0tDQVlBQUFBWE85VFdBQUFnQUVsRVFWUjRuTzNkZTd4ZFJYVUg4TitZOEVwRTVTR1NBSDJvVkVIRTZsaTErS2phS2xoMHhBY2lsa3BGQkt6NlViRXFhRUZRUVd4clViQXFpb2dHOFlFUEhGRVU1Q1ZTUkJoOFVBVkVRU0FRSUR3TUFRSkp5UFF6WVM3ZVhNNjlkOCtlT2Z1MWZ0L1A1L3lYY3pKNzNYMzJXWHYybWpVS0hXTzlYaC9BMCtQcktRQWVEMkFiQUk4Qk1LOXI0NlYxZk1Fb3QwK2RrRml2VHdhd3A0QndIbTZVT3l6M1E2elhld0ZZVkdaSW5YYXRVZTR2TXVLMEI0Q3ZDb2dUQ3NUcVNBQUhseDFTcCsxcmxQdDgzUUZhcnk4RjhGUVpvZXE5MVFDV0FiZ2R3RzhBL0JMQXhRRE9Nc3F0Nk9yQldhOHRnSmQxWUNqVWpxVnp1eEI0Ni9YbUFGNEY0T1VBbmc5Z293NE1pOUw5SVNObXRaT0xucm11MEhDbHhDdm5uQXIrdk5BNCtpQTNWbExPcVFuWFpyNWZXcno2TE9RNm04WFh0akhYQ0ZaWXI4K0lFeDdmTWNxdDd0Z3gvbGtIeGtEdCtVTnJTYnIxT3N6aXZ4REFXK0tkWWlkdUdDZ0xrL1RaNVNaU0UzaFRVNDJrUkNyMzNKS1dFTlNPbC9YNjRRQTJLVHNjYXNGR01XRVByMnV0MThjQytCK2ozTDBkK1dQd1JsQzJQenlzamNPM1h1OEdJRHdxL0JHQVZ6QkJINHhhTTFPeHhHbUJrQmlWU3RLbHpCQnpkcmc2M3RCVTV6UGp4ZVJwZU1JMTliOEFYRzY5M3IzdG83TmVQd3JBSXdjWVo2cnUya2FUWSt0MXFEUC9CSUNkK0VjYXBMcVBqNlhNNEswQmNIMmh6MktTWG8yazJlR2NtZUZ3bzd5dzdIQTY3U2FqM01xTUFUSkpINjd3dC8yNjlmbzBBUHNZNVphMmRLU1NTdlZvdEdzYm1VbTNYcyt6WGg4RDRDSW02SU4xUDRERk5ROU95Zy9lRXFQY3F0d1BpYVZpVWk3Z3JCdXVMdWVHSml6Tzcxd2pnVEhpV2dlYXpVc0IvTXA2L2NLV0lzVnpqTVpmN21LOTFuRWw5ZHNBdEZKZVE0MVluTEhvaHZYb2FVSnAwUHBORGJwbHRaUDB1Q0I5L2xBQ1VVSE9EWTIwaElCSk9sV3hKWUFmV0svL3BZVm84V2tOalRkSnQxNkhkbndYeERhS05HdzU5WjFTU2hKS0plbFM0c1c2NGVwOFppa1ZPN3VrWVFJbHgzcWh2YkQxK3FDR2o1am5HRjAzbGlROVBJNjNYb2NGR0tFSDdRYml3eXdETzd2TUxqY3htQ0FsWGpkbTFnMUxxa2ZQalJXVDlEUk1vT1Q1aVBYNndBYVBtdTBYWmJ2REtIZG44U1RkZWowSHdCY0J2RXQ2aElWaGtqNDdKdWxwMksya09pNndUY040VVIwZmE3RDBoVGVDc3EyOVJoVk4wbU9DL2lVQS95dzl1Z0t4SG5aMjdKR2VodTBYcStNTlRacWNUamdieGgyd1NhYmpyTmZQYU9ESW1hVExWajVKQi9BcEFLK1RIbG1oNnZaSUQyMUF0eElTTXRha3ArSGl2dXA0UTVNbVoxS0J5Wk5zWWRIK042M1htNDByQ3RicitYRjNWSkpyN2NSTHNTUTlMcXJZanllVVdIV1RoSzBCekJFU3ROelp6Z2tzRDZxR1NYb0Y4UW5vMWswT3RtVkxqWElyTW9iQUpKM0M5K1dZTVVhQjNZT28zRXk2OVhwWEFFZUtENmxjT1YwNHBQemczVnh3cTJrbTZkV3dKcjJhclFUZEtJTlBhS2lRMThYZDA4ZUJONEpVSmttM1hvZE5NQllKMndpRDFyVWtvN01FNjlFVFdLOGZEV0NqcGdiZHNwelpZV2xiYXJOVlpYVjhRa09sZk54NlBZNE9ka3pTYWUxMUtpdEpqenNmbmdoZ0UvSGhsSTJMUm1kWHFoNmRKUnpWc0Z0SmRVelMwekNCb2duaGV2eldNVVNEM1lNb1Awa0hzQytBdHJiTXBlNWdnakE3dGw5TWMwdG1lWkNrUkNxM2xJbzNOR21ZcE5Oa0IxdXY1eFdPQ004eDJaWWI1VzVIVHBJZUh5Y2ZJVDJTdEJhVDlObVZTdEtsektSenRyTTZKcDFwMkNPZFN0cHNERzJubWFUTDl1QTFLbWNtL1RBQWo1WWVTVm9ycHg2VzdRVFRzRHlvR2tsbFFleVJucVoydkt6WG9mM2V3cGJHVGQzMTlzSWpZNUl1MjRQWHFGcEp1dlY2WEhWWTFFKzFFaXJyOWNPWXBDZmpSa2JWc0hhL09ta0xJWFBYT3JCSkFrMjFuZlZhbDRoS1hJakt6YkpreTU1Si96ZGhMYnRvWm5WLzlNS00xSHBDWXNzZTZXazRPMXhkVGhjY0pheDg0dzZqM0owWjcyZG5GNXJPN29VaXczT002aWZwMXV2TkFieFJmQWhwc3JwSmdwU0wwVzFHdWJzS2ZSYWZQRlFqS1VuUHFkOWZFSGRRbElMdEYybGNYbGJvYzFucVFnOWVwK3JNcE84bnFFOHp6VzVwUm1jSjFsY25FTmI3TzJkMmVKNndMYlc1eFgxMVhKQk00N0s5OVhyVEFwL05HMEhLU3RKTHIyS21mbU5ubDlteC9XSTZKcDdWNVh3SFdZK2Voa2s2emVSdkMwU0hTVHJWSzNleFhqOE53QlBGaDQ4bVk1SStPN1pmVEJQcWhwZG52RjlTSXBWYlNzVWtQUTNiTDlKTXRpc1FIZDRJeXJiQ0tIZkxSQVJTWjlKZkt6MTY5QkE1Q1NqcnE5T3dQS2dhdGwrc2p1MFgwekNCb3BrOHRrQjBlSTdKdGs1T2xacWtjM2RSbW9wbENiTmorOFUwWE54WEhjczMwdVNzZFpnTFlPdVd4azM5c0tEQUtQbTBScloxZnYvbVZnMUZYQkR4dEo2R2JrMDRCQURIQVBoNUI4WXpKUGRrSEF1VHpqU01WelZzdjFnZHkxMnF1eC9BNWswUGVNQStDT0J0QXp1OHJLWWExdXZRa25pcmNzUHB2TkNJNUJSQngxdkZ5c24vcG5LU0R1QzVQZDdFSVR3eDJDMitMb3pKK2plTmNxczZNRGFSck5kYkF0aEF5TEdYU3RKWkhsUU5GOWhXSnlsSnY4c29kM3ZkTnh2bFBJQS9saDJTWE5ickxRWjQ4QnRtdm4rYnpKM2crK1p5b3h5L1V6TklPUm1lMHZqb3hpT3N2djVLU0FTczE0ZFlyN216Vnp1a0pKekxDbDZFV0I1VWphVEVzM2FTSHBNa1NlMTBTOTBzVXhsRHZKNnR5SHcveTg5b0hTbEorbDhOTEhRTDQrTzI2NjNYaTZ6WHorakFtQ1Jod3BuQWV2MXdRYjIvYXkvdWkxdHFiMWwyT0ozRzdrclZNU0hvbGlHZWYzZGt2bDlTUGZwcUFFczZNSTVPUzBuU1M3UVc2cUpRQTdZWGdJdXMxeisxWHU5bHZaYTBBMTlidUwxOUdpNkdySVkxMXRWSlc2REdtZlNPc0Y2SHNwQWhQc1crTmZQOWttNmNyemZLM2QrQmNYUmFTcEl1NGNmdm1RQVd4ZG4xdzYzWEpWWnEwMmljU1U4akpmbGNubE0zTE94SGJubG1LUlYzRzZXMkRQWGM0M3FhNnZoa3E0S1VKUDNoclkyeWVhRlc4OUJ3VWJkZW4yeTkza25Rc1RlRml5RFRzTE5MTlpKbWg1a1FwR0ZTMEIxRC9aNWVuZmwrUGpHbGRWUkswbU5iSUNtZE9DWUx4NzBuZ0F1czE4NTZ2WGVzZWFWOFREclRNRjdWY0NhcU9wWUdVVnVHK2ozOVplYjd1UkVicmFQcVRQcDhobTF0ai9nVFl5bk1FZFpyYm1xUmgwbG5HajU1cUlaSmVuWFNrblFtQmQweHhPOXA2T1IxVGQwM1c2L254QmFNVXZDbXVRSkovVGhMZVRTQTk4VVdqbCszWGo5M0dJZlZIT3YxWm9KdS9GanVrb2FKWjNYYzRyNjYrNHh5Ti9WbHNBSU04ZHo3U2ViN3QwcmN1NmJ2bUtSWFVQV0V5TmxWY3FqQ1hlL3U0V1c5RG8rNGpnVndzbEV1dDArcUJGSVNxYnVOY3Jtci9TZXdHMDQxck9tc0lPNGd2WEdUZzIwWkU0SnVHZUwzOU56TTk3UGJFajFFcFpsMG85eEtKdW96Q2hzOUhROWdzZlg2S091MXRDOWJLaWFjQ1FiY3JteVVuTVJUMnBiYWJMOVlIWlAwYmhsaWt2Njl6UGRMZXJLMUp1UkxIUmhINTZXVXU5d29ORVlwd3V6VWU4TUtiK3YxdDYzWEwralAwQnZGMG8wMDdGaFNqYlF0dFhObW9xUjFkbUU5ZWtmRWZVZ1dEdXl3cmpUS1haNzVHWksra3pjWTVWWjFZQnlkbC9LRDludWhNYW9qbE1Mc0J1QnM2L1ZsMXV2OXJOZnorbmNZWThORmtHbWtYTHp2TmNyZGt2RitTVGN6SzR4eVN6UGV6L2FMMUpid1BWVURpLzdKQlQ2RHBYcjBFQ21MRks0QXNETkRtR3dIQU1jQitLajErZ1FBbjh4WkFUNFFVaEtFOWF6WHp5L3dPZjlRNERQNmdPMFhxK01DMnpSWjhiSmVQd3ZBaGkyTWU0aitlbURINUdQbnQxeVN2cE9yQy8wMkRzbGRScmxMcGg1UFNwTCtNK2tSelBRb0FBY0NlS2YxK3J0eG9lbFpSam5mNjZPcVIwb3l0Vzk4VVRWc3YxZ2RrL1EwdVRlQVp3UFlxT2xCVXkrY1pwUXJVVTRsNmZyMWd2aWlQemtmd1BPbXhpT2wzT1VDQnJPSThKalBBRGdUd1A5WnJ3OFFXQW9qTFVHZ2FwaDRWc2YyaTJscUorblc2eTJZb05NTS9qTTNPTlpyeGQ5RjhVYisvbFZPMG8xeTRTSjNwZlFvRnJZOWdFL0hyakQvSWFFcmpQWDZFZkdwQXRGVXViT2RyT21zVGxLU3ZpcXo4UUdUSjVyT2VVYTU4d3RFSjNUdldwOVJGaTB2U1krczlDaU95U1lBM2gyN3dueGo0QnNrU1p2Qm8rcFlrMTVkVHF2S2plTTFSNHJyakhKck1vNlZTVHBONStCQ2tlSHZJbzE4T3BxYXBKOGtQb3pqRmJyQ3ZBckFqNjNYbDFxdjk0N3Rxb2FFRnlPYVRrN2l5UzIxcTVPV2RMSTBpTWJoYTBhNUN3dDlMczh4eXA5Sk44cjlDc0RGNGtQWmpLZkdGZVBYVzY4UHQxNFBaVE1iemtyUmRISVN6d1hDdHRUT1NUelpmakVORXlpYWFqbUFkeFdNQ3M4eEtsTHVFaHd0UHBUTkNvdVdEbzNKK2lMcnRlNzU4VEJKcDFGQzNmQk5HWkdSOUNNWGRvQmVrdkYrSnVscHVJTTBUZlV1bzl3TkJhUENjNHlLbExzRXAzQmpvMWFFTGMvM0FuQ0o5Zm9DNi9WcnJOZDluRG5rakFHTmtsczNMT204dWphemRhdTBoSUJySGFpazBITHhjNFUvaytlWWJFdU1jaXRIUlNBNVNUZktyUVp3a1BTSXRteW5VQThINEJycjlVSFc2ODE2TkhaZWpHZ1V0bCtzamtsbkdzYUxTZ25uMHQ1amlDYlBNZG1tL2Yyck01TWVmQlBBT2RLajJnRmJBL2hJTElVNXpucjl4QjZNbVkvMWFCUzJYNnlPU1dlYW5BWEpvUXZPeGkyTm03cGxSV2pzWUpTN2ZReWpZaG1vYkdXVDlQaW9kZjk0MGxMN3drWWIrd0c0M0hwOXV2WDZSWEZ6aEU2Sm16WTltdWNMamNERXN6bytkYWd1bEZBdHpuZy9reWRDUEk5ZWE1UnpwYU5odmQ0Y2dMUU5EV2xkMHpZQ3FEdVRIaEwxcXdDOGc0SHVuRjBBbkFIZ1Y5YnJmYXpYRzNab2dIeWtSOU5oQjQ3cWNtYUdONHlMMGFXNElaWm8xc1ZyRmdYN0crWEd0VThNenpFcVh1NnlsbEh1c3dBV2lROXZOKzBBNFBQaERzMTYvWUY0dDk0MnprclJkRGc3WEIzYkwxYkhtei9LOWE5R3VlUEhHRVdlWXpTZUpEM2FOMnkrSXo3RTNSWEtTdzZMZGV1ZnNsNC9yc1dSTWttbjZkUk9QSzNYV3dyYlVqc244V1NTbm9acmFPUUtUMkJlYjVUNzlKZ2p3SE9NeHBla3g3WXhCa0R4V2kwcUtqem1mak9BcTZ6WHAxaXZuOUZDZURsalFLUGNuMWszTE9tOENvbERUbjltN2phYWh0Y3NtWllCMk5VbzEwU2xBTTh4S2wrVFBwbFJMcHpRZncvZ1orSkQzWDFoUWVtckFWeGt2ZjZCOWZwWkRZNllGeU1hWlRIcmhpdTczaWgzZjhiN3BTWHBMSGVoVkZjQ2VKWlI3b3lHSXNkelRMYWxScmw3cG90QWtTUWRmMHJVWHdqZ085SWozaU03QTdqUWV2MHQ2L1ZqR3hnMnkxMW9GTFpmckk0encybTQxb0ZTbkFoQUcrV3VhREJxUE1ka20vRWFWU3hKeHdPSit0MEFYZ25nd3dCeWRzU2pacjBpdG04TUMwelhHK1AveklzUmpjSWt2VHJPREtlcGZXNVpyeDhPWU5PV3hrM051akg4RGhybDNoRHptQ2J4ZDFHMkdhOVJSWk4wUEpDb3J6SEtIUUxnSCtLSlQvMndmbHhnZW9uMStrbWxSMnk5M2dEQUFwNExOQUlUeitxNEVESU5PK0hRVEVKQ2ZpU0FKeGpsVG0wNlV0YnJSd0Y0SlA5Q29qV2JwRTh3eXAwTllIc0FuK2FzZXEvc0dOWVdXSy8zS2p4b3poYlFkSmlrVjVjek14eHV4QmUyTU9hMkxESEszWmZ4ZnpOSkg2NTdBWHdDd09PTWN1ODN5dDNWMHBIeUhLUG15bDJtQ25YcVJybC9CZkJNQUdlTC8xUDBSOWo5YkZFb2Z5azRZcmFab3VuazFsbExPcmR5U29QK0xDNGNsK0thek9Qa3hNTHczQWJnQ0FCL2FaUjdoMUh1NXBhUGtMK0wxRjZTUHNFb2Q3RlJMblIvZVRHQTB6bXozaHVIV2ErUEtqUll6aGpRZEhKMjBKd1BZTDZneU9ZOGRaQ1dkUDQ2OC8xTTBvZmpVZ0Q3QWRqR0tQZnZScm1iT25Kay9GMmtHU2VwNWpZWkhxUGNtUURPdEY3L1pkaG1GOEErY2JNZDZxNzNXcS92Tk1vZG1UbENYb3hvRko4NWs3NmxvS2l1Q1MwWU05NHZMZW04TFBQOXZHYjEyeDBBdmdiZ2VLTmNWL2R4NFRsRzdjK2tUMldVdThZb2QxQzRxd1h3VHdCK0l2N1AxRzFIV0s5TjVnaDVNYUpSbHNRTjBlcmFRbEJVUTZ4V1pieGYybmZ3RjVudjV6V3JmOEpDMEsvRURSWWZZNVI3YzRjVGRQQnBqWGgzR09YdW5Da0lqYzZrVHhVWDlad2NYdGJySndNNEFNQS9BOWk0elhIUlNDZUV2NUZSYmtuTjhMRDJqa2JKYmIrNHVhQ29jb0Z0ZGZjWDJBV2IxNngrQ0VuTzkrTWVMZDh4eXEzbzBkaVpwTXMyNjFQa1ZtYlNSekhLWFdhVWV3dUFyZUwyOWIvc3l0aG9yYzBBZkN3akZKeVZvbEZ5RTg5NWdxTEtqWG1xKzhWTXUvak54bnE5WVppSjdkWWgwVFRDUm9ybkFmaFd6eEowOEhkUnZGbXY2WjFKMGljWTVaWWI1VDVqbFB0ckFNOEdjQktBbkRaYVZNNmUxdXVucDM1YTNDQnBLLzRkYUFRbTZkVngwNmZxenM5OFA1T24vdGdtdG5yK25mWDZqZGJyVmlzRXFvcWJaVzNXbnpEVEdQUXZTWi9NS1BlL1JybFEvckkxZ1BjQXVMbzdveFByZlRVT2ZPdXVuMnZVbXR6Mmk1STJBc25wa1Q0M2ZnK2xPQ3Z6T0ptazkwOUkxbzhIY0lYMStsOTZrS3l6bklwbXZhYjNJbkV5eXQxcWxQdFBBTnNDMkNYV25xM3B3TkFrTXRicjFJNGFyTHVqNmVUT3BFdVNFNnVRb004UkVxdlZBTTdOL0F3bVVQMzFPQUJmQVBBYjYvVnJyZGRkelhONEkwaXpKdW05ZUN3MHdTZ1hFdk1maHBmMU90dzF2eW0rSkxWaGExdjRvZDhqN3RaV0ZTOUdOQjBtNmRYbHhFcFMwbmxlZ1Iwa2VjM3F2MjFqcDVkRHJkY2ZETzBZalhKZDJxTkYwamtXZG5nOXJnUGo2SnBMWnh0UHI1TDB5WXh5MThjdjM0Y0E3QllYbTc2Z095TWN0SDlra2s2Rk1FbXZMcWMwU05KMzBCYjRERjZ6aG1PN21LeUhQVDhPangxZ3VwQ3NTM3JDZkhYWTRiVUQ0K2lkM3RjSmg3N0JScmxUakhJdmpGL0drRHorc1FOREc3S2RFaDhoOHRFeGpiTFVLSGR2Wm1TazdGNThjMmFzSkNXZHB4YjRESmJvRFU5b1J2SHRNSHRwdmQ2MUEwY242UnpMWGZRdTFxQVc4eG5scm9oM2E2R1R5QnNMOU1tbDBjS3E5Q2NteElhelVqUktpVm4wWlVJaXkvYUwxZnpVS0plN0dCbE0wZ2N0Sk91bldhOS9hcjNlcGNVRGxmUzd5Q2VtTlEyeTQwYm9qMnVVTzhFb0Y5b0YvazFjUk5LMy9xbGR0MjNDK0ppazB5Z2xMdHk1dGNkOXdTUzltaS9uZm9EMWVuMEFDeHNhTDdYbm1RQk90MTVmWUwxK2ZndWpZSkpPc3hwOFd6eWozQ1ZHdVgzaVJmZWRBSzdzd0xDR29GSUpTeXlMMlVaNnNHaWtFbzlBN3hZUzJ0elpZUWtKd2Fxd09MREE1NFJybXlyd09kUVBPd0U0eDNwOWJsUEp1c0ROc2xqdVVwT1kzdFZHdVQ4YTVUNGU2OWIvSHNBM1lxc3VxbWVMaXU5YTJPY0Z5b21XRlhwSnFiTXVjZUcrdWNCbjlFSHRtYWg0b3l4aFhjaXBScm1sQlQ2SGEyaGsrcnVZclAvQWV2MnNNVWRBMmpuR0pMMG1LY25UZytLcTdyUER5M3E5QU1DK0FQWVR0dEZIQ1J0WC9Bd3BqL1J1TThwdFh1S0RyTmQzSnNTM3owbzhBcjFSUUp5UUdhdlFvbmE5Z21QcHF1TUxqWXZsZWJMdEhGN1c2OUR1K2YxR3VYR3NiWk4yanJIY3BTYlJ1MEFhNVpZWTVUNFV2ekN2QUhDR29Gbk1wa2k1R0pWWXJCWVM5RTJGSk9nb2RPRmVLbVJqczV4WVNmZ08vaGJBandwOUZwTjBRa3pXTDdGZW4ycTlmbXJoaUVnNngrNHp5dDNVZ1hIMEVyZHFmeUJadjk4b0Z4NlY3aHdYUlA1WG1CbnR3TkM2ck9wVEdDbVA5VXJORkVoNkRKcDlZeE8rdTZWdWtEcU9QZEpuOXZHNDJWMEpRMXBrR3phUXVhY0Q0K2l6bDhlMmpkK3dYbTlmNkRna2RRL2lMSG9HSnVsVEdPVitiNVI3ZDJ6aitIb0FGM1pxZ04yeHZPSklwTXdZbExvUVNZblhIVWE1T3d0OTF0QVhnOStXdVlQbTBCT0NNS0h5eFlLZk42UjR2VGUyeS8xR0I4YlNkNjhDOEgvVzY2OFdTTmJaSTUwcUVWZVRYcFZSN2o0QWk4TExlaDM2cWg0QTRKOWlqM0Jpa2o0VmsvUTBKV2RYcm9xUHBvZnExbmdOcXF2MG8vcXVPU2EwM1MwNHBxRjhCNWNaNVNZV3MrOXV2WDRSZ0dNQlBLRURZK3VyMFBWbkR3Q3Z0bDZmQk9ERFJybmYxVGdXU2VVdVROSXpNRW12d0NqM2k1Q2tXNi9mQTJBdkFHOEdzRVBuQno1ZVROTFhWYXJrUXNvTVM4a1NsVjhWL0t3dUNrblZ6d2QrakhXRkJQU1lVaDltdlo0N29DWUM2OXdJRytYT3RGN3ZDT0JBQUljQW1OZmUwSHB2RG9DOVF6NFFrL1VQR09WU2tsSDJTS2RLV082U0lEeWVOOHA5eWlqM1pBRFBBL0FWQUN0N2N3QmxWVTJ5V0pPZVJrcVNYdkxDeloyRjVUbzZ0TmN0ZVBRTFl3STJCQS81amhubFZocmxqbUlKVERFVHlmcFYxdXZQV0s5bi9iMnpYb2RPU3d2NmM0alptS1JuWUpKZWsxSHVmS1BjNitKR1BRY0R1S2FYQjFMZnJJLzRyTmVoOWRzR0hUNkdrbGp1a3Fia2hmc3l3VGZMa3QwQzRHT0ZqMzlJMzc5cEoxS01jdGNiNVhZSDhHSnU4RmRFU0x6M0Q3K0wxdXRqWTN2bjZXd2pMUGRpdVVzR0p1bVpqSEszeEptSnh3UFlGY0JwQWxyQytTcEp1cUNFODg2Q3MzbFNZbGJzd20yVUN6dE5YbHpxODZnM1BwaTVvSGFVSVgzL1pyMFJEaVV3QUhhTUUwM3NBcE12Sk90dkJYQzE5ZnJqMHlUcjBscDhNa25Qc0U1TmVud004LzYrSFVUSGhFZnZ0d0o0ellCci9xNk9DMnRudzRRemdmVTZMRXJlcEtsQnQ2ejBoVHYweUg1Mjc2SkFkZjBtdGhjc1RWU1NqbGdDQStBbzYvV1hRL2xRN0dKQ2VjSzIvMjhIOEtZd3N4N2FPaHZsYm8yZktLbXpTN0NmOVZyQ1hoWXBqZ3Y3OUZUNTkxTVhqb2JITUI5b2RlalVCMVhiVXJJZVBRMFhFOVYzTHE5ZG9yek5LTGQ2REFjOHBHdFcwbzF3S0lHSlhVdDJpVjFnSGorK29Za3hMN2JCZkt2MStwUGhaa2hna241SUI4YlFOWit0T3A2cDVTNlNObEtoK241YzhaMnNyMDRqSlY3TGpYSzNGLzdNQ3dDVVhFQkkzZlZWbzl6Wll4cmRrTDZEdFo1V0dlVitFTHVYL1R1QUZlV0hKZEw4bUt6L0liWnlKcm5DazZ0S3MrZ1lrYVJ6TzJTcTR2eUsvNDd0RjlPdy9XSk5zUzc5dEtZT2dGb1RidTdlT2NiL2ZDalhyTHNubFZja0MrV01ScmtqQUd3SDROdnRIY2JnUEpKUEtNUUxpN1o5MVNBd1NhZFUxeG5scnFqNEhyWVRUTU40NWZsV1V3ZEFyVG5RS0hmVE9QNXo2N1VhME5Qa0l0K3gwUHZiS1BkS0FDK3AyQ3lBaUdhVzlOMmNtcVJMcTVXaWRGOUplQWVUempRc0Q4cnovVGpUU3NOMG1sR3U1UGIvVXkySTNUbUdvT2pDYkpiQUVCWERKSjNHNnBRcUgyNjkzanpXNFVuQUpEM05XRnB5eFk1RFh4N2p1S2s5b1NmNlBtUCszOFhYbzgrRUpUQkVSU1I5TjFudVFpbCtiNVNydXJ1amxITnBSVTd0NXhSU0ZtNlBzMi91NThiNDJkU2V2WTF5UzhmOHY0dHJ2MWdIUzJDSXN0UkwwcTNYYzJJTFJxTHBwUFFsWnZ2RkJOYnIwRmYzTVUwTnVtWGpUQ0RDN3FObjlTVVFWTWxIWXJuRnVBM3BtalgycmRoWkFrTlVTKzF5bHdVaitxWVRUUWk3MFoyUUVBM1dWNmRoai9SeVNtOFZUKzA1cThFK3kwUDZEaGJ2b0RRS1MyQ0lrdFZPMGxucVFqTTUzaWgzVzBLRVdGK2RSa3E4d28vNkxXUCtQOElNMzgvSC9IL1ErSVVmczljYTVlNXZLTllzZDZtSkpUQkVsWVJyMlkwcG9XS1NUbFhjQytDamlaRmlrcDZHNVVHRnhCNjA3MnZxZ0dnczdnVHcwb0xyUGFvWXlqWHJ2bkcxcVp3TlMyQ0laclE0ZGFma3lVazZPN3ZRZEk0MXlpWGQvVEhwVE1ieW9JSmlzbkJlVXdkRlJZV05xZll3eXYyNjRiQ3lSM29CVTBwZ3Z0dm1XSWc2SnZtN3lTU2RaaE5LRTQ2b0VTVW1uV2tZci9MZUhoOHZVcis4c2FHRm9nK3lYbThCWUtPQm5DZU4xS1BQSnBiQW1QQkVCTURWWFJnVFVjdVNuN3l6M0lWbTgyNmozTEtVS0Ztdkh4VzNQNWFnVkxtTGxKdmt4aElJbzl3dkFSelQxUDlIUllRZFJSZTFFRXJXbzQrSlVlNTdBSjRFNEFPeGRKSklLaWJwVk5UM2pYSmZxdkdCVWhMT2xRQksxWDV5ZDlieE9CVEFOUTMvbjFUUHdVYTVvMXVLM1pDK2Y1MUswdkZBb242dlVlNkRBTFpuQ1F3SmxsWHVJcVdHbUtvSm5WemVWRE5XVWhMT2ErTWl4U3pXNi9VQkxHejNVQnJUZE5lSnU4SkdPQURXdEh2WU5JdVFvQi9WWXBDR2RNMGE1MlpoV1l4eTE3QUVoZ1NybDZSYnI3Y0VzQUhQSEpwazd4cUxSU2V3dmpwTnVFRldUUTI2WlkwbkVFYTU4d0VjMmJWQTBJUGUxWEtDam9GZHN6cWJwRTlnQ1F3SmxWenVPVEdUemxJWG11endlQkd0aSswWDAwaDVpaFc2ZGl4cDZmOCtETUNaTGYzZk5GcDR1dkVHbzl4L2R5QStyRWx2R0V0Z1NCalBKSjFLT0RrazZabWZJeVhwNUVaR2FhNHp5clZTZGhJM3hObVRqOWc3STVRaHZjd29kMkpIQmpTVWE5YXExTTFTMnNZU0dCTGlScVBjeXRSRG5ValNXWTlPaUZ0d3Y2RkFuVFhMWGRJd1hnMklPK2J1QXFESkRYTG9vY0pzMG5PTWN0L3ZVR3lHOGgxYzNOYU5jQzZXd05EQTFaclU0MHc2VFRnblhDZnIzT21Od0tRekRkc3ZOc1FvZHhXQVhlT09sdFM4bndCNFpteVAyUW5XNjAwQmJEeVFjNkVYcFM3VFlRa01EUmlUZEtydHRMZ0Y5ejI1SWJSZXp3ZXdtWkEvUmFta2srMFhHMlNVK3htQUZ6TlJiMXlvUFg5Qlcxdld6NEQxNkIzREVoZ2FvRnJmellra25idU55blVjZ0ZlVVNOQWpLZWZTYWdBM0ZQb3NQbmxvbUZIdW9waW9KMjNVUmJYY0hxOHhvWXZMNmc2R2NFamxucDN2N0pKaVNnbk1mZjBaT2RGRE1FbW5KS0dzNVMxR3VRTUsvM0JLU1Rpdmo0c1JzMWl2NXdMWXV0MURhVXluRW9pWXFEODcvQzA3TUp5aCtpR0FKeHZsVHUzdzhiSDlZb2ROS29FSnlYcVgxakVRcGFqMTVQMWgxdXZOQWN4bnFFWDVIWUNkakhLZkdzTkJzLzFpbXJDSjBaeW1CdDJ5emlVUVJybGZBL2hiQUQvcndIQ0daRG1BTndONFNjWitDMDFodVVzUEdPVitiNVFMNjBsZVB1VGpwTUdxUFpQT2VuUTV3cXIvVHdCNGlsSE9qZW1vMlg0eGpaVHZYM2pxc0xnRDQzZ0lvMXdvVzNwZUxQMmlmR0hXZkR1ajNHZEs3TWpiZ0NFOVNSNTg4bXFVczNGaDZZZFlBa005VXV1N09aZnRGOFg0WHdCdk5jcjlmTXdIelBycU5GTGl0YmlqOWNockdlWENqLzBCMXV0ekFZUW5USnQwWUZoOTgxc0E3K3hZYThVcWhwS2tyK25xalhCcFJya1ZBQTYxWG44UndERUEvbkZZUjBnRGMzTW8yNnB6U0p4Skg3NWZBTmpOS1Bmc0JoSjBNRWxQSnVVbXVmWDJpMVVZNWI0YWFxaGpMVFZWRS9yUEh3aGdoeDRtNkJqUU5ldUdMdDhJandOTFlLZ25hdi8rTVVrZkpoKzNRQSt6QzA4enluMm53YU1VczN0bW9jL2hUVTNIaFBJWG8xelk5R2lQdnUzZTJMQmxjWGZpeHhubGpqYktyZXJiQVZpdkh6R2dweVppazFTV3dGREgxZjV1em1WbmwwRzVFa0NZQ2Z5U1VhN3gzckxXNncwQVBHYllJWDRReTEzUzlDNkJNTXA5M1hwOU9vQjN4NWxpTHJCL1FKZzUvMlI0R2VYNnZudnJrSjVraVo1Slpna01kUmlUZEtIK0NPQkNBRDhDY0xwUjd2S1d3eURsWEZwVHNHMmZsSmoxc2pXY1VXNTUvT0VQZGVvSEFkZ2Z3SVlkR0ZvYnJvb0x6NzlRY0YrRnRnM3BKcmtYSldYakZrcGd3cTdDMW1zVHoxZFdDMURiYXYvK3plVUozR2sremxxRnpVQnVqbmRqNFhWWmZQM1dLTGVtUXdjZzVWeTZvY1NqZmV1MVlqZWNmb2k3Wkw3RGV2MWhBRytQN1FVbDdLd2JhcHkvSFR2Zm5OMlRiaTBwMkg1eG9FSUpqUFU2bEgwZURPQTlBRGFRSGhOcURaUDBnYm03ai9XZEFNNFIwaFVqZXhPalNhU1VCeTN2d0JpeXhmS09RMkt5dm51Y1dYOU96dzlybE5BTjZzc0FUakhLTGUzZThJbzVIc0JKQXptV3V6c3docW5ybzhrQUFBSVpTVVJCVkU3cFNBbk0xK04xZ3VTNnErNlJLNTQwUkVUMVdhOGZDK0ExQVBZRXNHTlBReGttQmM0RGNGcVlPVGZLc1hTQ0JxZWxFcGlQR09YZXg3T0o2bUNTVGtSVWlQVTYvUGkvSk03WWhRMlNIdEhoMkliZFZzK09yM09NY3NzNk1DYWlzYkplYndUZy9YRkIrUG9OUkh0L285eG4rVmVsT3Bpa0V4R05nZlY2VHB4WmZ5NkFwd040YXRpSkU4Q2NGdUlkV2tsZUN1QmlBR0czNFlzRzBKbUZxRGJyOWJZQWpnV3c4NWlqdUxOUjdneitwYWdPSnVsRVJBMnhYb2ZPTUU4QThIZ0FJVWtJcFRKYkE5Z1N3TUs0cHFQTzdONWRNUkZmSEYraCs5RHZBSVNPVDFkd2xweG9OT3YxS3dFY1BjWkYvRTgweWwzSjhGTWRUTktKaURva0p2S1BCTEJSbkhYZmVKclJyWWlkbis2UXR0TWtVVW5XNjNteEJPYmZ4bEFDczFIZExlR0ptS1FURVJHUmVHTW9nYm5aS0xlbDlMaFNmUTlqN0lpSWlFZzZvOXhWUnJsZEFMeXEwT1pRN0YxUFdaaWtFeEVSRVVWR3VXL0ZSZDVIQWxpWkVSY202WlNGU1RvUkVSSFJKRWE1ZTR4eW9VNTlCd0EvckJrYjdqZEFXWmlrRXhFUkVZMlFXUUxEbVhUS3dpU2RpSWlJYUFZMVMyQ1lwRk1XSnVsRVJFUkVzNmhSQXNNa25iS3dCU01SRVJGUm9nb2JJVzFzbEx1TGNhVzZPSk5PUkVSRWxHaFNDY3hIQWF5YTh1N2JtS0JUTGlicFJFUkVSRFhFRXBpREFPd0k0RWVUUG9HbExwU05TVG9SRVJGUkJxUGNGVWE1RndGNERZREZBSzVsUEltSWlJaUlPc0o2UGQ5Ni9SeitQU2dMZ1A4SEpNRlF2dEt5MDlRQUFBQUFTVVZPUks1Q1lJST0iLz4KPC9zdmc+Cg=="
+      table.insert(graphics,{
+        Type = "Svg",
+        Image = Logo,
+        Position = {0,5},
+        Size = {300,64},
+        ZOrder = 1000
+      })
+      table.insert(graphics,{
+        Type = "Text",
+        Text = "MXA-710",
+        Position = {300, 5},
+        Color = gaColor.Green,
+        Size = {185,64},
+        FontSize = 40,
+        Font = "Open Sans",
+        FontStyle = "Extrabold",
+        HTextAlign = "Left"
+      })
+      table.insert(graphics,{
+        Type = "Text",
+        Text = "©",
+        Position = {480, 20},
+        Color = gaColor.Green,
+        Size = {20,20},
+        FontSize = 16,
+        Font = "Open Sans",
+        FontStyle = "Extrabold",
+        HTextAlign = "Left"
+      })
+      table.insert(graphics,{
+        Type = "Header",
+        Text = "Information",
+        Position = {15,70},
+        Size = {530,11},
+        Color = gaColor.Green,
+        FontSize = 16,
+        Font = "Roboto",
+        FontStyle = "Bold",
+        HTextAlign = "Center",
+      })
+      local gaLabels = {
+        Pos = {X={35,35,35,35,35,35,35,35,35,35,400},Y={110,130,150,170,190,210,230,250,270,290,354}},
+        Text = {"Model:","Serial Number:","Firmware Version:","Dante IP:","Dante Subnet:","Dante Gateway:","Control MAC Address:",
+                "Device ID:","Dante Device Name:","Last Error:","Version "..PluginInfo.Version,}
+      }
+      local gaLayouts = {
+        Pos = {X={190,190,190,190,190,190,190,190,190,190},Y={110,130,150,170,190,210,230,250,270,290}},
+        Text = {"MODEL","SERIAL_NUM","FW_VER","IP_ADDR_NET_AUDIO_PRIMARY","IP_SUBNET_NET_AUDIO_PRIMARY","IP_GATEWAY_NET_AUDIO_PRIMARY",
+                "CONTROL_MAC_ADDR","DEVICE_ID","NA_DEVICE_NAME","LAST_ERROR_EVENT"},
+        PrettyName = {gsCat1.."Model",gsCat1.."Serial Number",gsCat1.."Firmware Version",gsCat1.."Dante IP",gsCat1.."Dante Subnet",gsCat1.."Dante Gateway",gsCat1.."Control MAC Address",gsCat1.."Device ID",
+                      gsCat1.."Dante Device Name",gsCat1.."Last Error"}
+      }
+      --Basic Labels
+      for i=1,#gaLabels.Pos.X do
+        table.insert(graphics,{
+          Type = "Text",
+          Text = gaLabels.Text[i],
+          Position = { gaLabels.Pos.X[i], gaLabels.Pos.Y[i]},
+          Color = gaColor.White,
+          Size = {150,16},
+          FontSize = 12,
+          HTextAlign = "Right"
+        })
+      end
+      --Named Text Components Layouts
+      for i=1,#gaLayouts.Pos.X do
+        layout[gaLayouts.Text[i]] = {
+          PrettyName = gaLayouts.PrettyName[i],
+          Style = "Indicator",
+          Position = { gaLayouts.Pos.X[i], gaLayouts.Pos.Y[i]},
+          Size = {180,16},
+          Color = gaColor.LtGray,
+          FontSize = 14,
+          HTextAlign = "Center",
+          IsReadOnly = true
+        }
+      end
+      layout["DEVICE_AUDIO_MUTE"] = {
+        PrettyName = "Device Audio Mute",
+        Style = "Button",
+        ButtonStyle = "Toggle",
+        ButtonVisualStyle = "Flat",
+        CornerRadius = 5,
+        Margin = 1,
+        Position = {100,354},
+        Size = {50,16},
+        Color = gaColor.Red,
+        OffColor = gaColor.LtGray,
+        UnlinkOffColor = true,
+      }    
+      layout["DEV_MUTE_STATUS_LED_STATE"] = {
+        PrettyName = "Device Muted State",
+        Style = "Led",
+        Position = {155,354},
+        Size = {16,16},
+        Color = gaColor.Red,
+        OffColor = gaColor.Green,
+        UnlinkOffColor = true,
+        Margin = 3,
+        IsReadOnly = true,
+      }
+      table.insert(graphics,{
+        Type = "Text",
+        Text = "Device Mute",
+        Position = { 10,354 },
+        Color = gaColor.White,
+        Size = {90,16},
+        FontSize = 12,
+        HTextAlign = "Center"
+      })
+      layout["Status"] = {
+        PrettyName = "Connection Info~Connection Status",
+        Style = "Led",
+        Position = {10,10},
+        Size = {16,16},
+        Margin = 3,
+        IsReadOnly = true,
+      }
+  elseif CurrentPage == "Setup"then
+    --All Basic Background and Header Graphics
+    table.insert(graphics,{
+      Type = "GroupBox",
+      Fill = gaColor.Black,
+      CornerRadius = 5,
+      StrokeWidth = 1,
+      Position = {5,5},
+      Size = {550,446}
+    })
+    Logo = "PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB3aWR0aD0iOTg1IiBoZWlnaHQ9IjM2MCIgdmlld0JveD0iMCAwIDk4NSAzNjAiPgogIDxpbWFnZSB4PSIxMjAiIHk9IjEyMCIgd2lkdGg9Ijc0NSIgaGVpZ2h0PSIxMzgiIHhsaW5rOmhyZWY9ImRhdGE6aW1nL3BuZztiYXNlNjQsaVZCT1J3MEtHZ29BQUFBTlNVaEVVZ0FBQXVrQUFBQ0tDQVlBQUFBWE85VFdBQUFnQUVsRVFWUjRuTzNkZTd4ZFJYVUg4TitZOEVwRTVTR1NBSDJvVkVIRTZsaTErS2phS2xoMHhBY2lsa3BGQkt6NlViRXFhRUZRUVd4clViQXFpb2dHOFlFUEhGRVU1Q1ZTUkJoOFVBVkVRU0FRSUR3TUFRSkp5UFF6WVM3ZVhNNjlkOCtlT2Z1MWZ0L1A1L3lYY3pKNzNYMzJXWHYybWpVS0hXTzlYaC9BMCtQcktRQWVEMkFiQUk4Qk1LOXI0NlYxZk1Fb3QwK2RrRml2VHdhd3A0QndIbTZVT3l6M1E2elhld0ZZVkdaSW5YYXRVZTR2TXVLMEI0Q3ZDb2dUQ3NUcVNBQUhseDFTcCsxcmxQdDgzUUZhcnk4RjhGUVpvZXE5MVFDV0FiZ2R3RzhBL0JMQXhRRE9Nc3F0Nk9yQldhOHRnSmQxWUNqVWpxVnp1eEI0Ni9YbUFGNEY0T1VBbmc5Z293NE1pOUw5SVNObXRaT0xucm11MEhDbHhDdm5uQXIrdk5BNCtpQTNWbExPcVFuWFpyNWZXcno2TE9RNm04WFh0akhYQ0ZaWXI4K0lFeDdmTWNxdDd0Z3gvbGtIeGtEdCtVTnJTYnIxT3N6aXZ4REFXK0tkWWlkdUdDZ0xrL1RaNVNaU0UzaFRVNDJrUkNyMzNKS1dFTlNPbC9YNjRRQTJLVHNjYXNGR01XRVByMnV0MThjQytCK2ozTDBkK1dQd1JsQzJQenlzamNPM1h1OEdJRHdxL0JHQVZ6QkJINHhhTTFPeHhHbUJrQmlWU3RLbHpCQnpkcmc2M3RCVTV6UGp4ZVJwZU1JMTliOEFYRzY5M3IzdG83TmVQd3JBSXdjWVo2cnUya2FUWSt0MXFEUC9CSUNkK0VjYXBMcVBqNlhNNEswQmNIMmh6MktTWG8yazJlR2NtZUZ3bzd5dzdIQTY3U2FqM01xTUFUSkpINjd3dC8yNjlmbzBBUHNZNVphMmRLU1NTdlZvdEdzYm1VbTNYcyt6WGg4RDRDSW02SU4xUDRERk5ROU95Zy9lRXFQY3F0d1BpYVZpVWk3Z3JCdXVMdWVHSml6Tzcxd2pnVEhpV2dlYXpVc0IvTXA2L2NLV0lzVnpqTVpmN21LOTFuRWw5ZHNBdEZKZVE0MVluTEhvaHZYb2FVSnAwUHBORGJwbHRaUDB1Q0I5L2xBQ1VVSE9EWTIwaElCSk9sV3hKWUFmV0svL3BZVm84V2tOalRkSnQxNkhkbndYeERhS05HdzU5WjFTU2hKS0plbFM0c1c2NGVwOFppa1ZPN3VrWVFJbHgzcWh2YkQxK3FDR2o1am5HRjAzbGlROVBJNjNYb2NGR0tFSDdRYml3eXdETzd2TUxqY3htQ0FsWGpkbTFnMUxxa2ZQalJXVDlEUk1vT1Q1aVBYNndBYVBtdTBYWmJ2REtIZG44U1RkZWowSHdCY0J2RXQ2aElWaGtqNDdKdWxwMksya09pNndUY040VVIwZmE3RDBoVGVDc3EyOVJoVk4wbU9DL2lVQS95dzl1Z0t4SG5aMjdKR2VodTBYcStNTlRacWNUamdieGgyd1NhYmpyTmZQYU9ESW1hVExWajVKQi9BcEFLK1RIbG1oNnZaSUQyMUF0eElTTXRha3ArSGl2dXA0UTVNbVoxS0J5Wk5zWWRIK042M1htNDByQ3RicitYRjNWSkpyN2NSTHNTUTlMcXJZanllVVdIV1RoSzBCekJFU3ROelp6Z2tzRDZxR1NYb0Y4UW5vMWswT3RtVkxqWElyTW9iQUpKM0M5K1dZTVVhQjNZT28zRXk2OVhwWEFFZUtENmxjT1YwNHBQemczVnh3cTJrbTZkV3dKcjJhclFUZEtJTlBhS2lRMThYZDA4ZUJONEpVSmttM1hvZE5NQllKMndpRDFyVWtvN01FNjlFVFdLOGZEV0NqcGdiZHNwelpZV2xiYXJOVlpYVjhRa09sZk54NlBZNE9ka3pTYWUxMUtpdEpqenNmbmdoZ0UvSGhsSTJMUm1kWHFoNmRKUnpWc0Z0SmRVelMwekNCb2duaGV2eldNVVNEM1lNb1Awa0hzQytBdHJiTXBlNWdnakE3dGw5TWMwdG1lWkNrUkNxM2xJbzNOR21ZcE5Oa0IxdXY1eFdPQ004eDJaWWI1VzVIVHBJZUh5Y2ZJVDJTdEJhVDlObVZTdEtsektSenRyTTZKcDFwMkNPZFN0cHNERzJubWFUTDl1QTFLbWNtL1RBQWo1WWVTVm9ycHg2VzdRVFRzRHlvR2tsbFFleVJucVoydkt6WG9mM2V3cGJHVGQzMTlzSWpZNUl1MjRQWHFGcEp1dlY2WEhWWTFFKzFFaXJyOWNPWXBDZmpSa2JWc0hhL09ta0xJWFBYT3JCSkFrMjFuZlZhbDRoS1hJakt6YkpreTU1Si96ZGhMYnRvWm5WLzlNS00xSHBDWXNzZTZXazRPMXhkVGhjY0pheDg0dzZqM0owWjcyZG5GNXJPN29VaXczT002aWZwMXV2TkFieFJmQWhwc3JwSmdwU0wwVzFHdWJzS2ZSYWZQRlFqS1VuUHFkOWZFSGRRbElMdEYybGNYbGJvYzFucVFnOWVwK3JNcE84bnFFOHp6VzVwUm1jSjFsY25FTmI3TzJkMmVKNndMYlc1eFgxMVhKQk00N0s5OVhyVEFwL05HMEhLU3RKTHIyS21mbU5ubDlteC9XSTZKcDdWNVh3SFdZK2Voa2s2emVSdkMwU0hTVHJWSzNleFhqOE53QlBGaDQ4bVk1SStPN1pmVEJQcWhwZG52RjlTSXBWYlNzVWtQUTNiTDlKTXRpc1FIZDRJeXJiQ0tIZkxSQVJTWjlKZkt6MTY5QkE1Q1NqcnE5T3dQS2dhdGwrc2p1MFgwekNCb3BrOHRrQjBlSTdKdGs1T2xacWtjM2RSbW9wbENiTmorOFUwWE54WEhjczMwdVNzZFpnTFlPdVd4azM5c0tEQUtQbTBScloxZnYvbVZnMUZYQkR4dEo2R2JrMDRCQURIQVBoNUI4WXpKUGRrSEF1VHpqU01WelZzdjFnZHkxMnF1eC9BNWswUGVNQStDT0J0QXp1OHJLWWExdXZRa25pcmNzUHB2TkNJNUJSQngxdkZ5c24vcG5LU0R1QzVQZDdFSVR3eDJDMitMb3pKK2plTmNxczZNRGFSck5kYkF0aEF5TEdYU3RKWkhsUU5GOWhXSnlsSnY4c29kM3ZkTnh2bFBJQS9saDJTWE5ickxRWjQ4QnRtdm4rYnpKM2crK1p5b3h5L1V6TklPUm1lMHZqb3hpT3N2djVLU0FTczE0ZFlyN216Vnp1a0pKekxDbDZFV0I1VWphVEVzM2FTSHBNa1NlMTBTOTBzVXhsRHZKNnR5SHcveTg5b0hTbEorbDhOTEhRTDQrTzI2NjNYaTZ6WHorakFtQ1Jod3BuQWV2MXdRYjIvYXkvdWkxdHFiMWwyT0ozRzdrclZNU0hvbGlHZWYzZGt2bDlTUGZwcUFFczZNSTVPUzBuU1M3UVc2cUpRQTdZWGdJdXMxeisxWHU5bHZaYTBBMTlidUwxOUdpNkdySVkxMXRWSlc2REdtZlNPc0Y2SHNwQWhQc1crTmZQOWttNmNyemZLM2QrQmNYUmFTcEl1NGNmdm1RQVd4ZG4xdzYzWEpWWnEwMmljU1U4akpmbGNubE0zTE94SGJubG1LUlYzRzZXMkRQWGM0M3FhNnZoa3E0S1VKUDNoclkyeWVhRlc4OUJ3VWJkZW4yeTkza25Rc1RlRml5RFRzTE5MTlpKbWg1a1FwR0ZTMEIxRC9aNWVuZmwrUGpHbGRWUkswbU5iSUNtZE9DWUx4NzBuZ0F1czE4NTZ2WGVzZWFWOFREclRNRjdWY0NhcU9wWUdVVnVHK2ozOVplYjd1UkVicmFQcVRQcDhobTF0ai9nVFl5bk1FZFpyYm1xUmgwbG5HajU1cUlaSmVuWFNrblFtQmQweHhPOXA2T1IxVGQwM1c2L254QmFNVXZDbXVRSkovVGhMZVRTQTk4VVdqbCszWGo5M0dJZlZIT3YxWm9KdS9GanVrb2FKWjNYYzRyNjYrNHh5Ti9WbHNBSU04ZHo3U2ViN3QwcmN1NmJ2bUtSWFVQV0V5TmxWY3FqQ1hlL3U0V1c5RG8rNGpnVndzbEV1dDArcUJGSVNxYnVOY3Jtci9TZXdHMDQxck9tc0lPNGd2WEdUZzIwWkU0SnVHZUwzOU56TTk3UGJFajFFcFpsMG85eEtKdW96Q2hzOUhROWdzZlg2S091MXRDOWJLaWFjQ1FiY3JteVVuTVJUMnBiYWJMOVlIWlAwYmhsaWt2Njl6UGRMZXJLMUp1UkxIUmhINTZXVXU5d29ORVlwd3V6VWU4TUtiK3YxdDYzWEwralAwQnZGMG8wMDdGaFNqYlF0dFhObW9xUjFkbUU5ZWtmRWZVZ1dEdXl3cmpUS1haNzVHWksra3pjWTVWWjFZQnlkbC9LRDludWhNYW9qbE1Mc0J1QnM2L1ZsMXV2OXJOZnorbmNZWThORmtHbWtYTHp2TmNyZGt2RitTVGN6SzR4eVN6UGV6L2FMMUpid1BWVURpLzdKQlQ2RHBYcjBFQ21MRks0QXNETkRtR3dIQU1jQitLajErZ1FBbjh4WkFUNFFVaEtFOWF6WHp5L3dPZjlRNERQNmdPMFhxK01DMnpSWjhiSmVQd3ZBaGkyTWU0aitlbURINUdQbnQxeVN2cE9yQy8wMkRzbGRScmxMcGg1UFNwTCtNK2tSelBRb0FBY0NlS2YxK3J0eG9lbFpSam5mNjZPcVIwb3l0Vzk4VVRWc3YxZ2RrL1EwdVRlQVp3UFlxT2xCVXkrY1pwUXJVVTRsNmZyMWd2aWlQemtmd1BPbXhpT2wzT1VDQnJPSThKalBBRGdUd1A5WnJ3OFFXQW9qTFVHZ2FwaDRWc2YyaTJscUorblc2eTJZb05NTS9qTTNPTlpyeGQ5RjhVYisvbFZPMG8xeTRTSjNwZlFvRnJZOWdFL0hyakQvSWFFcmpQWDZFZkdwQXRGVXViT2RyT21zVGxLU3ZpcXo4UUdUSjVyT2VVYTU4d3RFSjNUdldwOVJGaTB2U1krczlDaU95U1lBM2gyN3dueGo0QnNrU1p2Qm8rcFlrMTVkVHF2S2plTTFSNHJyakhKck1vNlZTVHBONStCQ2tlSHZJbzE4T3BxYXBKOGtQb3pqRmJyQ3ZBckFqNjNYbDFxdjk0N3Rxb2FFRnlPYVRrN2l5UzIxcTVPV2RMSTBpTWJoYTBhNUN3dDlMczh4eXA5Sk44cjlDc0RGNGtQWmpLZkdGZVBYVzY4UHQxNFBaVE1iemtyUmRISVN6d1hDdHRUT1NUelpmakVORXlpYWFqbUFkeFdNQ3M4eEtsTHVFaHd0UHBUTkNvdVdEbzNKK2lMcnRlNzU4VEJKcDFGQzNmQk5HWkdSOUNNWGRvQmVrdkYrSnVscHVJTTBUZlV1bzl3TkJhUENjNHlLbExzRXAzQmpvMWFFTGMvM0FuQ0o5Zm9DNi9WcnJOZDluRG5rakFHTmtsczNMT204dWphemRhdTBoSUJySGFpazBITHhjNFUvaytlWWJFdU1jaXRIUlNBNVNUZktyUVp3a1BTSXRteW5VQThINEJycjlVSFc2ODE2TkhaZWpHZ1V0bCtzamtsbkdzYUxTZ25uMHQ1amlDYlBNZG1tL2Yyck01TWVmQlBBT2RLajJnRmJBL2hJTElVNXpucjl4QjZNbVkvMWFCUzJYNnlPU1dlYW5BWEpvUXZPeGkyTm03cGxSV2pzWUpTN2ZReWpZaG1vYkdXVDlQaW9kZjk0MGxMN3drWWIrd0c0M0hwOXV2WDZSWEZ6aEU2Sm16WTltdWNMamNERXN6bytkYWd1bEZBdHpuZy9reWRDUEk5ZWE1UnpwYU5odmQ0Y2dMUU5EV2xkMHpZQ3FEdVRIaEwxcXdDOGc0SHVuRjBBbkFIZ1Y5YnJmYXpYRzNab2dIeWtSOU5oQjQ3cWNtYUdONHlMMGFXNElaWm8xc1ZyRmdYN0crWEd0VThNenpFcVh1NnlsbEh1c3dBV2lROXZOKzBBNFBQaERzMTYvWUY0dDk0MnprclJkRGc3WEIzYkwxYkhtei9LOWE5R3VlUEhHRVdlWXpTZUpEM2FOMnkrSXo3RTNSWEtTdzZMZGV1ZnNsNC9yc1dSTWttbjZkUk9QSzNYV3dyYlVqc244V1NTbm9acmFPUUtUMkJlYjVUNzlKZ2p3SE9NeHBla3g3WXhCa0R4V2kwcUtqem1mak9BcTZ6WHAxaXZuOUZDZURsalFLUGNuMWszTE9tOENvbERUbjltN2phYWh0Y3NtWllCMk5VbzEwU2xBTTh4S2wrVFBwbFJMcHpRZncvZ1orSkQzWDFoUWVtckFWeGt2ZjZCOWZwWkRZNllGeU1hWlRIcmhpdTczaWgzZjhiN3BTWHBMSGVoVkZjQ2VKWlI3b3lHSXNkelRMYWxScmw3cG90QWtTUWRmMHJVWHdqZ085SWozaU03QTdqUWV2MHQ2L1ZqR3hnMnkxMW9GTFpmckk0encybTQxb0ZTbkFoQUcrV3VhREJxUE1ka20vRWFWU3hKeHdPSit0MEFYZ25nd3dCeWRzU2pacjBpdG04TUMwelhHK1AveklzUmpjSWt2VHJPREtlcGZXNVpyeDhPWU5PV3hrM051akg4RGhybDNoRHptQ2J4ZDFHMkdhOVJSWk4wUEpDb3J6SEtIUUxnSCtLSlQvMndmbHhnZW9uMStrbWxSMnk5M2dEQUFwNExOQUlUeitxNEVESU5PK0hRVEVKQ2ZpU0FKeGpsVG0wNlV0YnJSd0Y0SlA5Q29qV2JwRTh3eXAwTllIc0FuK2FzZXEvc0dOWVdXSy8zS2p4b3poYlFkSmlrVjVjek14eHV4QmUyTU9hMkxESEszWmZ4ZnpOSkg2NTdBWHdDd09PTWN1ODN5dDNWMHBIeUhLUG15bDJtQ25YcVJybC9CZkJNQUdlTC8xUDBSOWo5YkZFb2Z5azRZcmFab3VuazFsbExPcmR5U29QK0xDNGNsK0thek9Qa3hNTHczQWJnQ0FCL2FaUjdoMUh1NXBhUGtMK0wxRjZTUHNFb2Q3RlJMblIvZVRHQTB6bXozaHVIV2ErUEtqUll6aGpRZEhKMjBKd1BZTDZneU9ZOGRaQ1dkUDQ2OC8xTTBvZmpVZ0Q3QWRqR0tQZnZScm1iT25Kay9GMmtHU2VwNWpZWkhxUGNtUURPdEY3L1pkaG1GOEErY2JNZDZxNzNXcS92Tk1vZG1UbENYb3hvRko4NWs3NmxvS2l1Q1MwWU05NHZMZW04TFBQOXZHYjEyeDBBdmdiZ2VLTmNWL2R4NFRsRzdjK2tUMldVdThZb2QxQzRxd1h3VHdCK0l2N1AxRzFIV0s5TjVnaDVNYUpSbHNRTjBlcmFRbEJVUTZ4V1pieGYybmZ3RjVudjV6V3JmOEpDMEsvRURSWWZZNVI3YzRjVGRQQnBqWGgzR09YdW5Da0lqYzZrVHhVWDlad2NYdGJySndNNEFNQS9BOWk0elhIUlNDZUV2NUZSYmtuTjhMRDJqa2JKYmIrNHVhQ29jb0Z0ZGZjWDJBV2IxNngrQ0VuTzkrTWVMZDh4eXEzbzBkaVpwTXMyNjFQa1ZtYlNSekhLWFdhVWV3dUFyZUwyOWIvc3l0aG9yYzBBZkN3akZKeVZvbEZ5RTg5NWdxTEtqWG1xKzhWTXUvak54bnE5WVppSjdkWWgwVFRDUm9ybkFmaFd6eEowOEhkUnZGbXY2WjFKMGljWTVaWWI1VDVqbFB0ckFNOEdjQktBbkRaYVZNNmUxdXVucDM1YTNDQnBLLzRkYUFRbTZkVngwNmZxenM5OFA1T24vdGdtdG5yK25mWDZqZGJyVmlzRXFvcWJaVzNXbnpEVEdQUXZTWi9NS1BlL1JybFEvckkxZ1BjQXVMbzdveFByZlRVT2ZPdXVuMnZVbXR6Mmk1STJBc25wa1Q0M2ZnK2xPQ3Z6T0ptazkwOUkxbzhIY0lYMStsOTZrS3l6bklwbXZhYjNJbkV5eXQxcWxQdFBBTnNDMkNYV25xM3B3TkFrTXRicjFJNGFyTHVqNmVUT3BFdVNFNnVRb004UkVxdlZBTTdOL0F3bVVQMzFPQUJmQVBBYjYvVnJyZGRkelhONEkwaXpKdW05ZUN3MHdTZ1hFdk1maHBmMU90dzF2eW0rSkxWaGExdjRvZDhqN3RaV0ZTOUdOQjBtNmRYbHhFcFMwbmxlZ1Iwa2VjM3F2MjFqcDVkRHJkY2ZETzBZalhKZDJxTkYwamtXZG5nOXJnUGo2SnBMWnh0UHI1TDB5WXh5MThjdjM0Y0E3QllYbTc2Z095TWN0SDlra2s2Rk1FbXZMcWMwU05KMzBCYjRERjZ6aG1PN21LeUhQVDhPangxZ3VwQ3NTM3JDZkhYWTRiVUQ0K2lkM3RjSmg3N0JScmxUakhJdmpGL0drRHorc1FOREc3S2RFaDhoOHRFeGpiTFVLSGR2Wm1TazdGNThjMmFzSkNXZHB4YjRESmJvRFU5b1J2SHRNSHRwdmQ2MUEwY242UnpMWGZRdTFxQVc4eG5scm9oM2E2R1R5QnNMOU1tbDBjS3E5Q2NteElhelVqUktpVm4wWlVJaXkvYUwxZnpVS0plN0dCbE0wZ2N0Sk91bldhOS9hcjNlcGNVRGxmUzd5Q2VtTlEyeTQwYm9qMnVVTzhFb0Y5b0YvazFjUk5LMy9xbGR0MjNDK0ppazB5Z2xMdHk1dGNkOXdTUzltaS9uZm9EMWVuMEFDeHNhTDdYbm1RQk90MTVmWUwxK2ZndWpZSkpPc3hwOFd6eWozQ1ZHdVgzaVJmZWRBSzdzd0xDR29GSUpTeXlMMlVaNnNHaWtFbzlBN3hZUzJ0elpZUWtKd2Fxd09MREE1NFJybXlyd09kUVBPd0U0eDNwOWJsUEp1c0ROc2xqdVVwT1kzdFZHdVQ4YTVUNGU2OWIvSHNBM1lxc3VxbWVMaXU5YTJPY0Z5b21XRlhwSnFiTXVjZUcrdWNCbjlFSHRtYWg0b3l4aFhjaXBScm1sQlQ2SGEyaGsrcnVZclAvQWV2MnNNVWRBMmpuR0pMMG1LY25UZytLcTdyUER5M3E5QU1DK0FQWVR0dEZIQ1J0WC9Bd3BqL1J1TThwdFh1S0RyTmQzSnNTM3owbzhBcjFSUUp5UUdhdlFvbmE5Z21QcHF1TUxqWXZsZWJMdEhGN1c2OUR1K2YxR3VYR3NiWk4yanJIY3BTYlJ1MEFhNVpZWTVUNFV2ekN2QUhDR29Gbk1wa2k1R0pWWXJCWVM5RTJGSk9nb2RPRmVLbVJqczV4WVNmZ08vaGJBandwOUZwTjBRa3pXTDdGZW4ycTlmbXJoaUVnNngrNHp5dDNVZ1hIMEVyZHFmeUJadjk4b0Z4NlY3aHdYUlA1WG1CbnR3TkM2ck9wVEdDbVA5VXJORkVoNkRKcDlZeE8rdTZWdWtEcU9QZEpuOXZHNDJWMEpRMXBrR3phUXVhY0Q0K2l6bDhlMmpkK3dYbTlmNkRna2RRL2lMSG9HSnVsVEdPVitiNVI3ZDJ6aitIb0FGM1pxZ04yeHZPSklwTXdZbExvUVNZblhIVWE1T3d0OTF0QVhnOStXdVlQbTBCT0NNS0h5eFlLZk42UjR2VGUyeS8xR0I4YlNkNjhDOEgvVzY2OFdTTmJaSTUwcUVWZVRYcFZSN2o0QWk4TExlaDM2cWg0QTRKOWlqM0Jpa2o0VmsvUTBKV2RYcm9xUHBvZnExbmdOcXF2MG8vcXVPU2EwM1MwNHBxRjhCNWNaNVNZV3MrOXV2WDRSZ0dNQlBLRURZK3VyMFBWbkR3Q3Z0bDZmQk9ERFJybmYxVGdXU2VVdVROSXpNRW12d0NqM2k1Q2tXNi9mQTJBdkFHOEdzRVBuQno1ZVROTFhWYXJrUXNvTVM4a1NsVjhWL0t3dUNrblZ6d2QrakhXRkJQU1lVaDltdlo0N29DWUM2OXdJRytYT3RGN3ZDT0JBQUljQW1OZmUwSHB2RG9DOVF6NFFrL1VQR09WU2tsSDJTS2RLV082U0lEeWVOOHA5eWlqM1pBRFBBL0FWQUN0N2N3QmxWVTJ5V0pPZVJrcVNYdkxDeloyRjVUbzZ0TmN0ZVBRTFl3STJCQS81amhubFZocmxqbUlKVERFVHlmcFYxdXZQV0s5bi9iMnpYb2RPU3d2NmM0alptS1JuWUpKZWsxSHVmS1BjNitKR1BRY0R1S2FYQjFMZnJJLzRyTmVoOWRzR0hUNkdrbGp1a3Fia2hmc3l3VGZMa3QwQzRHT0ZqMzlJMzc5cEoxS01jdGNiNVhZSDhHSnU4RmRFU0x6M0Q3K0wxdXRqWTN2bjZXd2pMUGRpdVVzR0p1bVpqSEszeEptSnh3UFlGY0JwQWxyQytTcEp1cUNFODg2Q3MzbFNZbGJzd20yVUN6dE5YbHpxODZnM1BwaTVvSGFVSVgzL1pyMFJEaVV3QUhhTUUwM3NBcE12Sk90dkJYQzE5ZnJqMHlUcjBscDhNa25Qc0U1TmVud004LzYrSFVUSGhFZnZ0d0o0ellCci9xNk9DMnRudzRRemdmVTZMRXJlcEtsQnQ2ejBoVHYweUg1Mjc2SkFkZjBtdGhjc1RWU1NqbGdDQStBbzYvV1hRL2xRN0dKQ2VjSzIvMjhIOEtZd3N4N2FPaHZsYm8yZktLbXpTN0NmOVZyQ1hoWXBqZ3Y3OUZUNTkxTVhqb2JITUI5b2RlalVCMVhiVXJJZVBRMFhFOVYzTHE5ZG9yek5LTGQ2REFjOHBHdFcwbzF3S0lHSlhVdDJpVjFnSGorK29Za3hMN2JCZkt2MStwUGhaa2hna241SUI4YlFOWit0T3A2cDVTNlNObEtoK241YzhaMnNyMDRqSlY3TGpYSzNGLzdNQ3dDVVhFQkkzZlZWbzl6Wll4cmRrTDZEdFo1V0dlVitFTHVYL1R1QUZlV0hKZEw4bUt6L0liWnlKcm5DazZ0S3MrZ1lrYVJ6TzJTcTR2eUsvNDd0RjlPdy9XSk5zUzc5dEtZT2dGb1RidTdlT2NiL2ZDalhyTHNubFZja0MrV01ScmtqQUd3SDROdnRIY2JnUEpKUEtNUUxpN1o5MVNBd1NhZFUxeG5scnFqNEhyWVRUTU40NWZsV1V3ZEFyVG5RS0hmVE9QNXo2N1VhME5Qa0l0K3gwUHZiS1BkS0FDK3AyQ3lBaUdhVzlOMmNtcVJMcTVXaWRGOUplQWVUempRc0Q4cnovVGpUU3NOMG1sR3U1UGIvVXkySTNUbUdvT2pDYkpiQUVCWERKSjNHNnBRcUgyNjkzanpXNFVuQUpEM05XRnB5eFk1RFh4N2p1S2s5b1NmNlBtUCszOFhYbzgrRUpUQkVSU1I5TjFudVFpbCtiNVNydXJ1amxITnBSVTd0NXhSU0ZtNlBzMi91NThiNDJkU2V2WTF5UzhmOHY0dHJ2MWdIUzJDSXN0UkwwcTNYYzJJTFJxTHBwUFFsWnZ2RkJOYnIwRmYzTVUwTnVtWGpUQ0RDN3FObjlTVVFWTWxIWXJuRnVBM3BtalgycmRoWkFrTlVTKzF5bHdVaitxWVRUUWk3MFoyUUVBM1dWNmRoai9SeVNtOFZUKzA1cThFK3kwUDZEaGJ2b0RRS1MyQ0lrdFZPMGxucVFqTTUzaWgzVzBLRVdGK2RSa3E4d28vNkxXUCtQOElNMzgvSC9IL1ErSVVmczljYTVlNXZLTllzZDZtSkpUQkVsWVJyMlkwcG9XS1NUbFhjQytDamlaRmlrcDZHNVVHRnhCNjA3MnZxZ0dnczdnVHcwb0xyUGFvWXlqWHJ2bkcxcVp3TlMyQ0laclE0ZGFma3lVazZPN3ZRZEk0MXlpWGQvVEhwVE1ieW9JSmlzbkJlVXdkRlJZV05xZll3eXYyNjRiQ3lSM29CVTBwZ3Z0dm1XSWc2SnZtN3lTU2RaaE5LRTQ2b0VTVW1uV2tZci9MZUhoOHZVcis4c2FHRm9nK3lYbThCWUtPQm5DZU4xS1BQSnBiQW1QQkVCTURWWFJnVFVjdVNuN3l6M0lWbTgyNmozTEtVS0Ztdkh4VzNQNWFnVkxtTGxKdmt4aElJbzl3dkFSelQxUDlIUllRZFJSZTFFRXJXbzQrSlVlNTdBSjRFNEFPeGRKSklLaWJwVk5UM2pYSmZxdkdCVWhMT2xRQksxWDV5ZDlieE9CVEFOUTMvbjFUUHdVYTVvMXVLM1pDK2Y1MUswdkZBb242dlVlNkRBTFpuQ1F3SmxsWHVJcVdHbUtvSm5WemVWRE5XVWhMT2ErTWl4U3pXNi9VQkxHejNVQnJUZE5lSnU4SkdPQURXdEh2WU5JdVFvQi9WWXBDR2RNMGE1MlpoV1l4eTE3QUVoZ1NybDZSYnI3Y0VzQUhQSEpwazd4cUxSU2V3dmpwTnVFRldUUTI2WlkwbkVFYTU4d0VjMmJWQTBJUGUxWEtDam9GZHN6cWJwRTlnQ1F3SmxWenVPVEdUemxJWG11endlQkd0aSswWDAwaDVpaFc2ZGl4cDZmOCtETUNaTGYzZk5GcDR1dkVHbzl4L2R5QStyRWx2R0V0Z1NCalBKSjFLT0RrazZabWZJeVhwNUVaR2FhNHp5clZTZGhJM3hObVRqOWc3STVRaHZjd29kMkpIQmpTVWE5YXExTTFTMnNZU0dCTGlScVBjeXRSRG5ValNXWTlPaUZ0d3Y2RkFuVFhMWGRJd1hnMklPK2J1QXFESkRYTG9vY0pzMG5PTWN0L3ZVR3lHOGgxYzNOYU5jQzZXd05EQTFaclU0MHc2VFRnblhDZnIzT21Od0tRekRkc3ZOc1FvZHhXQVhlT09sdFM4bndCNFpteVAyUW5XNjAwQmJEeVFjNkVYcFM3VFlRa01EUmlUZEtydHRMZ0Y5ejI1SWJSZXp3ZXdtWkEvUmFta2srMFhHMlNVK3htQUZ6TlJiMXlvUFg5Qlcxdld6NEQxNkIzREVoZ2FvRnJmellra25idU55blVjZ0ZlVVNOQWpLZWZTYWdBM0ZQb3NQbmxvbUZIdW9waW9KMjNVUmJYY0hxOHhvWXZMNmc2R2NFamxucDN2N0pKaVNnbk1mZjBaT2RGRE1FbW5KS0dzNVMxR3VRTUsvM0JLU1Rpdmo0c1JzMWl2NXdMWXV0MURhVXluRW9pWXFEODcvQzA3TUp5aCtpR0FKeHZsVHUzdzhiSDlZb2ROS29FSnlYcVgxakVRcGFqMTVQMWgxdXZOQWN4bnFFWDVIWUNkakhLZkdzTkJzLzFpbXJDSjBaeW1CdDJ5emlVUVJybGZBL2hiQUQvcndIQ0daRG1BTndONFNjWitDMDFodVVzUEdPVitiNVFMNjBsZVB1VGpwTUdxUFpQT2VuUTV3cXIvVHdCNGlsSE9qZW1vMlg0eGpaVHZYM2pxc0xnRDQzZ0lvMXdvVzNwZUxQMmlmR0hXZkR1ajNHZEs3TWpiZ0NFOVNSNTg4bXFVczNGaDZZZFlBa005VXV1N09aZnRGOFg0WHdCdk5jcjlmTXdIelBycU5GTGl0YmlqOWNockdlWENqLzBCMXV0ekFZUW5USnQwWUZoOTgxc0E3K3hZYThVcWhwS2tyK25xalhCcFJya1ZBQTYxWG44UndERUEvbkZZUjBnRGMzTW8yNnB6U0p4Skg3NWZBTmpOS1Bmc0JoSjBNRWxQSnVVbXVmWDJpMVVZNWI0YWFxaGpMVFZWRS9yUEh3aGdoeDRtNkJqUU5ldUdMdDhJandOTFlLZ25hdi8rTVVrZkpoKzNRQSt6QzA4enluMm53YU1VczN0bW9jL2hUVTNIaFBJWG8xelk5R2lQdnUzZTJMQmxjWGZpeHhubGpqYktyZXJiQVZpdkh6R2dweVppazFTV3dGREgxZjV1em1WbmwwRzVFa0NZQ2Z5U1VhN3gzckxXNncwQVBHYllJWDRReTEzUzlDNkJNTXA5M1hwOU9vQjN4NWxpTHJCL1FKZzUvMlI0R2VYNnZudnJrSjVraVo1Slpna01kUmlUZEtIK0NPQkNBRDhDY0xwUjd2S1d3eURsWEZwVHNHMmZsSmoxc2pXY1VXNTUvT0VQZGVvSEFkZ2Z3SVlkR0ZvYnJvb0x6NzlRY0YrRnRnM3BKcmtYSldYakZrcGd3cTdDMW1zVHoxZFdDMURiYXYvK3plVUozR2sremxxRnpVQnVqbmRqNFhWWmZQM1dLTGVtUXdjZzVWeTZvY1NqZmV1MVlqZWNmb2k3Wkw3RGV2MWhBRytQN1FVbDdLd2JhcHkvSFR2Zm5OMlRiaTBwMkg1eG9FSUpqUFU2bEgwZURPQTlBRGFRSGhOcURaUDBnYm03ai9XZEFNNFIwaFVqZXhPalNhU1VCeTN2d0JpeXhmS09RMkt5dm51Y1dYOU96dzlybE5BTjZzc0FUakhLTGUzZThJbzVIc0JKQXptV3V6c3docW5ybzhrQUFBSVpTVVJCVkU3cFNBbk0xK04xZ3VTNnErNlJLNTQwUkVUMVdhOGZDK0ExQVBZRXNHTlBReGttQmM0RGNGcVlPVGZLc1hTQ0JxZWxFcGlQR09YZXg3T0o2bUNTVGtSVWlQVTYvUGkvSk03WWhRMlNIdEhoMkliZFZzK09yM09NY3NzNk1DYWlzYkplYndUZy9YRkIrUG9OUkh0L285eG4rVmVsT3Bpa0V4R05nZlY2VHB4WmZ5NkFwd040YXRpSkU4Q2NGdUlkV2tsZUN1QmlBR0czNFlzRzBKbUZxRGJyOWJZQWpnV3c4NWlqdUxOUjdneitwYWdPSnVsRVJBMnhYb2ZPTUU4QThIZ0FJVWtJcFRKYkE5Z1N3TUs0cHFQTzdONWRNUkZmSEYraCs5RHZBSVNPVDFkd2xweG9OT3YxS3dFY1BjWkYvRTgweWwzSjhGTWRUTktKaURva0p2S1BCTEJSbkhYZmVKclJyWWlkbis2UXR0TWtVVW5XNjNteEJPYmZ4bEFDczFIZExlR0ptS1FURVJHUmVHTW9nYm5aS0xlbDlMaFNmUTlqN0lpSWlFZzZvOXhWUnJsZEFMeXEwT1pRN0YxUFdaaWtFeEVSRVVWR3VXL0ZSZDVIQWxpWkVSY202WlNGU1RvUkVSSFJKRWE1ZTR4eW9VNTlCd0EvckJrYjdqZEFXWmlrRXhFUkVZMlFXUUxEbVhUS3dpU2RpSWlJYUFZMVMyQ1lwRk1XSnVsRVJFUkVzNmhSQXNNa25iS3dCU01SRVJGUm9nb2JJVzFzbEx1TGNhVzZPSk5PUkVSRWxHaFNDY3hIQWF5YTh1N2JtS0JUTGlicFJFUkVSRFhFRXBpREFPd0k0RWVUUG9HbExwU05TVG9SRVJGUkJxUGNGVWE1RndGNERZREZBSzVsUEltSWlJaUlPc0o2UGQ5Ni9SeitQU2dMZ1A4SEpNRlF2dEt5MDlRQUFBQUFTVVZPUks1Q1lJST0iLz4KPC9zdmc+Cg=="
+    table.insert(graphics,{
+      Type = "Svg",
+      Image = Logo,
+      Position = {0,5},
+      Size = {300,64},
+      ZOrder = 1000
+    })
+    table.insert(graphics,{
+      Type = "Text",
+      Text = "MXA-710",
+      Position = {300, 5},
+      Color = gaColor.Green,
+      Size = {185,64},
+      FontSize = 40,
+      Font = "Open Sans",
+      FontStyle = "Extrabold",
+      HTextAlign = "Left"
+    })
+    table.insert(graphics,{
+      Type = "Text",
+      Text = "©",
+      Position = {480, 20},
+      Color = gaColor.Green,
+      Size = {20,20},
+      FontSize = 16,
+      Font = "Open Sans",
+      FontStyle = "Extrabold",
+      HTextAlign = "Left"
+    })
+    table.insert(graphics,{
+      Type = "Header",
+      Text = "Setup",
+      Position = {15,70},
+      Size = {530,11},
+      Color = gaColor.Green,
+      FontSize = 16,
+      Font = "Roboto",
+      FontStyle = "Bold",
+      HTextAlign = "Center",
+    })
+    local gaLabels = {
+      Pos = {X={20,20,20,20,20,20,20,20,20,20,20,390},Y={110,130,250,270,290,310,330,350,370,390,410,430}},
+      Text = {"IP Address:","Connection Status:","Installation Type:","LED Brightness:","LED Color When Muted:","LED Enabled When Muted:","LED Color When Unmuted:","LED Enabled When Unmuted:",
+              "ID Mode (Flash LEDS):","Encryption:","Enable Metering:","Version "..PluginInfo.Version,}
+    }
+    local gaComboLayouts = {
+      Pos = {X={185,185,185,185},Y={250,270,290,330,}},
+      Text = {"DEVICE_INSTALLATION","LED_BRIGHTNESS","LED_COLOR_MUTED","LED_COLOR_UNMUTED"},
+      PrettyName = {gsCat5.."Installation Type",gsCat5.."LED Brightness",gsCat5.."LED Color (Muted)",gsCat5.."LED Color (Unmuted)"}
+    }
+    local gaBtnLayouts = {
+      Pos = {X={285,285,285,285,285},Y={310,350,370,390,410}},
+      Text = {"LED_STATE_MUTED","LED_STATE_UNMUTED","FLASH","ENCRYPTION","ENABLE_METERING"},
+      PrettyName = {gsCat5.."LED Enabled (Muted)",gsCat5.."LED Enabled (Unmuted)",gsCat5.."ID Mode (Flash LEDS)",gsCat5.."Encryption",gsCat5.."Enable Metering"}
+    }
+    --Basic Labels
+    for i=1,#gaLabels.Pos.X do
+      table.insert(graphics,{
+        Type = "Text",
+        Text = gaLabels.Text[i],
+        Position = { gaLabels.Pos.X[i], gaLabels.Pos.Y[i]},
+        Color = gaColor.White,
+        Size = {160,16},
+        FontSize = 12,
+        HTextAlign = "Right"
+      })
+    end
+    --Named Text Components Layouts
+    for i=1,#gaComboLayouts.Pos.X do
+      layout[gaComboLayouts.Text[i]] = {
+        PrettyName = gaComboLayouts.PrettyName[i],
+        Style = "ComboBox",
+        Position = { gaComboLayouts.Pos.X[i], gaComboLayouts.Pos.Y[i]},
+        Size = {250,16},
+        Color = gaColor.White,
+        FontSize = 14,
+        HTextAlign = "Center",
+        IsReadOnly = false
+      }
+    end
+    for j=1,#gaBtnLayouts.Pos.X do
+      layout[gaBtnLayouts.Text[j]] = {
+        PrettyName = gaBtnLayouts.PrettyName[j],
+        Style = "Button",
+        ButtonStyle = "Toggle",
+        ButtonVisualStyle = "Flat",
+        CornerRadius = 5,
+        Margin = 1,
+        Position = { gaBtnLayouts.Pos.X[j], gaBtnLayouts.Pos.Y[j]},
+        Size = {50,16},
+        Color = gaColor.Purple,
+        OffColor = gaColor.LtGray,
+        UnlinkOffColor = true,
+      }
+    end
+    layout["IPAddress"] = {
+      PrettyName = "Connection Info~Unit IP Address",
+      Style = "Indicator",
+      Position = {185,110},
+      Size = {250,16},
+      Color = gaColor.White,
+      FontSize = 14,
+      HTextAlign = "Center",
+      IsReadOnly = false
+    }
+    layout["Status"] = {
+      PrettyName = "Connection Info~Connection Status",
+      Style = "Indicator",
+      Position = {185,130},
+      Size = {250,100},
+      Color = {255,255,255},
+      FontSize = 16,
+      HTextAlign = "Center",
+      IsReadOnly = true
+    }
+    layout["DEVICE_AUDIO_MUTE"] = {
+      PrettyName = "Device Audio Mute",
+      Style = "Button",
+      ButtonStyle = "Toggle",
+      ButtonVisualStyle = "Flat",
+      CornerRadius = 5,
+      Margin = 1,
+      Position = {100,430},
+      Size = {50,16},
+      Color = gaColor.Red,
+      OffColor = gaColor.LtGray,
+      UnlinkOffColor = true,
+    }    
+    layout["DEV_MUTE_STATUS_LED_STATE"] = {
+      PrettyName = "Device Muted State",
+      Style = "Led",
+      Position = {155,430},
+      Size = {16,16},
+      Color = gaColor.Red,
+      OffColor = gaColor.Green,
+      UnlinkOffColor = true,
+      Margin = 3,
+      IsReadOnly = true,
+    }
+    table.insert(graphics,{
+      Type = "Text",
+      Text = "Device Mute",
+      Position = { 10,430 },
+      Color = gaColor.White,
+      Size = {90,16},
+      FontSize = 12,
+      HTextAlign = "Center"
+    })
+  end
+  return layout, graphics
+end
+
+--Start event based logic
+if Controls then
+  --Requirment Librarys
+  -------------------------------------------------
+  json = require("rapidjson")
+  require("LuaXML")
+  
+  --TCP Socket Defined
+  ------------------------------------------------------------
+  gsIPAddress = Controls["IPAddress"].String
+  gsPort = 2202
+  
+  TCPClient = TcpSocket.New() --Define Socket
+  TCPClient.ReadTimeout = 0
+  TCPClient.WriteTimeout = 0
+  TCPClient.ReconnectTimeout = 5
+  
+  --Debug Function
+  ---------------------------------------------------------
+  function DebugFormat(string) -- Format strings containing non-printable characters so we can see what they are
+    local visual = ""
+    for i=1,#string do
+      local byte = string:sub(i,i)
+      if string.byte(byte) >= 32 and string.byte(byte) <= 126 then
+        visual = visual..byte
+      else
+        visual = visual..string.format("[%02xh]",string.byte(byte))
+      end
+    end
+    return visual
+  end
+  
+  DebugTx = false
+  DebugRx = false
+  DebugFunction = false
+  DebugSVGImageGen = false
+  DebugPrint = Properties["Debug Print"].Value
+  
+  -- A function to determine common print statement scenarios for troubleshooting
+  function SetupDebugPrint()
+    if DebugPrint=="Tx/Rx" then
+      DebugTx,DebugRx=true,true
+    elseif DebugPrint=="Tx" then
+      DebugTx=true
+    elseif DebugPrint=="Rx" then
+      DebugRx=true
+    elseif DebugPrint=="Function Calls" then
+      DebugFunction=true
+    elseif DebugPrint=="SVG Image Generation"then
+      DebugSVGImageGen = true
+    elseif DebugPrint=="All" then
+      DebugTx,DebugRx,DebugFunction,DebugSVGImageGen=true,true,true,true
+    end
+  end
+  
+  SetupDebugPrint()
+  
+  --Global Variables
+  -----------------------------------------------------------
+  gsSVGFooter = "</svg>"
+  gaColorChoices = {["Red"] = "#990000", ["Blue"] = "#006298", ["Purple"] = "#66435A", ["Green"] = "#009933", ["Brown"] = "#4A3C31", ["Yellow"] = "#F5BB17", ["Orange"] = "#F25B19", ["Black"] = "#191919", ["White"] = "#EDEBEB", ["LtBlue"] ="#6EC6F1" }
+  gaColor = {gaColorChoices.Red,gaColorChoices.Blue,gaColorChoices.Purple,gaColorChoices.Green,gaColorChoices.Yellow,gaColorChoices.Brown,gaColorChoices.Orange,gaColorChoices.Black}
+  gsMainLineOpacity = "1.0"
+  gsSecLineOpacity = "0.5"
+  giNumofActiveMics = 0
+  
+  --Scaling Math Function
+  -----------------------------------------------------------
+  function scaleBetween(unscaledNum, minAllowed, maxAllowed, min, max)
+    local liVal = (maxAllowed - minAllowed) * (unscaledNum - min) / (max - min) + minAllowed
+    return liVal
+  end
+  
+  --Value Constants
+  -----------------------------------------------------------
+  gsModel = "MODEL"
+  gsSerialNum = "SERIAL_NUM"
+  gsFWVersion = "FW_VER"
+  gsAudioIPAdd = "IP_ADDR_NET_AUDIO_PRIMARY"
+  gsAudioIPSubnet = "IP_SUBNET_NET_AUDIO_PRIMARY"
+  gsAudioIPGateway = "IP_GATEWAY_NET_AUDIO_PRIMARY"
+  gsCtrlMacAddress = "CONTROL_MAC_ADDR"
+  gsDeviceID = "DEVICE_ID"
+  gsNADeviceName = "NA_DEVICE_NAME"
+  gsChannelName = "CHAN_NAME"
+  gsNAChannelName = "NA_CHAN_NAME"
+  gsFlash = "FLASH"
+  gsAudioClipIndicator = "AUDIO_OUT_CLIP_INDICATOR" 
+  gsDigAudioGain = "AUDIO_GAIN_HI_RES"
+  gsDigAudioGainPostGate = "AUDIO_GAIN_POSTGATE"
+  gsAudioLvlRMS = "AUDIO_IN_RMS_LVL"
+  gsAudioLvlPeak = "AUDIO_IN_PEAK_LVL"
+  gsDeviceAudioMute = "DEVICE_AUDIO_MUTE"
+  gsChAudioMute = "AUDIO_MUTE"
+  gsPresetName = "PRESET_NAME"
+  gsEncryption = "ENCRYPTION"
+  gsPEQ1 = "PEQ 1"
+  gsPEQ2 = "PEQ 2"
+  gsPEQ3 = "PEQ 3"
+  gsPEQ4 = "PEQ 4"
+  gsNumofActiveMics = "NUM_ACTIVE_MICS"
+  gsMuteStatusLEDState = "DEV_MUTE_STATUS_LED_STATE"
+  gsSoloAutomixCh = "CHAN_AUTOMIX_SOLO_EN"
+  gsLEDBrightness = "LED_BRIGHTNESS"
+  gsLEDUnmuteColor = "LED_COLOR_UNMUTED"
+  gsLEDMuteColor = "LED_COLOR_MUTED"
+  gsLEDMutedState = "LED_STATE_MUTED"
+  gsLEDUnmutedState = "LED_STATE_UNMUTED"
+  gsLEDInState = "DEV_LED_IN_STATE"
+  gsBypassEQ = "BYPASS_ALL_EQ"
+  gsBypassINTX = "BYPASS_IMX"
+  gsEQContour = "EQ_CONTOUR"
+  gsAutomixGateStatus = "AUTOMIX_GATE_OUT_EXT_SIG"
+  gsDevInstallType ="DEVICE_INSTALLATION"
+  gsLobeBeamAngle = "BEAM_ANGLE"
+  gsLobeBeamWidth = "BEAM_W"
+  gsPresets = "PRESET"
+  gsLastError = "LAST_ERROR_EVENT"
+  gsArray = { gsModel,gsSerialNum,gsFWVersion,gsAudioIPAdd,gsAudioIPSubnet,gsAudioIPGateway,gsCtrlMacAddress,gsDeviceID,gsNADeviceName,gsChannelName,
+              gsNAChannelName,gsFlash,gsAudioClipIndicator,gsDigAudioGain,gsDigAudioGainPostGate,gsAudioLvlRMS,gsAudioLvlPeak,gsDeviceAudioMute,
+              gsChAudioMute,gsPresetName,gsEncryption,gsPEQ1,gsPEQ2,gsPEQ3,gsPEQ4,gsNumofActiveMics,gsMuteStatusLEDState,gsSoloAutomixCh,gsLEDBrightness,gsLEDUnmuteColor,
+              gsLEDMuteColor,gsLEDMutedState,gsLEDUnmutedState,gsLEDInState,gsBypassEQ,gsBypassINTX,gsEQContour,gsAutomixGateStatus,gsDevInstallType,gsLobeBeamAngle,gsLobeBeamWidth,gsPresets,gsLastError}
+  
+  gcModel = Controls["MODEL"]
+  gcSerialNum = Controls["SERIAL_NUM"]
+  gcFWVersion = Controls["FW_VER"]
+  gcAudioIPAdd = Controls["IP_ADDR_NET_AUDIO_PRIMARY"]
+  gcAudioIPSubnet = Controls["IP_SUBNET_NET_AUDIO_PRIMARY"]
+  gcAudioIPGateway = Controls["IP_GATEWAY_NET_AUDIO_PRIMARY"]
+  gcCtrlMacAddress = Controls["CONTROL_MAC_ADDR"]
+  gcDeviceID = Controls["DEVICE_ID"]
+  gcNADeviceName = Controls["NA_DEVICE_NAME"]
+  gcChannelName = Controls["CHAN_NAME"]
+  gcNAChannelName = Controls["NA_CHAN_NAME"]
+  gcFlash = Controls["FLASH"]
+  gcAudioClipIndicator = Controls["AUDIO_OUT_CLIP_INDICATOR"]
+  gcDigAudioGain = Controls["AUDIO_GAIN_HI_RES"]
+  gcDigAudioGainPostGate = Controls["AUDIO_GAIN_POSTGATE"]
+  gcAudioLvlRMS = Controls["AUDIO_IN_RMS_LVL"]
+  gcAudioLvlPeak = Controls["AUDIO_IN_PEAK_LVL"]
+  gcDeviceAudioMute = Controls["DEVICE_AUDIO_MUTE"]
+  gcChAudioMute = Controls["AUDIO_MUTE"]
+  gcPresetName = Controls["PRESET_NAME"]
+  gcEncryption = Controls["ENCRYPTION"]
+  gcPEQ1 = Controls["PEQ_1"]
+  gcPEQ2 = Controls["PEQ_2"]
+  gcPEQ3 = Controls["PEQ_3"]
+  gcPEQ4 = Controls["PEQ_4"]
+  gcNumofActiveMics = Controls["NUM_ACTIVE_MICS"]
+  gcMuteStatusLEDState = Controls["DEV_MUTE_STATUS_LED_STATE"]
+  gcSoloAutomixCh = Controls["CHAN_AUTOMIX_SOLO_EN"]
+  gcLEDBrightness = Controls["LED_BRIGHTNESS"]
+  gcLEDUnmuteColor = Controls["LED_COLOR_UNMUTED"]
+  gcLEDMuteColor = Controls["LED_COLOR_MUTED"]
+  gcLEDMutedState = Controls["LED_STATE_MUTED"]
+  gcLEDUnmutedState = Controls["LED_STATE_UNMUTED"]
+  gcLEDInState = Controls["DEV_LED_IN_STATE"]
+  gcBypassEQ = Controls["BYPASS_ALL_EQ"]
+  gcBypassINTX = Controls["BYPASS_IMX"]
+  gcEQContour = Controls["EQ_CONTOUR"]
+  gcAutomixGateStatus = Controls["AUTOMIX_GATE_OUT_EXT_SIG"]
+  gcDevInstallType = Controls["DEVICE_INSTALLATION"]
+  gcLobeBeamAngle = Controls["BEAM_ANGLE"]
+  gcLobeBeamWidth = Controls["BEAM_W"]
+  gcPresets = Controls["PRESET"]
+  gcLastError = Controls["LAST_ERROR_EVENT"]
+  gcArray = { gcModel,gcSerialNum,gcFWVersion,gcAudioIPAdd,gcAudioIPSubnet,gcAudioIPGateway,gcCtrlMacAddress,gcDeviceID,gcNADeviceName,gcChannelName,
+              gcNAChannelName,gcFlash,gcAudioClipIndicator,gcDigAudioGain,gcDigAudioGainPostGate,gcAudioLvlRMS,gcAudioLvlPeak,gcDeviceAudioMute,
+              gcChAudioMute,gcPresetName,gcEncryption,gcPEQ1,gcPEQ2,gcPEQ3,gcPEQ4,gcNumofActiveMics,gcMuteStatusLEDState,gcSoloAutomixCh,gcLEDBrightness,gcLEDUnmuteColor,
+              gcLEDMuteColor,gcLEDMutedState,gcLEDUnmutedState,gcLEDInState,gcBypassEQ,gcBypassINTX,gcEQContour,gcAutomixGateStatus,gcDevInstallType,gcLobeBeamAngle,gcLobeBeamWidth,gcPresets,gcLastError}
+  
+  --Combo Box Choices
+  ------------------------------------------------------------
+  gaBeamWidth = {"NARROW", "MEDIUM", "WIDE"}
+  gaInstallType = {"CEILING", "WALL_HORIZONTAL", "WALL_VERTICAL", "TABLE"}
+  gaLEDColor = { "RED", "ORANGE", "GOLD", "YELLOW", "YELLOWGREEN", "GREEN", "TURQUOISE", "POWDERBLUE", "CYAN", "SKYBLUE", "BLUE", "PURPLE", "LIGHTPURPLE", 
+                  "VIOLET", "ORCHID", "PINK", "WHITE"}
+  gaLEDBrightness = {"0: Off", "1: 20%", "2: 40%", "3: 60%", "4: 80%", "5: 100%"}
+  
+  for x, lobes in pairs (gcLobeBeamWidth)do
+    lobes.Choices = gaBeamWidth
+  end
+  gsPresetChoices = {}
+  gcDevInstallType.Choices = gaInstallType
+  gcLEDUnmuteColor.Choices = gaLEDColor
+  gcLEDMuteColor.Choices = gaLEDColor
+  gcLEDBrightness.Choices = gaLEDBrightness
+  
+  --SVG Generation Functions
+  ----------------------------------------------------------
+  --Calc Angle on Radius
+  function CalcAngleForSVG(lsAngle,lsRadius)
+    lsAngle = math.rad(lsAngle) --Convert Angle to Radians
+    
+    local x1 = math.cos(lsAngle)*lsRadius + 200 --Figure Out x Coordinate and add Center of Circle
+    local y1 = math.sin(lsAngle)*lsRadius + 200 --Figure Out y Coordinate and add Center of Circle
+    
+    return math.floor(x1),math.floor(y1)      --Round Up and Return Values
+    end
+    
+    --Generate SVG Header
+    function GenSVGHeader(lsWid, lsHght, lsViewBox) 
+      return(string.format("<svg width=\"%s\" height=\"%s\" viewbox=\"%s\" xmlns=\"%s\" version=\"%s\">",lsWid, lsHght, lsViewBox,"http://www.w3.org/2000/svg","1.1"))
+    end
+    
+    --Generate SVG Circle
+    function GenCircleSVG(lsXVal, lsYVal, lsRadius, lsFillColor,lsFillOpacity,lsStrokeColor,lsStrokeWidth)
+      return(string.format("<circle cx=\"%s\" cy=\"%s\" r=\"%s\" fill=\"%s\" fill-opacity=\"%s\" stroke=\"%s\" stroke-width=\"%s\" />",lsXVal, lsYVal, lsRadius, lsFillColor,lsFillOpacity,lsStrokeColor,lsStrokeWidth))
+    end
+    
+    --Generate SVG Ellipse
+    function GenEllipseSVG(lsTranslate,lsRotate,lsRX,lsRY,lsFillColor,lsStrokeColor,lsStrokeWidth)
+      return(string.format("<ellipse transform=\"translate(%s) rotate(%s)\" rx=\"%s\" ry=\"%s\" fill=\"%s\" stroke=\"%s\" stroke-width=\"%s\" />",lsTranslate,lsRotate,lsRX,lsRY,lsFillColor,lsStrokeColor,lsStrokeWidth))
+    end
+    --Generate SVG Rectangle
+    function GenRectSVG(lsXVal, lsYVal, lsWidth, lsHeight,lsFillColor,lsStrokeColor,lsStrokeWidth)
+      return(string.format("<rect x=\"%s\" y=\"%s\" width=\"%s\" height=\"%s\" fill=\"%s\" stroke=\"%s\" stroke-width=\"%s\" />",lsXVal, lsYVal, lsWidth, lsHeight,lsFillColor,lsStrokeColor,lsStrokeWidth))
+    end
+    --Generate SVG Line
+    function GenLineSVG(lsXStart,lsYStart,lsXEnd,lsYEnd,lsStrokeColor,lsOpacity,lsStrokeWidth)
+      return(string.format("<line x1=\"%s\" y1=\"%s\" x2=\"%s\" y2=\"%s\" stroke=\"%s\" stroke-opacity=\"%s\" stroke-width=\"%s\" stroke-linecap=\"%s\" />",lsXStart,lsYStart,lsXEnd,lsYEnd,lsStrokeColor,lsOpacity,lsStrokeWidth,"round"))
+    end
+    
+    --Generate SVG Text
+    function GenTextSVG(lsXVal,lsYVal,lsRotation,lsFontSize,lsColor,lsText)
+    return(string.format("<text x=\"%s\" y=\"%s\" dx=\"%s\" dy=\"%s\" rotate=\"%s\" font-family=\"%s\" font-size=\"%s\" font-weight=\"%s\" fill=\"%s\" > %s </text>",lsXVal,lsYVal,"-5","6",lsRotation,"Roboto",lsFontSize,"bold",lsColor,lsText))
+    end
+    
+    --Generate SVG Polygon
+    function GenPolygonSVG(lsFillColor,lsStrokeColor,lsStrokeWidth,lsPoints)
+      return(string.format("<polygon fill=\"%s\" stroke=\"%s\" stroke-width=\"%s\" points=\"%s\" />",lsFillColor,lsStrokeColor,lsStrokeWidth,lsPoints))
+    end
+    
+    --Generate SVG Polyline
+    function GenPolylineSVG(lsFillColor,lsStrokeColor,lsStrokeWidth,lsPoints)
+      return(string.format("<polyline fill=\"%s\" stroke=\"%s\" stroke-width=\"%s\" points=\"%s\" />",lsFillColor,lsStrokeColor,lsStrokeWidth,lsPoints))
+    end
+    
+    --Assemble String Together and Convert to XML
+    function generateSVGFormat()
+    
+      local x,x1,x2,xInv,x1Inv,x2Inv = {},{},{},{},{},{}
+      local y,y1,y2,yInv,y1Inv,y2Inv = {},{},{},{},{},{}
+      local lsSVG = ""
+      local lsBeamWidth = {}                                      --for Shure MXA 710 Widths --30 Degree for Narrow Width, 40 Degree for Medium Width, 74 Degree for Wide
+  
+      for x,chs in pairs(gcLobeBeamWidth) do
+        if(chs.String == "NARROW")then
+          lsBeamWidth[x] = 15
+        elseif(chs.String == "MEDIUM")then
+          lsBeamWidth[x] = 20
+        elseif(chs.String == "WIDE")then
+          lsBeamWidth[x] = 37
+        else
+          lsBeamWidth[x] = 20
+        end
+      end
+    
+      lsSVG = string.format(GenSVGHeader("400", "400", "0 0 400 400")..GenCircleSVG("200","200","147",gaColorChoices.LtBlue,"0.3",gaColorChoices.LtBlue,"3"))   
+  
+    for i=1, giNumofActiveMics do
+      x[i],y[i] = CalcAngleForSVG((Controls["BEAM_ANGLE"][i].Value+270),"147")
+      x1[i],y1[i] = CalcAngleForSVG((Controls["BEAM_ANGLE"][i].Value+270)-lsBeamWidth[i],"147")
+      x2[i],y2[i] = CalcAngleForSVG((Controls["BEAM_ANGLE"][i].Value+270)+lsBeamWidth[i],"147")
+      xInv[i],yInv[i] = CalcAngleForSVG(math.abs(Controls["BEAM_ANGLE"][i].Value+270)*-1,"147")
+      x1Inv[i],y1Inv[i] = CalcAngleForSVG(math.abs(Controls["BEAM_ANGLE"][i].Value+270)*-1-lsBeamWidth[i],"147")
+      x2Inv[i],y2Inv[i] = CalcAngleForSVG(math.abs(Controls["BEAM_ANGLE"][i].Value+270)*-1+lsBeamWidth[i],"147")
+      
+      lsSVG = lsSVG..string.format(GenLineSVG(x[i],y[i],"200","200",gaColor[i],gsMainLineOpacity,"5")..GenCircleSVG(x[i],y[i],"10",gaColor[i],"1.0",gaColor[i],"3")..GenTextSVG(x[i],y[i],0,"16",gaColorChoices.White,i)
+                          ..GenLineSVG(x1[i],y1[i],"200","200",gaColor[i],gsSecLineOpacity,"2")..GenLineSVG(x2[i],y2[i],"200","200",gaColor[i],gsSecLineOpacity,"2")..GenLineSVG(xInv[i],yInv[i],"200","200",gaColor[i],gsMainLineOpacity,"5")
+                          ..GenCircleSVG(xInv[i],yInv[i],"10",gaColor[i],"1.0",gaColor[i],"3")..GenTextSVG(xInv[i],yInv[i],0,"16",gaColorChoices.White,i)..GenLineSVG(x1Inv[i],y1Inv[i],"200","200",gaColor[i],gsSecLineOpacity,"2")..GenLineSVG(x2Inv[i],y2Inv[i],"200","200",gaColor[i],gsSecLineOpacity,"2"))    
+    end
+    lsSvg = lsSVG..string.format(gsSVGFooter)   
+    
+    SVGXML = xml.eval(lsSVG)
+    return(SVGXML)   
+    end 
+    
+    --Function to Generate Image and assign to .legend on Button
+    function generate()
+      local luaSVG = generateSVGFormat()
+      
+      legend = {
+        DrawChrome = false,
+        IconData = Crypto.Base64Encode(tostring(luaSVG))
+      }
+      if(DebugSVGImageGen)then print(DebugFormat("Raw SVG XML String: "..tostring(luaSVG)))end
+      Controls["Coverage_Map"].Legend = json.encode(legend)
+    end
+    
+  --Parse Data
+  -----------------------------------------------------------
+  function CheckForOnOff(lsVar)
+    if(lsVar == " OFF" or lsVar == " DISABLE")then
+      return(0)
+    elseif(lsVar == " ON" or lsVar == " ENABLE")then
+      return(1)
+    else
+      return(lsVar)
+    end
+  end
+  
+  function CalDB(lsVar)
+    local liDbVal = math.floor(scaleBetween(lsVar,-110,30,0,1400))
+    return(liDbVal)
+  end
+  
+  function rxDataParse(lsRXData)
+    
+    lsCommandReturn = string.sub(lsRXData,3,5)
+    
+    if(DebugFunction)then print(DebugFormat("Command Type: "..lsCommandReturn))end  
+  
+    if(lsCommandReturn == "REP")then  --Report Returned    
+      for x,reports in pairs(gsArray)do       --Search through All Reported Values
+          if(string.find(lsRXData, gsArray[x]) ~= nil)then --If you find the value match and its at least one succesfully matach found  
+            if(DebugFunction)then print(DebugFormat("Found Command: "..gsArray[x].."Array Position: "..x))end        
+            lsIndexVal = tonumber(string.sub(lsRXData, 7,8)) --Pull Out Index
+  
+            if(lsIndexVal ~= nil)then         --IF there is a index value then send to array
+              lsStart, lsEnd = string.find(lsRXData,gsArray[x]) --Find start and end position of Match
+              lsLen = string.len(lsRXData) -- Find total length of string
+              lsFilteredString = string.sub(lsRXData, (lsEnd+1), (lsLen - 1)) --Pull out just raw value and send it to controls
+          
+              if(string.find(lsFilteredString, "{") or string.find(lsFilteredString, "}") ~= nil)then  --If you find brackets Cleanup
+                  lsFilteredString = string.gsub(lsFilteredString, "{", "")--Remove Bracket
+                  lsFilteredString = string.gsub(lsFilteredString, "}", "")--Remove Bracket          
+                  gcArray[x][lsIndexVal].String = CheckForOnOff(lsFilteredString)
+              else     --No Brackets Found
+                  if(x == 14 or x == 15)then --For Audio Gain and Gain Post Gate to convert to db
+                    gcArray[x][lsIndexVal].String = CalDB(lsFilteredString)  --Send Recieved String to Field
+                  elseif(x == 40)then -- For Angle to Convert Scaled Value                                
+                    gcArray[x][lsIndexVal].String = scaleBetween(lsFilteredString,-90,90,0,180)
+                  else
+                    gcArray[x][lsIndexVal].String = CheckForOnOff(lsFilteredString)  --Send Recieved String to Field
+                  end
+              end
+              
+            else
+                lsStart, lsEnd = string.find(lsRXData,gsArray[x]) --Find start and end position of Match
+                lsLen = string.len(lsRXData) -- Find total length of string
+              if(x == 20)then --If Preset Name Array
+                lsFilteredString = string.sub(lsRXData, (lsEnd+5), (lsLen - 1)) --Pull out just raw value and send it to controls
+                lsPresetArray = tonumber(string.sub(lsRXData, (lsEnd+1), (lsEnd+3))) --Convert Text to Number for Array
+                if(string.find(lsFilteredString, "{") or string.find(lsFilteredString, "}") ~= nil)then  --If you find brackets Cleanup
+                    lsFilteredString = string.gsub(lsFilteredString, "{", "")--Remove Bracket
+                    lsFilteredString = string.gsub(lsFilteredString, "}", "") --Remove Bracket             
+                    gsPresetChoices[lsPresetArray] = CheckForOnOff(lsFilteredString)
+                    gcArray[x].Choices = gsPresetChoices
+                else    --No Brackets Found
+                    gsPresetChoices[lsPresetArray] = CheckForOnOff(lsFilteredString)
+                    gcArray[x].Choices = gsPresetChoices
+                end
+              elseif(x == 42)then --Has word Preset In it
+                if(string.find(lsRXData,"PRESET_NAME"))then -- If find preset name then ignore
+                else
+                  lsFilteredString = string.sub(lsRXData, (lsEnd+1), (lsLen - 1)) --Pull out just raw value and send it to controls
+                  gcArray[x].String = lsFilteredString
+                end
+              elseif(x == 26)then --Num of Active Mics to Disable Other Controls 
+                  lsFilteredString = string.sub(lsRXData, (lsEnd+1), (lsLen - 1)) --Pull out just raw value and send it to controls
+                  giNumofActiveMics = tonumber(lsFilteredString)
+                  for x=1, tonumber(lsFilteredString) do
+                    gcChannelName[x].IsDisabled = false
+                    gcNAChannelName[x].IsDisabled = false
+                    gcAudioClipIndicator[x].IsDisabled = false
+                    gcDigAudioGain[x].IsDisabled = false
+                    gcDigAudioGainPostGate[x].IsDisabled = false
+                    gcAudioLvlRMS[x].IsDisabled = false
+                    gcAudioLvlPeak[x].IsDisabled = false
+                    gcChAudioMute[x].IsDisabled = false
+                    gcPEQ1[x].IsDisabled = false
+                    gcPEQ2[x].IsDisabled = false
+                    gcPEQ3[x].IsDisabled = false
+                    gcPEQ4[x].IsDisabled = false
+                    gcSoloAutomixCh[x].IsDisabled = false
+                    gcAutomixGateStatus[x].IsDisabled = false
+                    gcLobeBeamAngle[x].IsDisabled = false
+                    gcLobeBeamWidth[x].IsDisabled = false
+                    Controls["METER_RATE"][x].IsDisabled = false
+                    Controls["AUTOMIXER_METER_RATE"][x].IsDisabled = false
+                    Controls["POSTGATE_METER_RATE"][x].IsDisabled = false
+                  end
+                  for x=(tonumber(lsFilteredString)+1),8 do
+                    gcChannelName[x].IsDisabled = true
+                    gcNAChannelName[x].IsDisabled = true
+                    gcAudioClipIndicator[x].IsDisabled = true
+                    gcDigAudioGain[x].IsDisabled = true
+                    gcDigAudioGainPostGate[x].IsDisabled = true
+                    gcAudioLvlRMS[x].IsDisabled = true
+                    gcAudioLvlPeak[x].IsDisabled = true
+                    gcChAudioMute[x].IsDisabled = true
+                    gcPEQ1[x].IsDisabled = true
+                    gcPEQ2[x].IsDisabled = true
+                    gcPEQ3[x].IsDisabled = true
+                    gcPEQ4[x].IsDisabled = true
+                    gcSoloAutomixCh[x].IsDisabled = true
+                    gcAutomixGateStatus[x].IsDisabled = true
+                    gcLobeBeamAngle[x].IsDisabled = true
+                    gcLobeBeamWidth[x].IsDisabled = true
+                    Controls["METER_RATE"][x].IsDisabled = true
+                    Controls["AUTOMIXER_METER_RATE"][x].IsDisabled = true
+                    Controls["POSTGATE_METER_RATE"][x].IsDisabled = true
+                end
+                  generate()
+                  gcArray[x].String = lsFilteredString         
+              else --All Other Arrays
+                  lsFilteredString = string.sub(lsRXData, (lsEnd+1), (lsLen - 1)) --Pull out just raw value and send it to controls
+                
+                if(string.find(lsFilteredString, "{") or string.find(lsFilteredString, "}") ~= nil)then  --If you find brackets Cleanup
+                  lsFilteredString = string.gsub(lsFilteredString, "{", "")--Remove Bracket
+                  lsFilteredString = string.gsub(lsFilteredString, "}", "")--Remove Bracket            
+                  gcArray[x].String = CheckForOnOff(lsFilteredString)
+                else    --No Brackets Found
+                  if(x == 29)then   --LED Brightness Show Pretty Format
+                    gcArray[x].String = gaLEDBrightness[tonumber(lsFilteredString)+1]
+                  else
+                    gcArray[x].String = CheckForOnOff(lsFilteredString)
+                  end
+                end
+              end
+          end
+        end
+      end
+    elseif(lsCommandReturn == "SAM")then  --Sample Levels Returned
+      if(string.find(lsRXData, "SAMPLE_POSTGATE"))then
+        local laPostGateMeter = {}
+        laPostGateMeter[1] = string.sub(lsRXData, 19, 21)
+        laPostGateMeter[2] = string.sub(lsRXData, 23, 25)
+        laPostGateMeter[3] = string.sub(lsRXData, 27, 29)
+        laPostGateMeter[4] = string.sub(lsRXData, 31, 33)
+        laPostGateMeter[5] = string.sub(lsRXData, 35, 37)
+        laPostGateMeter[6] = string.sub(lsRXData, 39, 41)
+        laPostGateMeter[7] = string.sub(lsRXData, 43, 45)
+        laPostGateMeter[8] = string.sub(lsRXData, 47, 49)
+        
+        for x, chs in pairs(laPostGateMeter)do
+          Controls["POSTGATE_METER_RATE"][x].String = math.floor(scaleBetween(laPostGateMeter[x],-60,0,0,60))  --Lobe Audio Levels for Main Channels
+        end
+      elseif(string.find(lsRXData, "SAMPLE_AECREF"))then
+        Controls["AEC_REF_METER_RATE"].String = math.floor(scaleBetween(string.sub(lsRXData, 17, 19),-60,0,0,60))
+      elseif(string.find(lsRXData, "SAMPLE_MXR_GAIN"))then
+        local laMixGainMeter = {}
+        laMixGainMeter[1] = string.sub(lsRXData, 20, 22)
+        laMixGainMeter[2] = string.sub(lsRXData, 24, 26)
+        laMixGainMeter[3] = string.sub(lsRXData, 28, 30)
+        laMixGainMeter[4] = string.sub(lsRXData, 32, 34)
+        laMixGainMeter[5] = string.sub(lsRXData, 36, 38)
+        laMixGainMeter[6] = string.sub(lsRXData, 40, 42)
+        laMixGainMeter[7] = string.sub(lsRXData, 44, 46)
+        laMixGainMeter[8] = string.sub(lsRXData, 48, 50)
+        
+        for x, chs in pairs(laMixGainMeter)do
+          Controls["AUTOMIXER_METER_RATE"][x].String = math.floor(scaleBetween(laMixGainMeter[x],-60,0,0,60))  --Lobe Audio Levels for Main Channels
+        end
+      else
+        local laMeter = {}
+        laMeter[1] = string.sub(lsRXData, 14, 16)
+        laMeter[2] = string.sub(lsRXData, 18, 20)
+        laMeter[3] = string.sub(lsRXData, 22, 24)
+        laMeter[4] = string.sub(lsRXData, 26, 28)
+        laMeter[5] = string.sub(lsRXData, 30, 32)
+        laMeter[6] = string.sub(lsRXData, 34, 36)
+        laMeter[7] = string.sub(lsRXData, 38, 40)
+        laMeter[8] = string.sub(lsRXData, 42, 44)
+        laMeter[9] = string.sub(lsRXData, 10, 12)
+        
+        for x, chs in pairs(laMeter)do
+          Controls["METER_RATE"][x].String = math.floor(scaleBetween(laMeter[x],-60,0,0,60))  --Lobe Audio Levels for Main Channels
+        end
+      end
+    end
+  end
+  
+  
+  --Timers
+  -----------------------------------------------------------
+  QueryTimer = Timer.New()
+  
+  QueryTimer.EventHandler = function()
+    TCPClient:Write("< GET ALL >")            ---Get All Data
+            if(DebugFunction)then print(DebugFormat("Found Command: "..gsArray[x].."Array Position: "..x))end        
+    if(DebugTx)then print(DebugFormat("TX: ".."< GET ALL >"))end
+  end
+  
+  --Check to See if Metering is enabled on connection to device
+  function CheckForMetering()
+    if(Controls["ENABLE_METERING"].Value == 1)then
+        TCPClient:Write("< SET METER_RATE 300 >")            ---Set RMS Meter Rate
+        if(DebugTx)then print(DebugFormat("TX: ".."< SET METER_RATE 300 >"))end
+        TCPClient:Write("< SET METER_RATE_POSTGATE 300 >")   ---Set POST GATE RMS Meter Rate
+        if(DebugTx)then print(DebugFormat("TX: ".."< SET METER_RATE_POSTGATE 300 >"))end
+        --TCPClient:Write("< SET METER_RATE_MXR_GAIN 300 >")   ---Set AutoMixer RMS Meter Rate
+        --TCPClient:Write("< SET METER_RATE_AECREF 300 >")     ---Set AEC REF RMS Meter Rate
+    else
+        TCPClient:Write("< SET METER_RATE 0 >")            ---Set RMS Meter Rate
+        if(DebugTx)then print(DebugFormat("TX: ".."< SET METER_RATE 0 >"))end
+        TCPClient:Write("< SET METER_RATE_POSTGATE 0 >")   ---Set POST GATE RMS Meter Rate
+        if(DebugTx)then print(DebugFormat("TX: ".."< SET METER_RATE_POSTGATE 0 >"))end
+        --TCPClient:Write("< SET METER_RATE_MXR_GAIN 0 >")   ---Set AutoMixer RMS Meter Rate
+        --TCPClient:Write("< SET METER_RATE_AECREF 0 >")     ---Set AEC REF RMS Meter Rate
+    end
+  end
+  
+  --TCP Socket Event Handlers
+  -----------------------------------------------------------
+  TCPClient.Connected = function(TCPClient)     --Is Connected
+    if(DebugFunction)then print(DebugFormat("TCP socket is connected"))end
+    Controls["Status"].Value = 0
+    Controls["Status"].String = '' 
+    
+    QueryTimer:Start(15)
+    TCPClient:Write("< GET ALL >")            ---Get All Data Initially
+    if(DebugTx)then print(DebugFormat("TX: ".."< GET ALL >"))end
+    CheckForMetering()                        --Check to See if Metering is Enabled
+  end
+  TCPClient.Reconnect = function(TCPClient)     --Reconnecting
+    if(DebugFunction)then print(DebugFormat("TCP socket is reconnecting"))end
+    Controls["Status"].Value = 5
+    Controls["Status"].String = 'Reconnecting'
+  end
+  
+  
+  TCPClient.Data = function(TCPClient)          --RX Data
+   if(DebugFunction)then print(DebugFormat("TCP socket has data:"))end
+     repeat
+        msg = TCPClient:ReadLine(TcpSocket.EOL.Custom, ">")
+        if(msg ~= nil)then
+          rxDataParse(msg)
+          if(DebugRx)then print(DebugFormat("Raw Received Message: "..msg))end
+        else
+          break
+        end
+     until(TCPClient.BufferLength == 0)
+  end
+  TCPClient.Closed = function(TCPClient)        --Socket Closed
+    if(DebugFunction)then print(DebugFormat("TCP socket was closed by the remote end"))end
+    Controls["Status"].Value = 2 
+    Controls["Status"].String = 'Closed'
+    QueryTimer:Stop()
+  end
+  TCPClient.Error = function(TCPClient, Err)    --Error On Socket
+    if(DebugFunction)then print(DebugFormat("TCP socket had an error:", Err))end
+    Controls["Status"].Value = 2
+    Controls["Status"].String = Err
+    QueryTimer:Stop()
+  end
+  TCPClient.Timeout = function(TCPClient, Err)   --Timeout Occured
+    if(DebugFunction)then print(DebugFormat("TCP socket timed out", Err))end
+    Controls["Status"].Value = 2
+    Controls["Status"].String = 'TimeOut'
+    QueryTimer:Stop()
+  end
+   
+   
+  --Connect Events
+  ---------------------------------------------------------- 
+  if(gsIPAddress ~= "" and gsPort ~= "")then      --Connect on Startup
+    TCPClient:Connect(gsIPAddress, gsPort)
+  else
+    Controls["Status"].Value = 2 
+    Controls["Status"].String = 'Invalid IP Address'
+  end
+  
+  Controls["IPAddress"].EventHandler = function()
+      gsIPAddress = Controls["IPAddress"].String
+      TCPClient:Disconnect()
+      if(gsIPAddress ~= "" and gsPort ~= "")then 
+        TCPClient:Connect(gsIPAddress, gsPort)
+      else
+        Controls["Status"].Value = 2 
+        Controls["Status"].String = 'Invalid IP Address'
+      end  
+  end
+  
+  
+  --Set Events
+  ---------------------------------------------------------
+  for x, lobes in pairs(gcLobeBeamWidth) do
+    lobes.EventHandler = function()
+      TCPClient:Write("< SET "..tostring(x).." BEAM_W "..lobes.String.." >")                         --Change Lobe Width
+      if(DebugTx)then print(DebugFormat("TX: ".."< SET "..tostring(x).." BEAM_W "..lobes.String.." >"))end
+    end
+  end
+  
+  gcDevInstallType.EventHandler = function()                                              --Install Type
+    TCPClient:Write("< SET DEVICE_INSTALLATION "..gcDevInstallType.String.." >")          --Change Install Type
+    if(DebugTx)then print(DebugFormat("TX: ".."< SET DEVICE_INSTALLATION "..gcDevInstallType.String.." >"))end
+  end
+  
+  gcLEDUnmuteColor.EventHandler = function()
+    TCPClient:Write("< SET LED_COLOR_UNMUTED "..gcLEDUnmuteColor.String.." >")           --Set unmute color
+    if(DebugTx)then print(DebugFormat("TX: ".."< SET LED_COLOR_UNMUTED "..gcLEDUnmuteColor.String.." >"))end
+  end
+  
+  gcLEDMuteColor.EventHandler = function()
+    TCPClient:Write("< SET LED_COLOR_MUTED "..gcLEDMuteColor.String.." >")           --Set mute color
+    if(DebugTx)then print(DebugFormat("TX: ".."< SET LED_COLOR_MUTED "..gcLEDMuteColor.String.." >"))end
+  end
+  
+  gcLEDBrightness.EventHandler = function()
+    TCPClient:Write("< SET LED_BRIGHTNESS "..string.sub(gcLEDBrightness.String,1,1).." >")           --Set LED Brightness
+    if(DebugTx)then print(DebugFormat("TX: ".."< SET LED_BRIGHTNESS "..string.sub(gcLEDBrightness.String,1,1).." >"))end
+  end
+  
+  gcDeviceAudioMute.EventHandler = function(lbCtrl) -- Device Audio Mute
+    if(lbCtrl.Value == 1)then
+        TCPClient:Write("< SET DEVICE_AUDIO_MUTE ON >")           --Turn Mute On
+        if(DebugTx)then print(DebugFormat("TX: ".."< SET DEVICE_AUDIO_MUTE ON >"))end
+    else
+        TCPClient:Write("< SET DEVICE_AUDIO_MUTE OFF >")           --Turn Mute Off
+        if(DebugTx)then print(DebugFormat("TX: ".."< SET DEVICE_AUDIO_MUTE OFF >"))end
+    end
+  end
+  
+  for x, chs in pairs(gcChAudioMute)do            --Channel Audio Mute
+    chs.EventHandler = function(lbCtrl)
+      if(lbCtrl.Value == 1)then
+        TCPClient:Write("< SET 0"..tostring(x).." AUDIO_MUTE ON >")           --Turn Mute On
+        if(DebugTx)then print(DebugFormat("TX: ".."< SET 0"..tostring(x).." AUDIO_MUTE ON >"))end
+      else
+        TCPClient:Write("< SET 0"..tostring(x).." AUDIO_MUTE OFF >")           --Turn Mute Off
+        if(DebugTx)then print(DebugFormat("TX: ".."< SET 0"..tostring(x).." AUDIO_MUTE OFF >"))end
+      end  
+    end
+  end
+  
+  gcFlash.EventHandler = function(lbCtrl)   --LED Flash
+    if(lbCtrl.Value == 1)then
+        TCPClient:Write("< SET FLASH ON >")           --Turn Flash On
+        if(DebugTx)then print(DebugFormat("TX: ".."< SET FLASH ON >"))end
+    else
+        TCPClient:Write("< SET FLASH OFF >")           --Turn Flash Off
+        if(DebugTx)then print(DebugFormat("TX: ".."< SET FLASH OFF >"))end
+    end
+  end
+  
+  gcEncryption.EventHandler = function(lbCtrl)   --Encryption
+    if(lbCtrl.Value == 1)then
+        TCPClient:Write("< SET ENCRYPTION ON >")           --Turn Encryption On
+        if(DebugTx)then print(DebugFormat("TX: ".."< SET ENCRYPTION ON >"))end
+    else
+        TCPClient:Write("< SET ENCRYPTION OFF >")           --Turn Encryption Off
+        if(DebugTx)then print(DebugFormat("TX: ".."< SET ENCRYPTION OFF >"))end
+    end
+  end
+  
+  for x, chs in pairs(gcSoloAutomixCh)do            --Channel Audio Mute
+    chs.EventHandler = function(lbCtrl)
+      if(lbCtrl.Value == 1)then
+          TCPClient:Write("< SET "..tostring(x).." CHAN_AUTOMIX_SOLO_EN ENABLE >")  --Turn Solo the Automix Channel On
+          if(DebugTx)then print(DebugFormat("TX: ".."< SET "..tostring(x).." CHAN_AUTOMIX_SOLO_EN ENABLE >"))end
+      else
+          TCPClient:Write("< SET "..tostring(x).." CHAN_AUTOMIX_SOLO_EN DISABLE >")  --Turn Solo the Automix Channel OFF
+          if(DebugTx)then print(DebugFormat("TX: ".."< SET "..tostring(x).." CHAN_AUTOMIX_SOLO_EN DISABLE >"))end
+      end
+    end
+  end
+  
+  gcLEDMutedState.EventHandler = function(lbCtrl)   --LED Enabled In Mute State
+    if(lbCtrl.Value == 1)then
+        TCPClient:Write("< SET LED_STATE_MUTED ON >")           --Turn LED On in Mute State
+        if(DebugTx)then print(DebugFormat("TX: ".."< SET LED_STATE_MUTED ON >"))end
+    else
+        TCPClient:Write("< SET LED_STATE_MUTED OFF >")           --Turn LED Off in Mute State
+        if(DebugTx)then print(DebugFormat("TX: ".."< SET LED_STATE_MUTED OFF >"))end
+    end
+  end
+  
+  gcLEDUnmutedState.EventHandler = function(lbCtrl)   --LED Enabled In Mute State
+    if(lbCtrl.Value == 1)then
+        TCPClient:Write("< SET LED_STATE_UNMUTED ON >")           --Turn LED On in UNMute State
+        if(DebugTx)then print(DebugFormat("TX: ".."< SET LED_STATE_UNMUTED ON >"))end
+    else
+        TCPClient:Write("< SET LED_STATE_UNMUTED OFF >")           --Turn LED Off in UNMute State
+        if(DebugTx)then print(DebugFormat("TX: ".."< SET LED_STATE_UNMUTED OFF >"))end
+    end
+  end
+  
+  gcBypassEQ.EventHandler = function(lbCtrl)   --Bypass EQ
+    if(lbCtrl.Value == 1)then
+        TCPClient:Write("< SET BYPASS_ALL_EQ ON >")           --Turn ALL EQ On
+        if(DebugTx)then print(DebugFormat("TX: ".."< SET BYPASS_ALL_EQ ON >"))end
+    else
+        TCPClient:Write("< SET BYPASS_ALL_EQ OFF >")           --Turn ALL EQ Off
+        if(DebugTx)then print(DebugFormat("TX: ".."< SET BYPASS_ALL_EQ OFF >"))end
+    end
+  end
+  
+  gcBypassINTX.EventHandler = function(lbCtrl)   --Bypass Intellmix DSP Blocks
+    if(lbCtrl.Value == 1)then
+        TCPClient:Write("< SET BYPASS_IMX ON >")           --Turn Intellmix DSP Blocks On
+        if(DebugTx)then print(DebugFormat("TX: ".."< SET BYPASS_IMX ON >"))end
+    else
+        TCPClient:Write("< SET BYPASS_IMX OFF >")           --Turn Intellmix DSP Blocks Off
+        if(DebugTx)then print(DebugFormat("TX: ".."< SET BYPASS_IMX OFF >"))end
+    end
+  end
+  
+  gcEQContour.EventHandler = function(lbCtrl)   --Bypass EQ Contour
+    if(lbCtrl.Value == 1)then
+        TCPClient:Write("< SET EQ_CONTOUR LOWSHELF >")           --Turn EQ Contour On Lowshelf
+        if(DebugTx)then print(DebugFormat("TX: ".."< SET EQ_CONTOUR LOWSHELF >"))end
+    else
+        TCPClient:Write("< SET EQ_CONTOUR OFF >")           --Turn EQ Contour Off
+        if(DebugTx)then print(DebugFormat("TX: ".."< SET EQ_CONTOUR OFF >"))end
+    end
+  end
+  
+  for x, chs in pairs(gcDigAudioGain)do            --Channel Digital Audio Gain
+    chs.EventHandler = function(lbCtrl)
+          local liDbVal = math.floor(scaleBetween(lbCtrl.Value,0,1400,-110,30))
+          TCPClient:Write("< SET 0"..tostring(x).." AUDIO_GAIN_HI_RES "..liDbVal.." >")  --Send Gain Level
+          if(DebugTx)then print(DebugFormat("TX: ".."< SET 0"..tostring(x).." AUDIO_GAIN_HI_RES "..liDbVal.." >"))end
+    end
+  end
+  
+  for x, chs in pairs(gcDigAudioGainPostGate)do            --Channel Digital Audio Gain Post Gate
+    chs.EventHandler = function(lbCtrl)
+          local liDbVal = math.floor(scaleBetween(lbCtrl.Value,0,1400,-110,30))
+          TCPClient:Write("< SET 0"..tostring(x).." AUDIO_GAIN_POSTGATE "..liDbVal.." >")  --Send Gain Level
+          if(DebugTx)then print(DebugFormat("TX: ".."< SET 0"..tostring(x).." AUDIO_GAIN_POSTGATE "..liDbVal.." >"))end
+    end
+  end
+  
+  for x, chs in pairs(gcLobeBeamAngle)do            --Channel Beam Angle
+    chs.EventHandler = function(lbCtrl)
+          local liAngleVal = math.floor(scaleBetween(lbCtrl.Value,0,180,-90,90))
+          TCPClient:Write("< SET 0"..tostring(x).." BEAM_ANGLE "..liAngleVal.." >")  --Send Angle
+          if(DebugTx)then print(DebugFormat("TX: ".."< SET 0"..tostring(x).." BEAM_ANGLE "..liAngleVal.." >"))end
+    end
+  end
+  
+  for x, chs in pairs(gcPEQ1)do            --PEQ Filter 1 On Channels
+    chs.EventHandler = function(lbCtrl)
+      if(lbCtrl.Value == 1)then
+          TCPClient:Write("< SET 0"..tostring(x).." PEQ 1 ON >")           --Turn EQ ON
+          if(DebugTx)then print(DebugFormat("TX: ".."< SET 0"..tostring(x).." PEQ 1 ON >"))end
+      else
+          TCPClient:Write("< SET 0"..tostring(x).." PEQ 1 OFF >")           --Turn EQ OFF
+          if(DebugTx)then print(DebugFormat("TX: ".."< SET 0"..tostring(x).." PEQ 1 OFF >"))end
+      end
+    end
+  end
+  
+  for x, chs in pairs(gcPEQ2)do            --PEQ Filter 2 On Channels
+    chs.EventHandler = function(lbCtrl)
+      if(lbCtrl.Value == 1)then
+          TCPClient:Write("< SET 0"..tostring(x).." PEQ 2 ON >")           --Turn EQ ON
+          if(DebugTx)then print(DebugFormat("TX: ".."< SET 0"..tostring(x).." PEQ 2 ON >"))end
+      else
+          TCPClient:Write("< SET 0"..tostring(x).." PEQ 2 OFF >")           --Turn EQ OFF
+          if(DebugTx)then print(DebugFormat("TX: ".."< SET 0"..tostring(x).." PEQ 2 OFF >"))end
+      end
+    end
+  end
+  
+  for x, chs in pairs(gcPEQ3)do            --PEQ Filter 3 On Channels
+    chs.EventHandler = function(lbCtrl)
+      if(lbCtrl.Value == 1)then
+          TCPClient:Write("< SET 0"..tostring(x).." PEQ 3 ON >")           --Turn EQ ON
+          if(DebugTx)then print(DebugFormat("TX: ".."< SET 0"..tostring(x).." PEQ 3 ON >"))end
+      else
+          TCPClient:Write("< SET 0"..tostring(x).." PEQ 3 OFF >")           --Turn EQ OFF
+          if(DebugTx)then print(DebugFormat("TX: ".."< SET 0"..tostring(x).." PEQ 3 OFF >"))end
+      end
+    end
+  end
+  
+  for x, chs in pairs(gcPEQ4)do            --PEQ Filter 4 On Channels
+    chs.EventHandler = function(lbCtrl)
+      if(lbCtrl.Value == 1)then
+          TCPClient:Write("< SET 0"..tostring(x).." PEQ 4 ON >")           --Turn EQ ON
+          if(DebugTx)then print(DebugFormat("TX: ".."< SET 0"..tostring(x).." PEQ 4 ON >"))end
+      else
+          TCPClient:Write("< SET 0"..tostring(x).." PEQ 4 OFF >")           --Turn EQ OFF
+          if(DebugTx)then print(DebugFormat("TX: ".."< SET 0"..tostring(x).." PEQ 4 OFF >"))end
+      end
+    end
+  end
+  
+  --[[gcPresets.EventHandler = function(lbCtrl) --Set New Preset
+          TCPClient:Write("< SET PRESET "..lbCtrl.String.." >")           --Go to Preset Num
+          print(DebugFormat("< SET PRESET "..lbCtrl.String.." >")
+  end]]--
+  
+  gcPresetName.EventHandler = function(lbCtrl)  --Preset Name Change
+    for x,preset in pairs(gsPresetChoices)do
+      if(preset==lbCtrl.String)then
+        TCPClient:Write("< SET PRESET "..tostring(x).." >")           --Go to Preset Num
+        if(DebugTx)then print(DebugFormat("TX: ".."< SET PRESET "..tostring(x).." >"))end
+      end
+    end
+  end
+  
+  --Enable Metering
+  Controls["ENABLE_METERING"].EventHandler = function(lbCtrl) --Enable Metering 
+    if(lbCtrl.Value == 1)then
+      if(TCPClient.IsConnected == true)then
+        TCPClient:Write("< SET METER_RATE 300 >")            ---Set RMS Meter Rate
+        if(DebugTx)then print(DebugFormat("TX: ".."< SET METER_RATE 300 >"))end
+        TCPClient:Write("< SET METER_RATE_POSTGATE 300 >")   ---Set POST GATE RMS Meter Rate
+        if(DebugTx)then print(DebugFormat("TX: ".."< SET METER_RATE_POSTGATE 300 >"))end
+        --TCPClient:Write("< SET METER_RATE_MXR_GAIN 300 >")   ---Set AutoMixer RMS Meter Rate
+        --TCPClient:Write("< SET METER_RATE_AECREF 300 >")     ---Set AEC REF RMS Meter Rate
+      end
+    else
+      if(TCPClient.IsConnected == true)then
+        TCPClient:Write("< SET METER_RATE 0 >")            ---Set RMS Meter Rate
+        if(DebugTx)then print(DebugFormat("TX: ".."< SET METER_RATE 0 >"))end
+        TCPClient:Write("< SET METER_RATE_POSTGATE 0 >")   ---Set POST GATE RMS Meter Rate
+        if(DebugTx)then print(DebugFormat("TX: ".."< SET METER_RATE_POSTGATE 0 >"))end
+        --TCPClient:Write("< SET METER_RATE_MXR_GAIN 0 >")   ---Set AutoMixer RMS Meter Rate
+        --TCPClient:Write("< SET METER_RATE_AECREF 0 >")     ---Set AEC REF RMS Meter Rate
+      end    
+    end
+  end
+  
+  --Slider for Adjusting Angle on SVG
+  for i, chs in pairs(gcLobeBeamWidth)do
+    chs.EventHandler = function()
+      generate()
+    end
+  end
+  
+  for i, chs in pairs(gcLobeBeamAngle)do
+    chs.EventHandler = function()
+      generate()
+    end
+  end
+  
+end

@@ -1,0 +1,1747 @@
+﻿-- Shure MXA910 Plugin for Q-Sys 5.3+
+-- by Joe Peavey / QSC Boulder
+-- December 2016
+
+PluginInfo = 
+{
+  Name = "Shure~MXA910",
+  Version = "1.03",
+  Id = "cf37206d-b30a-4c6e-cc4b-6d7ee464d8f9",
+  Description = "MXA910 Ceiling Array Microphone",
+  ShowDebug = false
+}
+
+function GetColor(props) return { 153, 153, 153 } end
+function GetProperties() return {} end-- No properties needed
+
+function GetControls(props)
+  return
+  {
+    {
+      Name = "mxapreview",
+      ControlType = "Button",
+      ButtonType = "Trigger",
+      Count = 1,
+      IconType = "SVG",
+      Icon = "PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz48IURPQ1RZUEUgc3ZnIFBVQkxJQyAiLS8vVzNDLy9EVEQgU1ZHIDEuMS8vRU4iICJodHRwOi8vd3d3LnczLm9yZy9HcmFwaGljcy9TVkcvMS4xL0RURC9zdmcxMS5kdGQiPjxzdmcgdmVyc2lvbj0iMS4xIiBpZD0iTGF5ZXJfMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgeD0iMHB4IiB5PSIwcHgiIHdpZHRoPSI0OS42MDJweCIgaGVpZ2h0PSI0OS42MDJweCIgdmlld0JveD0iMCAwIDQ5LjYwMiA0OS42MDIiIGVuYWJsZS1iYWNrZ3JvdW5kPSJuZXcgMCAwIDQ5LjYwMiA0OS42MDIiIHhtbDpzcGFjZT0icHJlc2VydmUiPjxwYXRoIGZpbGw9IiNDRURBREUiIGQ9Ik0wLDB2NDkuNjAyaDQ5LjYwMlYwSDB6IE0xMS4wODIsNS41NjZoLTUuNDhWNC4zNTloNS40OFY1LjU2NnoiLz48cGF0aCBmaWxsPSIjODQ5MTk0IiBkPSJNMy4xOTksNDYuMzk4VjMuMTk5aDEuNTY2djMuMTMzaDcuMDVWMy4xOTloMzQuNTgzdjQzLjE5OEgzLjE5OXoiLz48cGF0aCBmaWxsPSIjQTlCN0JEIiBkPSJNNDguODAxLDQ4LjgwMWgtNDh2LTQ4aDQ4VjQ4LjgwMXogTTEuNjAyLDQ4SDQ4VjEuNjAySDEuNjAyVjQ4eiIvPjxnIGlkPSJCbGFja18xXyI+PGcgaWQ9IkJsYWNrIj48cGF0aCBmaWxsPSIjNDM1MTU5IiBkPSJNOC40MjIsMy4xNjlMOC4zNDQsMy43NzJIOC4yMzJsMC4wNzYtMC42MDNINy44ODNsLTAuMDU3LDAuNDFjMCwwLTAuMDMsMC4xNTgtMC4wMDcsMC4yM2MwLjA1NSwwLjE2MywwLjE4OCwwLjIyMSwwLjE4OCwwLjIyMWwwLjAxNywwLjAxYzAuMDU0LDAuMDI1LDAuMTEsMC4wNCwwLjE4NSwwLjA0aDAuMDRjMC4xMDYsMCwwLjE5NC0wLjAyNCwwLjI2Ni0wLjA2MUw4LjUyLDQuMDE4YzAuMDIzLTAuMDEzLDAuMTU0LTAuMDgxLDAuMjM2LTAuMjQzYzAuMDM1LTAuMDY2LDAuMDUtMC4xNzEsMC4wNS0wLjE3MUw4Ljg1NywzLjE3Ii8+PHBhdGggZmlsbD0iIzQzNTE1OSIgZD0iTTExLjI5NCwzLjE5NWMwLjAyLDAuMDIxLDAuMDMsMC4wNDYsMC4wMywwLjA3MmMwLDAuMDI5LTAuMDEzLDAuMDU0LTAuMDMxLDAuMDcyYy0wLjAyMSwwLjAyLTAuMDQ2LDAuMDMxLTAuMDcxLDAuMDMxYy0wLjAyOSwwLTAuMDU0LTAuMDEzLTAuMDczLTAuMDMyQzExLjEzLDMuMzE4LDExLjEyLDMuMjk0LDExLjEyLDMuMjY3YzAtMC4wMTksMC4wMDUtMC4wMzYsMC4wMTUtMC4wNTNjMC4wMTgtMC4wMzEsMC4wNTEtMC4wNSwwLjA4OC0wLjA1QzExLjI0OSwzLjE2NSwxMS4yNzQsMy4xNzYsMTEuMjk0LDMuMTk1IE0xMS4xNjIsMy4yMDZjLTAuMDE4LDAuMDE3LTAuMDI2LDAuMDM5LTAuMDI2LDAuMDYyYzAsMC4wMjMsMC4wMDksMC4wNDMsMC4wMjUsMC4wNjFjMC4wMTcsMC4wMTcsMC4wMzgsMC4wMjUsMC4wNjIsMC4wMjVjMC4wMjEsMCwwLjA0Mi0wLjAwOSwwLjA2Mi0wLjAyNGMwLjAxNS0wLjAxNywwLjAyNC0wLjAzNywwLjAyNC0wLjA2MVMxMS4zLDMuMjI1LDExLjI4NCwzLjIwN2MtMC4wMTctMC4wMTctMC4wMzctMC4wMjYtMC4wNjItMC4wMjZDMTEuMTk5LDMuMTgxLDExLjE3OCwzLjE5LDExLjE2MiwzLjIwNiBNMTEuMjIzLDMuMjA4YzAuMDMzLDAsMC4wNDksMC4wMTEsMC4wNDksMC4wMzNjMCwwLjAxNC0wLjAxLDAuMDI1LTAuMDI0LDAuMDNsMC4wMjQsMC4wNTJoLTAuMDNMMTEuMjIsMy4yNzZoLTAuMDE0djAuMDQ4SDExLjE4VjMuMjA4SDExLjIyM3ogTTExLjIwNywzLjI1OGgwLjAxNGMwLjAxNiwwLDAuMDIyLTAuMDA1LDAuMDIyLTAuMDE1YzAtMC4wMTQtMC4wMDktMC4wMTgtMC4wMjYtMC4wMThoLTAuMDExTDExLjIwNywzLjI1OEwxMS4yMDcsMy4yNTh6Ii8+PHBvbHlsaW5lIGZpbGw9IiM0MzUxNTkiIHBvaW50cz0iNy4yMDYsMy4xNjkgNi43ODIsMy4xNjkgNi42NzYsNC4wNDEgNy4wOTksNC4wNDEgNy4wOTksNC4wNDEgNy4wOTksNC4wNDEgNy4wOTksNC4wNDEgNy4wOTksNC4wNDEgNy4xMzYsMy43MzUgNy4yNjYsMy43MzUgNy4yNjksMy43MzQgNy4yMzEsNC4wNCA3LjY1NCw0LjA0MSA3Ljc2MSwzLjE2OSA3Ljc2MSwzLjE3IDcuMzM3LDMuMTcgNy4zMDEsMy40NzIgNy4zMDEsMy40NzIgNy4xNywzLjQ3MiA3LjE2OCwzLjQ3MiA3LjIwNSwzLjE2OSAiLz48cGF0aCBmaWxsPSIjNDM1MTU5IiBkPSJNMTAuNDk1LDMuMzdIMTFsMC4wMTktMC4yMDFoLTAuOTMzbC0wLjA4LDAuNjVsLTAuMzItMC4xNjNjMCwwLDAuMDg4LTAuMDI0LDAuMTM4LTAuMDU5YzAuMDUtMC4wMzcsMC4wNy0wLjA3MSwwLjA3OS0wLjA4OWMwLjAyLTAuMDMsMC4wMzktMC4wNjQsMC4wNDEtMC4xM0M5Ljk0NSwzLjMxMiw5LjkxLDMuMjYzLDkuODkxLDMuMjQxYy0wLjAyLTAuMDIzLTAuMDY1LTAuMDczLTAuMTQ4LTAuMDcyYy0wLjA5MywwLTAuNzY5LDAtMC43NjksMEw4Ljk0OSwzLjM2NmgwLjYwNkw5LjU0MiwzLjQ3M0g4LjkzNkw4Ljg2OCw0LjAzM2gwLjM2NWwwLjAzOC0wLjI4MUw5Ljk2Niw0LjE3TDkuOTgsNC4wNDFsMC45NDQtMC4wMDFsMC4wMjEtMC4yMjloLTAuNTExbDAuMDE3LTAuMTE1aDAuNTExbDAuMDMtMC4yMjNoLTAuNTEzTDEwLjQ5NSwzLjM3eiIvPjxwYXRoIGZpbGw9IiM0MzUxNTkiIGQ9Ik01LjkyMiwzLjE2NWMtMC4wNTYsMC0wLjEwNywwLjAyLTAuMTQ3LDAuMDUxSDUuNzczbDAsMGwwLDBjLTAuMTMsMC4xMDEtMC4xNTYsMC4zMjEsMC4wMjYsMC40MWMwLjAyMiwwLjAxMiwwLjQyNywwLjE3NiwwLjQyNywwLjE3NmgwLjAwMUw1LjYyOCwzLjgwNEw1LjU5LDQuMDRINS41ODlINS41OWwwLDBsMCwwYzAuMDIyLDAsMC42ODksMCwwLjc0NiwwYzAuMTEyLDAsMC4xODgtMC4wNDMsMC4yNDMtMC4xMTlDNi41OTksMy44OTUsNi42MTIsMy44Nyw2LjYyLDMuODQzYzAuMDI3LTAuMDgyLDAuMDIzLTAuMTc3LTAuMDMyLTAuMjIyQzYuNTc0LDMuNjEzLDYuNTY0LDMuNjA1LDYuNTUzLDMuNTk5Yy0wLjAwNy0wLjAwNS0wLjAyLTAuMDEzLTAuMDMxLTAuMDE4QzYuNDI2LDMuNTM2LDYuMDE2LDMuMzYxLDYuMDE2LDMuMzYxSDYuNjVsMC4wMjYtMC4xOTVMNi42NiwzLjE3N2wwLjAxNi0wLjAxMkg1LjkyMnoiLz48L2c+PC9nPjwvc3ZnPg==",
+    },
+    {
+      Name = "ledpreview",
+      ControlType = "Indicator",
+      IndicatorType = "Led",
+      Count = 1,
+    },
+    {
+      Name = "preset",
+      ControlType = "Button",
+      ButtonType = "Trigger",
+      UserPin = true,
+      PinStyle = "Both",
+      Count = 10,
+    },
+    {
+      Name = "presetname",
+      ControlType = "Text",
+      UserPin = true,
+      PinStyle = "Both",
+      Count = 1,
+    },
+    {
+      Name = "ledstate",
+      ControlType = "Button",
+      ButtonType = "Toggle",
+      UserPin = true,
+      PinStyle = "Both",
+      Count = 1,
+    },
+    {
+      Name = "ledmutedcolor",
+      ControlType = "Text",
+      UserPin = true,
+      PinStyle = "Output",
+      Count = 1,
+    },
+    {
+      Name = "ledmutedbehavior",
+      ControlType = "Text",
+      UserPin = true,
+      PinStyle = "Both",
+      Count = 1,
+    },
+    {
+      Name = "ledunmutedcolor",
+      ControlType = "Text",
+      UserPin = true,
+      PinStyle = "Output",
+      Count = 1,
+    },
+    {
+      Name = "ledunmutedbehavior",
+      ControlType = "Text",
+      UserPin = true,
+      PinStyle = "Both",
+      Count = 1,
+    },
+    {
+      Name = "ledbright",
+      ControlType = "Button",
+      ButtonType = "Toggle",
+      UserPin = true,
+      PinStyle = "Both",
+      Count = 1,
+    },
+    {
+      Name = "mxaname",
+      ControlType = "Text",
+      UserPin = true,
+      PinStyle = "Output",
+      Count = 1,
+    },
+    {
+      Name = "muteall",
+      ControlType = "Button",
+      ButtonType = "Toggle",
+      Icon="Microphone None",
+      UserPin = true,
+      PinStyle = "Both",
+      Count = 1,
+    },
+    {
+      Name = "id",
+      ControlType = "Button",
+      ButtonType = "Toggle",
+      UserPin = true,
+      PinStyle = "Both",
+      Count = 1,
+    },
+    {
+      Name = "status",
+      ControlType = "Indicator",
+      IndicatorType = "Status",
+      UserPin = true,
+      PinStyle = "Output",
+      Count = 1,
+    },
+    {
+      Name = "mode",
+      ControlType = "Text",
+      UserPin = true,
+      PinStyle = "Both",
+      Count = 1,
+    },
+    {
+      Name = "nic",
+      ControlType = "Text",
+      UserPin = true,
+      PinStyle = "Both",
+      Count = 1,
+    },
+    {
+      Name = "ip",
+      ControlType = "Text",
+      UserPin = true,
+      PinStyle = "Both",
+      Count = 1,
+    },
+    {
+      Name = "unit",
+      ControlType = "Text",
+      UserPin = true,
+      PinStyle = "Both",
+      Count = 1,
+    },
+    {
+      Name = "connect",
+      ControlType = "Button",
+      ButtonType = "Toggle",
+      UserPin = true,
+      PinStyle = "Both",
+      Count = 1,
+    },
+    {
+      Name = "details",
+      ControlType = "Text",
+      UserPin = true,
+      PinStyle = "Output",
+      Count = 1,
+    },
+    {
+      Name = "chlabel",
+      ControlType = "Text",
+      UserPin = true,
+      PinStyle = "Both",
+      Count = 8,
+    },
+    {
+      Name = "chfader",
+      ControlType = "Knob",
+      ControlUnit = "dB",
+      UserPin = true,
+      PinStyle = "Both",
+      Min = -90,
+      Max = 30,
+      Count = 8
+    },
+    {
+      Name = "chfadertext",
+      ControlType = "Knob",
+      ControlUnit = "dB",
+      Min = -90,
+      Max = 30,
+      Count = 8
+    },
+    {
+      Name = "chfaderbup",
+      ControlType = "Button",
+      ButtonType = "Trigger",
+      Count = 8
+    },
+    {
+      Name = "chfaderbdn",
+      ControlType = "Button",
+      ButtonType = "Trigger",
+      Count = 8
+    },
+    {
+      Name = "chmeter",
+      ControlType = "Knob",
+      ControlUnit = "dB",
+      UserPin = true,
+      PinStyle = "Both",
+      Min = -60,
+      Max = 0,
+      Count = 8,
+    },
+--[[    {
+      Name = "chmeter",
+      ControlType = "Indicator",
+      IndicatorType = "Meter",
+      ControlUnit = "dB",
+      Min = -60,
+      Max = 0,
+      Count = 8,
+    },]]
+    {
+      Name = "mute",
+      ControlType = "Button",
+      ButtonType = "Toggle",
+      Icon="Microphone None",
+      UserPin = true,
+      PinStyle = "Both",
+      Count = 8,
+    },
+--[[    {
+      Name = "fgroup",
+      ControlType = "Button",
+      ButtonType = "Toggle",
+      UserPin = true,
+      PinStyle = "Both",
+      Count = 8,
+    },
+    {
+      Name = "mgroup",
+      ControlType = "Button",
+      ButtonType = "Toggle",
+      UserPin = true,
+      PinStyle = "Both",
+      Count = 8,
+    },]]
+  }
+end
+
+function GetControlLayout(props)
+  local Color = {
+    White = { 255, 255, 255 },
+    BtnBlue = { 0, 181, 239 },
+    BtnGray = { 82, 99, 109 },
+    LtGrayText = { 223, 231, 234 },
+    DkGrayText = { 148, 156, 160 },
+    ChTextGray = { 156, 171, 175 },
+    MuteOn = { 50, 203, 254 },
+    IDOn = { 24, 145, 174 },
+    DkGray = { 37, 45, 50 },
+    LtGray = { 204, 204, 204 },
+    BtnGray = { 102, 102, 102 },
+    meterGrn = { 81, 177, 78 },
+    meterBg = { 59, 72 , 79 },
+  }
+
+  layout = {
+    mxapreview = 
+    {
+      PrettyName = "MXA910",
+      Style = "Button",
+      ButtonStyle = "Trigger",
+      StrokeWidth = 0,
+      Padding = 0,
+      Radius = 0,
+      Margin = 0,
+      Position = { 29, 38 },
+      Size = { 74, 74 },
+      IsReadOnly = true
+    },
+    ledpreview = 
+    {
+      PrettyName = "LED Preview",
+      Style = "Meter",
+      Color = Color.BtnGray,
+      OffColor = Color.DkGray,
+      BackgroundColor = Color.DkGray,
+      UnlinkOffColor = true,
+      StrokeWidth = 0,
+      Padding = 0,
+      Position = { 36, 43 },
+      Size = { 11, 6 },
+      Radius = 0,
+      CornerRadius = 0,
+      Margin = 0,
+    },
+    mxaname =
+    {
+      PrettyName = "MXA Name",
+      Style = "Text",
+      Color = Color.White,
+      TextBoxStyle = "NoBackground",
+      IsBold = true,
+      Position = { 0, 114 },
+      Size = { 132, 12 },
+      IsReadOnly = true,
+    },
+    muteall =
+    {
+      PrettyName = "Mute All",
+      Style = "Button",
+      ButtonStyle = "Toggle",
+      Legend = "Mute All",
+      TextFontSize = 13,
+      Color = Color.MuteOn,
+      OffColor = Color.BtnGray,
+      UnlinkOffColor = true,
+      Position = { 8, 139 },
+      Size = { 115, 23 }
+    },
+    id =
+    {
+      PrettyName = "Identify",
+      Style = "Button",
+      ButtonStyle = "Toggle",
+      Legend = "Identify",
+      TextFontSize = 13,
+      Color = Color.IDOn,
+      OffColor = Color.BtnGray,
+      UnlinkOffColor = true,
+      Position = { 8, 163 },
+      Size = { 115, 23 }
+    },
+    status = 
+    {
+      PrettyName = "Status",
+      Style = "Text",
+      Position = { 4, 190 },
+      Size = { 124, 16 },
+      TextFontSize = 10,
+    },
+    mode = 
+    {
+      PrettyName = "Network~Connect Mode",
+      Style = "ComboBox",
+      Position = { 49, 220 },
+      Size = { 76, 16 },
+      TextFontSize = 10,
+    },
+    ip = 
+    {
+      PrettyName = "Network~IP Address",
+      Style = "Text",
+      Position = { 49, 239 },
+      Size = { 76, 16 },
+      TextFontSize = 10,
+    },
+    unit = 
+    {
+      PrettyName = "Network~Select Unit",
+      Style = "ComboBox",
+      Position = { 49, 239 },
+      Size = { 76, 16 },
+      TextFontSize = 10,
+    },
+    nic = 
+    {
+      PrettyName = "Network~Local NIC",
+      Style = "ComboBox",
+      Color = Color.LtBlue,
+      Position = { 49, 258 },
+      Size = { 76, 16 },
+      TextFontSize = 10,
+    },
+    connect =
+    {
+      PrettyName = "Network~Connect",
+      Style = "Button",
+      ButtonStyle = "Toggle",
+      Legend = "Connect",
+      Color = Color.BtnBlue,
+      OffColor = { 183, 37, 39 },
+      UnlinkOffColor = true,
+      Position = { 49, 275 },
+      Size = { 76, 18 },
+      Radius = 2,
+      Margin = 1,
+      TextFontSize = 12,
+      IsBold = true,
+    },
+    details = 
+    {
+      PrettyName = "Device Details",
+      Style = "Text",
+      WordWrap = true,
+      HTextAlign = "Left",
+      VTextAlign = "Top",
+      TextFontSize = 7,
+      TextBoxStyle = "NoBackground",
+      Position = { 11, 304 },
+      Size = { 113, 36 },
+    },
+    presetname =
+    {
+      PrettyName = "Preset~Name",
+      Style = "ComboBox",
+      TextFontSize = 12,
+      Color = Color.BtnGray,
+      Position = { 394,6 },
+      Size = { 146, 20 },
+    },
+    ledstate =
+    {
+      PrettyName = "LED~State",
+      Style = "Button",
+      ButtonStyle = "Toggle",
+      Legend = "LED\rState",
+      Color = Color.BtnBlue,
+      OffColor = Color.BtnGray,
+      UnlinkOffColor = true,
+      Position = { 594, 3 },
+      Size = { 46, 25 },
+      Radius = 2,
+      Margin = 1,
+      TextFontSize = 10,
+    },
+    ledmutedcolor = 
+    {
+      PrettyName = "LED~Muted~Color",
+      Style = "ComboBox",
+      Position = { 646, 15 },
+      Size = { 46, 13 },
+      TextFontSize = 7,
+    },
+    ledmutedbehavior = 
+    {
+      PrettyName = "LED~Muted~Behavior",
+      Style = "ComboBox",
+      Position = { 692, 15 },
+      Size = { 46, 13 },
+      TextFontSize = 7,
+    },
+    ledunmutedcolor = 
+    {
+      PrettyName = "LED~Unmuted~Color",
+      Style = "ComboBox",
+      Position = { 743, 15 },
+      Size = { 46, 13 },
+      TextFontSize = 7,
+    },
+    ledunmutedbehavior = 
+    {
+      PrettyName = "LED~Unmuted~Behavior",
+      Style = "ComboBox",
+      Position = { 789, 15 },
+      Size = { 46, 13 },
+      TextFontSize = 7,
+    },
+    ledbright = 
+    {
+      PrettyName = "LED~Brightness",
+      Style = "Button",
+      ButtonStyle = "Toggle",
+      Legend = "Bright",
+      Color = Color.BtnBlue,
+      OffColor = Color.BtnGray,
+      UnlinkOffColor = true,
+      Position = { 842, 3 },
+      Size = { 32, 25 },
+      Radius = 2,
+      Margin = 1,
+      TextFontSize = 10,
+    },
+  }
+  for i=1,10 do
+    layout["preset "..i] =
+    {
+      PrettyName = string.format("Preset~Load %i",i),
+      Style = "Button",
+      ButtonStyle = "Trigger",
+      Legend = tostring(i),
+      Color = Color.MuteOn,
+      OffColor = Color.BtnGray,
+      UnlinkOffColor = true,
+      Position = { 203+19*(i-1), 6 },
+      Size = { 20, 20 }
+    }
+  end
+  for i=1,8 do
+    layout["chlabel "..i] = 
+    {
+      PrettyName = "Channel "..i.."~Label",
+      Style = "Text",
+      IsBold = true,
+      TextFontSize = 12,
+      Position = { 146+93*(i-1), 71 },
+      Size = { 75, 24 },
+      IsReadOnly = true, -- Hopefully not forever!
+    }
+    layout["chfader "..i] = 
+    {
+      PrettyName = string.format("Channel %i~Gain",i),
+      Style = "Fader",
+      ShowTextbox = false,
+      Legend = "–",
+      Color = { 194, 204, 208 },
+      Position = { 165+93*(i-1), 100 },
+      Size = { 12, 124 },
+      CornerRadius = 0
+    }
+    layout["chmeter "..i] =
+    {
+      PrettyName = string.format("Channel %i~Meter",i),
+      Style = "Meter",
+      MeterStyle = "Level",
+      ShowTextbox = false,
+      Color = Color.meterGrn,
+      BackgroundColor = Color.meterBg,
+      Position = { 195+93*(i-1), 108 },
+      Size = { 6, 111 },
+      CornerRadius = 0,
+      --Radius = 0
+    }
+    layout["chfadertext "..i] =
+    {
+      PrettyName = string.format("Channel %i~Gain Text",i),
+      Style = "Text",
+      TextBoxStyle = "Normal",
+      TextFontSize = 12,
+      Color = Color.White,
+      Position = { 163+93*(i-1), 254 },
+      Size = { 44, 23 },
+    }
+    layout["chfaderbdn "..i] =
+    {
+      PrettyName = string.format("Channel %i Bump Down",i),
+      Style = "Button",
+      Legend = "–",
+      ButtonStyle = "Trigger",
+      Color = Color.White,
+      OffColor = Color.BtnGray,
+      UnlinkOffColor = true,
+      CornerRadius = 8,
+      Margin = 0,
+      Padding = 0,
+      Position = { 143+93*(i-1), 258 },
+      Size = { 16, 16 }
+    }
+    layout["chfaderbup "..i] =
+    {
+      PrettyName = string.format("Channel %i Bump Up",i),
+      Style = "Button",
+      Legend = "+",
+      TextFontSize = 20,
+      ButtonStyle = "Trigger",
+      Color = Color.White,
+      OffColor = Color.BtnGray,
+      UnlinkOffColor = true,
+      CornerRadius = 8,
+      Margin = 0,
+      Padding = 0,
+      Position = { 209+93*(i-1), 258 },
+      Size = { 16, 16 }
+    }
+    layout["mute "..i] =
+    {
+      PrettyName = string.format("Channel %i~Mute",i),
+      Style = "Button",
+      ButtonStyle = "Toggle",
+      Legend = "Mute",
+      Color = Color.MuteOn,
+      OffColor = Color.BtnGray,
+      UnlinkOffColor = true,
+      Position = { 148+93*(i-1), 284 },
+      Size = { 73, 24 }
+    }
+--[[    layout["fgroup "..i] =
+    {
+      PrettyName = string.format("Channel %i~Fader Group",i),
+      Style = "Button",
+      ButtonStyle = "Toggle",
+      Margin = 0,
+      Position = { 145+93*(i-1), 315 },
+      Size = { 10, 10 }
+    }
+    layout["mgroup "..i] =
+    {
+      PrettyName = string.format("Channel %i~Mute Group",i),
+      Style = "Button",
+      ButtonStyle = "Toggle",
+      Margin = 0,
+      Position = { 145+93*(i-1), 331 },
+      Size = { 10, 10 }
+    }]]
+  end
+
+  graphics =
+  {
+    {
+      Type = "GroupBox",
+      Fill = Color.DkGray,
+      StrokeWidth = 0,
+      CornerRadius = 0,
+      Position = { 0, 0 },
+      Size = { 132, 32 }
+    },
+    {
+      Type = "Svg", -- White Shure Logo
+      Image = "PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz48IURPQ1RZUEUgc3ZnIFBVQkxJQyAiLS8vVzNDLy9EVEQgU1ZHIDEuMS8vRU4iICJodHRwOi8vd3d3LnczLm9yZy9HcmFwaGljcy9TVkcvMS4xL0RURC9zdmcxMS5kdGQiPjxzdmcgdmVyc2lvbj0iMS4xIiBpZD0iTGF5ZXJfMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayIgeD0iMHB4IiB5PSIwcHgiIHdpZHRoPSIxMTUuMDUzcHgiIGhlaWdodD0iMjAuMjI1cHgiIHZpZXdCb3g9IjAgMCAxMTUuMDUzIDIwLjIyNSIgZW5hYmxlLWJhY2tncm91bmQ9Im5ldyAwIDAgMTE1LjA1MyAyMC4yMjUiIHhtbDpzcGFjZT0icHJlc2VydmUiPjxnIGlkPSJMYXllcl8zIiBkaXNwbGF5PSJub25lIj48cmVjdCB4PSI4Ni4xMjIiIHk9Ii00LjM3OSIgZGlzcGxheT0iaW5saW5lIiBmaWxsPSIjMjQwMDBFIiB3aWR0aD0iMzAuMDgxIiBoZWlnaHQ9IjEyLjY5MSIvPjwvZz48ZyBpZD0iQmxhY2tfMV8iIGRpc3BsYXk9Im5vbmUiPjxnIGlkPSJCbGFjayIgZGlzcGxheT0iaW5saW5lIj48cGF0aCBmaWxsPSIjMjMxRjIwIiBkPSJNNTYuODQyLDAuMTMxbC0xLjU0OSwxMi4wODVoLTIuMjU0bDEuNTA1LTEyLjA4NWgtOC41MjFsLTEuMTM4LDguMjE0YzAsMC0wLjU4NSwzLjE4OC0wLjExNCw0LjYyOWMxLjA3OSwzLjI2LDMuNzcxLDQuNDQ1LDMuNzcxLDQuNDQ1bDAuMzEyLDAuMTdjMS4wODEsMC41NTMsMi4yMjIsMC43OTUsMy43MDEsMC43OTVoMC44MDZjMi4xNDctMC4wMDYsMy44OTQtMC40ODQsNS4zMi0xLjE5NGMwLjAwMy0wLjAwOSwwLjA4OS0wLjA0MSwwLjA4OS0wLjA0MWMwLjQ2MS0wLjI3NCwzLjExLTEuNjM4LDQuNzUyLTQuODc3YzAuNjg2LTEuMzU1LDEuMDAyLTMuNDQ3LDEuMDAyLTMuNDQ3bDEuMDI0LTguNjkzIi8+PHBhdGggZmlsbD0iIzIzMUYyMCIgZD0iTTExNC40NzEsMC42NTRjMC4zNzksMC4zODcsMC41ODIsMC44OTUsMC41ODIsMS40NDJjMCwwLjU2Ni0wLjIxNiwxLjA3NS0wLjYwNCwxLjQ1M2MtMC40MDEsMC4zODktMC45MjMsMC41OTktMS40NTEsMC41OTljLTAuNTQ5LDAtMS4wNjQtMC4yMi0xLjQ2MS0wLjYyMmMtMC4zODYtMC4zOS0wLjU4OC0wLjg5OS0wLjU4OC0xLjQzYzAtMC4zNjksMC4wOTctMC43MjMsMC4zLTEuMDdjMC4zNjgtMC42MiwxLjAwNy0wLjk4NywxLjc0OS0wLjk4N0MxMTMuNTYxLDAuMDM4LDExNC4wNzMsMC4yNTMsMTE0LjQ3MSwwLjY1NCBNMTExLjgwNywwLjg2M2MtMC4zMzQsMC4zMzUtMC41MiwwLjc3NC0wLjUyLDEuMjI4czAuMTcsMC44NzcsMC40OTEsMS4yYzAuMzI4LDAuMzMyLDAuNzY1LDAuNTIsMS4yMTgsMC41MmMwLjQ0NCwwLDAuODc1LTAuMTgxLDEuMjE0LTAuNTAzYzAuMzIzLTAuMzExLDAuNTA0LTAuNzQxLDAuNTA0LTEuMTgyYzAtMC40OTItMC4xNjUtMC45MDQtMC40ODctMS4yMzNjLTAuMzMyLTAuMzM4LTAuNzUyLTAuNTEzLTEuMjI3LTAuNTEzQzExMi41MzcsMC4zNzgsMTEyLjEzLDAuNTQsMTExLjgwNywwLjg2MyBNMTEzLjAzOSwwLjkxNGMwLjY0OSwwLDAuOTczLDAuMjIyLDAuOTczLDAuNjU1YzAsMC4zMDEtMC4xODYsMC41MjYtMC40OTYsMC42MDZsMC41MDgsMS4wMTZoLTAuNjE2bC0wLjQzNS0wLjkzMmgtMC4yNzF2MC45MzJoLTAuNTU2VjAuOTE0SDExMy4wMzl6IE0xMTIuNzAxLDEuOTI2aDAuMjcxYzAuMzE1LDAsMC40NjktMC4wOTYsMC40NjktMC4zMjJjMC0wLjIzNy0wLjE2NC0wLjM0LTAuNDk4LTAuMzRoLTAuMjQxVjEuOTI2TDExMi43MDEsMS45MjZ6Ii8+PHBvbHlsaW5lIGZpbGw9IiMyMzFGMjAiIHBvaW50cz0iMzIuNDMxLDAuMTMxIDIzLjkzOCwwLjEzMSAyMS44MDEsMTcuNjIyIDMwLjI3NiwxNy42MjIgMzAuMjgzLDE3LjYyNyAzMC4yODMsMTcuNjIyIDMwLjI4NSwxNy42MjIgMzAuMjgzLDE3LjYyIDMxLjAzOCwxMS40OTQgMzMuNjQ2LDExLjQ5NCAzMy42OTcsMTEuNDY0IDMyLjk0MywxNy42MDQgNDEuNDI2LDE3LjYyNyA0My41NzIsMC4xMzYgNDMuNTcyLDAuMTQ3IDM1LjA4OCwwLjE0NyAzNC4zNDIsNi4xOTQgMzQuMzI4LDYuMTg0IDMxLjcwOSw2LjE4NCAzMS42ODMsNi4xOTYgMzIuNDI0LDAuMTM2ICIvPjxwYXRoIGZpbGw9IiMyMzFGMjAiIGQ9Ik05OC40MjEsNC4xNDNoMTAuMTQ2bDAuMzczLTQuMDIxSDkwLjIzTDg4LjYyNiwxMy4xOGwtNi40NDItMy4yODNjMCwwLDEuNzc3LTAuNTA0LDIuNzUtMS4xODNjMS4wMTUtMC43MSwxLjQzOS0xLjQxNSwxLjYyOS0xLjc0NGMwLjM2LTAuNjA0LDAuNzUtMS4zMDQsMC43OTUtMi42MjJjMC4wNDUtMS4zNjEtMC42Ny0yLjMzNy0xLjA1My0yLjc4MmMtMC4zODUtMC40NTctMS4zMy0xLjQ2LTMtMS40MzVjLTEuODU1LDAuMDI2LTE1LjQsMC0xNS40LDBsLTAuNDk2LDMuOTU1aDEyLjE5NWwtMC4yOSwyLjEzNEg2Ny4xNDhMNjUuNzksMTcuNDdoNy4zMzNsMC43NDktNS42NDFsMTMuOTEyLDguMzk1bDAuMzA4LTIuNTg2bDE4LjkyNi0wLjAxN2wwLjQ0MS00LjZsLTEwLjI1NS0wLjAwNmwwLjMxOC0yLjMxOGgxMC4yNDZsMC42MDMtNC40NjJsLTEwLjI0LDAuMDExTDk4LjQyMSw0LjE0M3oiLz48cGF0aCBmaWxsPSIjMjMxRjIwIiBkPSJNNi42NzUsMC4wMzRjLTEuMTQsMC4wMDUtMi4xNTEsMC4zOTctMi45NTcsMS4wMjlsLTAuMDQsMC4wMDdDMy42NzIsMS4wNjksMy42NzEsMS4wNjQsMy42NzEsMS4wNjRsMC4wMDEsMC4wMDdDMS4wODksMy4wODgsMC41MzEsNy41LDQuMTk0LDkuMzE0YzAuNDg4LDAuMjQyLDguNTkxLDMuNTI3LDguNTkxLDMuNTI3bDAuMDIsMC4wMDZMMC43ODIsMTIuODY1bC0wLjc2Nyw0LjczN0wwLDE3LjYxNWgwLjAxNUwwLjAxLDE3LjYyN2wwLjAxMS0wLjAxMmMwLjQ2MSwwLDEzLjg1MywwLjAxNiwxNC45NDUsMC4wMTZjMi4yNTcsMC4wMDIsMy44MDktMC44NjUsNC44ODgtMi4zODdjMC4zOTEtMC41MjEsMC42NS0xLjAzNiwwLjgyNS0xLjU2NGMwLjU2My0xLjY1NSwwLjQ1Ny0zLjU0Mi0wLjY2Ny00LjQ0NGMtMC4yMzktMC4xOTEtMC40NTEtMC4zNTktMC42NzEtMC40OTNjLTAuMTUtMC4wOTItMC40MDItMC4yNDUtMC42Mi0wLjM0N0MxNi43OTcsNy40OCw4LjU2Niw0LjAwMyw4LjU2Niw0LjAwM2wxMi43MDUtMC4wMDhsMC41MjQtMy45NWwtMC4zMTgsMC4yMzNsMC4zMTgtMC4yNDRINi42NzV6Ii8+PC9nPjwvZz48ZyBpZD0iV2hpdGVfMV8iPjxnIGlkPSJXaGl0ZSI+PHBhdGggZmlsbD0iI0ZGRkZGRiIgZD0iTTU2Ljg0MiwwLjEzMWwtMS41NDksMTIuMDg1aC0yLjI1NGwxLjUwNS0xMi4wODVoLTguNTIxbC0xLjEzOCw4LjIxNGMwLDAtMC41ODUsMy4xODgtMC4xMTQsNC42MjljMS4wNzksMy4yNiwzLjc3MSw0LjQ0NSwzLjc3MSw0LjQ0NWwwLjMxMiwwLjE3YzEuMDgxLDAuNTUzLDIuMjIyLDAuNzk1LDMuNzAxLDAuNzk1aDAuODA2YzIuMTQ3LTAuMDA2LDMuODk0LTAuNDg0LDUuMzItMS4xOTRjMC4wMDMtMC4wMDksMC4wODktMC4wNDEsMC4wODktMC4wNDFjMC40NjEtMC4yNzQsMy4xMS0xLjYzOCw0Ljc1Mi00Ljg3N2MwLjY4Ni0xLjM1NSwxLjAwMi0zLjQ0NywxLjAwMi0zLjQ0N2wxLjAyNC04LjY5MyIvPjxwYXRoIGZpbGw9IiNGRkZGRkYiIGQ9Ik0xMTQuNDcxLDAuNjU0YzAuMzc5LDAuMzg3LDAuNTgyLDAuODk1LDAuNTgyLDEuNDQyYzAsMC41NjYtMC4yMTYsMS4wNzUtMC42MDQsMS40NTNjLTAuNDAxLDAuMzg5LTAuOTIzLDAuNTk5LTEuNDUxLDAuNTk5Yy0wLjU0OSwwLTEuMDY0LTAuMjItMS40NjEtMC42MjJjLTAuMzg2LTAuMzktMC41ODgtMC44OTktMC41ODgtMS40M2MwLTAuMzY5LDAuMDk3LTAuNzIzLDAuMy0xLjA3YzAuMzY4LTAuNjIsMS4wMDctMC45ODcsMS43NDktMC45ODdDMTEzLjU2MSwwLjAzOCwxMTQuMDczLDAuMjUzLDExNC40NzEsMC42NTQgTTExMS44MDcsMC44NjNjLTAuMzM0LDAuMzM1LTAuNTIsMC43NzQtMC41MiwxLjIyOHMwLjE3LDAuODc3LDAuNDkxLDEuMmMwLjMyOCwwLjMzMiwwLjc2NSwwLjUyLDEuMjE4LDAuNTJjMC40NDQsMCwwLjg3NS0wLjE4MSwxLjIxNC0wLjUwM2MwLjMyMy0wLjMxMSwwLjUwNC0wLjc0MSwwLjUwNC0xLjE4MmMwLTAuNDkyLTAuMTY1LTAuOTA0LTAuNDg3LTEuMjMzYy0wLjMzMi0wLjMzOC0wLjc1Mi0wLjUxMy0xLjIyNy0wLjUxM0MxMTIuNTM3LDAuMzc4LDExMi4xMywwLjU0LDExMS44MDcsMC44NjMgTTExMy4wMzksMC45MTRjMC42NDksMCwwLjk3MywwLjIyMiwwLjk3MywwLjY1NWMwLDAuMzAxLTAuMTg2LDAuNTI2LTAuNDk2LDAuNjA2bDAuNTA4LDEuMDE2aC0wLjYxNmwtMC40MzUtMC45MzJoLTAuMjcxdjAuOTMyaC0wLjU1NlYwLjkxNEgxMTMuMDM5eiBNMTEyLjcwMSwxLjkyNmgwLjI3MWMwLjMxNSwwLDAuNDY5LTAuMDk2LDAuNDY5LTAuMzIyYzAtMC4yMzctMC4xNjQtMC4zNC0wLjQ5OC0wLjM0aC0wLjI0MVYxLjkyNkwxMTIuNzAxLDEuOTI2eiIvPjxwb2x5bGluZSBmaWxsPSIjRkZGRkZGIiBwb2ludHM9IjMyLjQzMSwwLjEzMSAyMy45MzgsMC4xMzEgMjEuODAxLDE3LjYyMiAzMC4yNzYsMTcuNjIyIDMwLjI4MywxNy42MjcgMzAuMjgzLDE3LjYyMiAzMC4yODUsMTcuNjIyIDMwLjI4MywxNy42MiAzMS4wMzgsMTEuNDk0IDMzLjY0NiwxMS40OTQgMzMuNjk3LDExLjQ2NCAzMi45NDMsMTcuNjA0IDQxLjQyNiwxNy42MjcgNDMuNTcyLDAuMTM2IDQzLjU3MiwwLjE0NyAzNS4wODgsMC4xNDcgMzQuMzQyLDYuMTk0IDM0LjMyOCw2LjE4NCAzMS43MDksNi4xODQgMzEuNjgzLDYuMTk2IDMyLjQyNCwwLjEzNiAiLz48cGF0aCBmaWxsPSIjRkZGRkZGIiBkPSJNOTguNDIxLDQuMTQzaDEwLjE0NmwwLjM3My00LjAyMUg5MC4yM0w4OC42MjYsMTMuMThsLTYuNDQyLTMuMjgzYzAsMCwxLjc3Ny0wLjUwNCwyLjc1LTEuMTgzYzEuMDE1LTAuNzEsMS40MzktMS40MTUsMS42MjktMS43NDRjMC4zNi0wLjYwNCwwLjc1LTEuMzA0LDAuNzk1LTIuNjIyYzAuMDQ1LTEuMzYxLTAuNjctMi4zMzctMS4wNTMtMi43ODJjLTAuMzg1LTAuNDU3LTEuMzMtMS40Ni0zLTEuNDM1Yy0xLjg1NSwwLjAyNi0xNS40LDAtMTUuNCwwbC0wLjQ5NiwzLjk1NWgxMi4xOTVsLTAuMjksMi4xMzRINjcuMTQ4TDY1Ljc5LDE3LjQ3aDcuMzMzbDAuNzQ5LTUuNjQxbDEzLjkxMiw4LjM5NWwwLjMwOC0yLjU4NmwxOC45MjYtMC4wMTdsMC40NDEtNC42bC0xMC4yNTUtMC4wMDZsMC4zMTgtMi4zMThoMTAuMjQ2bDAuNjAzLTQuNDYybC0xMC4yNCwwLjAxMUw5OC40MjEsNC4xNDN6Ii8+PHBhdGggZmlsbD0iI0ZGRkZGRiIgZD0iTTYuNjc1LDAuMDM0Yy0xLjE0LDAuMDA1LTIuMTUxLDAuMzk3LTIuOTU3LDEuMDI5bC0wLjA0LDAuMDA3QzMuNjcyLDEuMDY5LDMuNjcxLDEuMDY0LDMuNjcxLDEuMDY0bDAuMDAxLDAuMDA3QzEuMDg5LDMuMDg4LDAuNTMxLDcuNSw0LjE5NCw5LjMxNGMwLjQ4OCwwLjI0Miw4LjU5MSwzLjUyNyw4LjU5MSwzLjUyN2wwLjAyLDAuMDA2TDAuNzgyLDEyLjg2NWwtMC43NjcsNC43MzdMMCwxNy42MTVoMC4wMTVMMC4wMSwxNy42MjdsMC4wMTEtMC4wMTJjMC40NjEsMCwxMy44NTMsMC4wMTYsMTQuOTQ1LDAuMDE2YzIuMjU3LDAuMDAyLDMuODA5LTAuODY1LDQuODg4LTIuMzg3YzAuMzkxLTAuNTIxLDAuNjUtMS4wMzYsMC44MjUtMS41NjRjMC41NjMtMS42NTUsMC40NTctMy41NDItMC42NjctNC40NDRjLTAuMjM5LTAuMTkxLTAuNDUxLTAuMzU5LTAuNjcxLTAuNDkzYy0wLjE1LTAuMDkyLTAuNDAyLTAuMjQ1LTAuNjItMC4zNDdDMTYuNzk3LDcuNDgsOC41NjYsNC4wMDMsOC41NjYsNC4wMDNsMTIuNzA1LTAuMDA4bDAuNTI0LTMuOTVsLTAuMzE4LDAuMjMzbDAuMzE4LTAuMjQ0SDYuNjc1eiIvPjwvZz48L2c+PC9zdmc+",
+      Position = { 23, 9 },
+      Size = { 86, 15 }
+    },
+    {
+      Type = "GroupBox",
+      Fill = Color.DkGray,
+      StrokeWidth = 0,
+      CornerRadius = 0,
+      Position = { 132, 0 },
+      Size = { 431, 32 }
+    },
+    {
+      Type = "Label",
+      Text = "Preset Load",
+      TextSize = 9,
+      Color = Color.DkGrayText,
+      Position = { 154, 6 },
+      Size = { 49, 20 },
+    },
+    {
+      Type = "GroupBox",
+      Fill = Color.DkGray,
+      StrokeWidth = 0,
+      CornerRadius = 0,
+      Position = { 563, 0 },
+      Size = { 318, 32 }
+    },
+    {
+      Type = "Label",
+      Text = "Light Bar",
+      TextSize = 10,
+      Color = Color.DkGrayText,
+      Position = { 563, 0 },
+      Size = { 31, 32 },
+    },
+    {
+      Type = "Header",
+      Text = "Mute Behavior",
+      Color = Color.DkGrayText,
+      TextSize = 11,
+      Position = { 646, 3 },
+      Size = { 91, 10 }
+    },
+    {
+      Type = "Header",
+      Text = "Unmute Behavior",
+      Color = Color.DkGrayText,
+      TextSize = 11,
+      Position = { 743, 3 },
+      Size = { 91, 10 }
+    },
+    {
+      Type = "GroupBox",
+      Fill = Color.DkGray,
+      StrokeWidth = 0,
+      CornerRadius = 0,
+      Position = { 0,32 },
+      Size = { 132, 178 }
+    },
+    {
+      Type = "GroupBox",
+      Fill = Color.DkGray,
+      StrokeWidth = 0,
+      CornerRadius = 0,
+      Position = { 0,210 },
+      Size = { 132, 136 }
+    },
+    {
+      Type = "Label",
+      Text = "MXA910",
+      TextSize = 9,
+      Color = Color.DkGrayText,
+      IsBold = true,
+      Position = { 47, 126 },
+      Size = { 38, 11 },
+    },
+    {
+      Type = "Label",
+      Text = "Connection Setup",
+      TextSize = 9,
+      IsBold = true,
+      HTextAlign = "Left",
+      Color = Color.LtGrayText,
+      Position = { 2, 209 },
+      Size = { 72, 11 },
+    },
+    {
+      Type = "Label",
+      Text = "Mode",
+      TextSize = 10,
+      HTextAlign = "Right",
+      Color = Color.LtGrayText,
+      Position = { 8, 220 },
+      Size = { 41, 16 },
+    },
+    {
+      Type = "Label",
+      Text = "Unit/IP",
+      TextSize = 10,
+      HTextAlign = "Right",
+      Color = Color.LtGrayText,
+      Position = { 8, 239 },
+      Size = { 41, 16 },
+    },
+    {
+      Type = "Label",
+      Text = "NIC",
+      TextSize = 10,
+      HTextAlign = "Right",
+      Color = Color.LtGrayText,
+      Position = { 8, 258 },
+      Size = { 41, 16 },
+    },
+    {
+      Type = "GroupBox",
+      StrokeColor = Color.LtGrayText,
+      StrokeWidth = 1,
+      CornerRadius = 8,
+      Position = { 3,295 },
+      Size = { 125, 47 }
+    },
+    {
+      Type = "Label",
+      Text = "Details                 (Plugin v"..PluginInfo.Version..")",
+      TextSize = 9,
+      IsBold = true,
+      HTextAlign = "Left",
+      Color = Color.LtGrayText,
+      Position = { 6, 296 },
+      Size = { 117, 9 },
+    },
+  }
+  for i=1,8 do
+    table.insert(graphics,{
+      Type = "GroupBox",
+      Fill = { 244, 246, 249},
+      StrokeWidth = 1,
+      StrokeColor = { 156, 171, 175 },
+      CornerRadius = 0,
+      Position = { 136+(i-1)*93,60 },
+      Size = { 94, 286 }
+    })
+    table.insert(graphics,{
+      Type = "Label",
+      Text = tostring(i),
+      TextSize = 10,
+      StrokeWidth = 1,
+      StrokeColor = { 156, 171, 175 },
+      Fill = { 223, 231, 234 },
+      Position = { 136+(i-1)*93,36 },
+      Size = { 94, 25 },
+    })
+    table.insert(graphics,{
+      Type = "Label",
+      Text = "dB",
+      TextSize = 8,
+      Color = Color.ChTextGray,
+      Position = { 165+(i-1)*93,225 },
+      Size = { 13, 7 },
+    })
+    table.insert(graphics,{
+      Type = "Label",
+      Text = "dBFS",
+      TextSize = 8,
+      Color = Color.ChTextGray,
+      Position = { 189+(i-1)*93,225 },
+      Size = { 22, 7 },
+    })
+    table.insert(graphics,{
+      Type = "Label",
+      Text = "Gain (dB)",
+      TextSize = 11,
+      Color = Color.ChTextGray,
+      Position = { 162+(i-1)*93,239 },
+      Size = { 46, 13 },
+    })
+--[[    table.insert(graphics,{
+      Type = "Label",
+      Text = "Fader group",
+      TextSize = 10,
+      Color = { 33, 33, 33 },
+      Position = { 162+(i-1)*93,313 },
+      Size = { 53, 12 },
+    })
+    table.insert(graphics,{
+      Type = "Label",
+      Text = "Mute group",
+      TextSize = 10,
+      Color = { 33, 33, 33 },
+      Position = { 161+(i-1)*93,328 },
+      Size = { 53, 12 },
+    })]]
+    table.insert(graphics,{
+      Type = "GroupBox",
+      StrokeWidth = 1,
+      StrokeColor = Color.ChTextGray,
+      CornerRadius = 0,
+      Position = { 148+(i-1)*93,317 },
+      Size = { 73, 1 }
+    })
+    table.insert(graphics,{
+      Type = "Label",
+      Text = string.format("Output Ch %i",i),
+      TextSize = 10,
+      Color = Color.ChTextGray,
+      Position = { 155+(i-1)*93,325 },
+      Size = { 55, 12 },
+    })
+    for ix=1,13 do
+      table.insert(graphics,{
+        Type = "GroupBox",
+        Fill = { 156, 171, 175 },
+        StrokeWidth = 0,
+        Position = { 167+(i-1)*93, 108+(ix-1)*(math.floor(112/12)) },
+        Size = { 8, 1 }
+      })
+      table.insert(graphics,{
+        Type = "Label",
+        Text = ix==13 and "-INF" or tostring(40-(ix*10)),
+        TextSize = 8,
+        HTextAlign = "Right",
+        Color = { 156, 171, 175 },
+        Position = { 148+(i-1)*93, 105+(ix-1)*(math.floor(112/12)) },
+        Size = { 18, 7 },
+      })
+    end
+    for ix=1,6 do
+      table.insert(graphics,{
+        Type = "GroupBox",
+        Fill = { 156, 171, 175 },
+        StrokeWidth = 0,
+        Position = { 192+(i-1)*93, 108+(ix-1)*(math.floor(112/5)) },
+        Size = { 12, 1 }
+      })
+      table.insert(graphics,{
+        Type = "Label",
+        Text = tostring(0-((ix-1)*12)),
+        TextSize = 8,
+        HTextAlign = "Left",
+        Color = { 156, 171, 175 },
+        Position = { 203+(i-1)*93, 105+(ix-1)*(math.floor(112/5)) },
+        Size = { 15, 7 },
+      })
+    end
+  end
+
+  return layout , graphics
+end
+
+function GetComponents(props)
+  return {{Name = "nic_storage", Type = "scriptable_controls", Properties = {
+  ["config"] = '[{"Name":"Core","ControlType":"Text","ButtonType":"Momentary","TextType":"TextBox","IndicatorType":"Led","ControlUnit":"dB","PinStyle":"None","Min":-100.0,"Max":12.0,"Count":1.0},{"Name":"Emul","ControlType":"Text","ButtonType":"Momentary","TextType":"TextBox","IndicatorType":"Led","ControlUnit":"dB","PinStyle":"None","Min":-100.0,"Max":12.0,"Count":1.0},{"Name":"lastIP","ControlType":"Text","ButtonType":"Momentary","TextType":"TextBox","IndicatorType":"Led","ControlUnit":"dB","PinStyle":"None","Min":-100.0,"Max":12.0,"Count":1.0},{"Name":"lastname","ControlType":"Text","ButtonType":"Momentary","TextType":"TextBox","IndicatorType":"Led","ControlUnit":"dB","PinStyle":"None","Min":-100.0,"Max":12.0,"Count":1.0}]'}}}
+end
+
+if Controls then
+
+-- Subtract 37 from any error line numbers for actual error line
+discovery = UdpSocket.New()
+mxdQuery = UdpSocket.New()
+MXA = TcpSocket.New()
+MXA.ReadTimeout = 5
+MXA.WriteTimeout = 0
+MXA.ReconnectTimeout = 5
+local IPTimer = Timer.New()
+local Flash = {
+  ID = {
+    Toggle = Timer.New(),
+    Delay = Timer.New(),
+    State = false
+    },
+  Preview = {
+    Toggle = Timer.New(),
+    State = false
+    }
+  }
+local PresetPollTimer = Timer.New()
+local NICTimer = Timer.New()
+local GainTimer = {}
+local Discovered = {}
+local IPLookup = {}
+local resolvedIP = {}
+local PresetNames-- = {}
+local Waits = {}
+local Faders = {}
+local Details = {}
+
+-- Constants
+e = System.IsEmulating
+--local nic_storage = Controls["nic.storage."..tostring(e and "Emul" or "Core")] -- Use this line when running in Scriptable Controls
+local lastDev = { ip = nic_storage.lastIP, name = nic_storage.lastname }
+local nic_storage = nic_storage[tostring(e and "Emul" or "Core")]
+local ippattern = "[012]?%d?%d+.[012]?%d?%d+.[012]?%d?%d+.[012]?%d?%d"
+local discTimeout = 6
+local ShureQuery = "\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x06_shure\x04_tcp\x05local\x00\x00\x0c\x00\x01"
+local Colors = {"RED", "GREEN", "BLUE", "PINK", "PURPLE", "YELLOW", "ORANGE", "WHITE"}
+local ColorPreview = {
+  Bright = {RED="FF0000", GREEN="00FC61", BLUE="61C6FF", PINK="FF98FF", PURPLE="C1ACFF", YELLOW="FFFF00", ORANGE="FF9F38", WHITE="FFFFFF"},
+  Dim =    {RED="E90000", GREEN="00E658", BLUE="0098ED", PINK="EDA8ED", PURPLE="A08ED4", YELLOW="ECEC00", ORANGE="E79032", WHITE="E6E6E6"} }
+local Behavior = {"ON", "OFF", "FLASHING"}
+local ShureQueryIP = "239.255.254.253"
+local mDNSIP = "224.0.0.251"
+local ShureQueryPort = 8427
+local status_state = { OK = 0, COMPROMISED = 1, FAULT = 2, NOTPRESENT = 3, MISSING = 4, INITIALIZING = 5 }
+
+--aliases
+muteall = Controls.muteall
+id = Controls.id
+status = Controls.status
+mode = Controls.mode
+discover = Controls.discover
+unit = Controls.unit
+ip = Controls.ip
+nic = Controls.nic
+details = Controls.details
+connect = Controls.connect
+preset = Controls.preset
+presetname = Controls.presetname
+ledstate = Controls.ledstate
+ledbright = Controls.ledbright
+ledmutedcolor = Controls.ledmutedcolor
+ledmutedbehavior = Controls.ledmutedbehavior
+ledunmutedcolor = Controls.ledunmutedcolor
+ledunmutedbehavior = Controls.ledunmutedbehavior
+ledpreview = Controls.ledpreview
+ledpreview.Style = "{\"StrokeWidth\":0}"
+ledpreview.String = ""
+ledpreview.Legend = ""
+mxaname = Controls.mxaname
+chlabel = Controls.chlabel
+chfader = Controls.chfader
+chfadertext = Controls.chfadertext
+chfaderbup = Controls.chfaderbup
+chfaderbdn = Controls.chfaderbdn
+chmeter = Controls.chmeter
+mute = Controls.mute
+fgroup = Controls.fgroup
+mgroup = Controls.mgroup
+
+-- Helper Functions
+function DebugFormat(string,hex) -- Format strings containing non-printable characters so we can see what they are
+  local visual = ""
+  local format = hex~=nil and "\\x%02x" or "[%02X]"
+  for i=1,#string do
+    local byte = string:sub(i,i)
+    if string.byte(byte) >= 33 and string.byte(byte) <= 126 or string.byte(byte)==0x20 then
+      visual = visual..byte
+    else
+      visual = visual..string.format(format,string.byte(byte))
+    end
+  end
+  return visual
+end
+
+local function find(a,t) local f = false for _,_a in pairs(t) do f=a==_a if f then break end end return f end
+function GetNICIP(ctl) return string.match(ctl.String,ippattern) end
+
+function Status( msg, state )
+  status.Value = status_state[state]
+  status.String = msg
+  if DebugDesc or (status_state[state]>0) then print( msg ) end
+end
+
+function round(num)
+  if num >= -0.5 then return math.floor(num+.5) 
+  else return math.ceil(num-.5) end
+end
+
+local function FaderOut(val) return tostring( ( round(val)+110)*10) end
+local function FaderIn(val) return (val*.1)-110 end
+
+-- Discovery and Connect Functions
+function SourceNIC()
+  iptable = Qlib.networkinterfaces()
+  local list = {}
+  for i,nicid in pairs(iptable) do
+    local name,ipa = nicid.Interface, nicid.Address
+    if not string.find(name,"Loopback") then
+      table.insert(list,tostring(e and ipa or name).." - "..tostring(e and name or ipa))
+      --print(tostring(e and ipa or name).." - "..tostring(e and name or ipa))
+    end
+  end
+  if #list==1 then
+    LocalIP=GetNICIP{String=list[1]}
+    nic.String=list[1]
+    nic_storage.String = list[1]
+    if not find(nic.String,list) then print("Single NIC AssignIP()") AssignIP() end
+  elseif #list>1 then
+    local validnic = find(nic_storage.String,list)
+    --print("Chosen nic valid:",validnic)
+    if nic_storage.String ~="" and validnic then
+      nic.String = nic_storage.String
+    end
+    if not validnic then
+      nic.String = "Choose NIC..."
+      connect.Boolean=false
+      nic_storage.String=""
+    end
+    nic.Choices = list
+  else
+    nic.String="No NICs found"
+    nic_storage.String = ""
+    LocalIP = ""
+    Status( "No Network Interfaces Found", "FAULT" )
+  end
+end
+
+function AssignIP()
+  if not string.find(nic.String,"Choose NIC") then
+    LocalIP=GetNICIP(nic)
+    print("Using Local IP: ",LocalIP)
+    nic_storage.String = nic.String
+  end
+end
+
+-- Bonjour Bits on Core
+local ResolveBonjourName
+if not e then ResolveBonjourName=load(bitstring.fromhexstream("1b4c7561530019930d0a1a0a04080408087856000000000000000000000028774001023d100000003100000007001117000000c6014000c741c003e48180000682400007c24004248280004102010080020000c142010000030004418301005d428304840200016c030000ca4183836c4300008c03c20300040003a443800180038006c0038004a44300012600800009000000040654696d657204044e657704036f730408746d706e616d6504146e6f68757020646e732d7364202d47207634200404203e2004032026040d4576656e7448616e646c657204065374617274010000000000020000000016000000280000000000085100000006404000078040004500800081c000002480800108000080060040000cc041008100020024008101088000830840808208000082060040000c404200850080002440800106004100224000001e4001800680420041c00200864041005d808000868041002440800106004300074043004500800024400001060043000780430041c0030024000101c6404400c780c4010601410041c10400e480800108c00088220000001e400880c6004100dc0080015f00c5011e400780c6004400c6c000015f40c5011e000180c5000002c6c08001060144005f0081011e000480c60044000bc10000450100020a41018b450180024c81c402c1010600648180010a41818b450100030a41818c88008101c500000206014400c8008101c5008003e4408000c5000004cc80c601e44000011ec00080c680420001c1060045018002e4408001260080001c000000040566696c650403696f04056f70656e040272040472657304046d73670405636f646504057265616404032a610406636c6f736504067072696e7404084572726f723a2004036f73040772656d6f7665040865786563757465041d706772657020646e732d7364207c207861726773206b696c6c202d39040c63616e64696461746549500407737472696e6704066d6174636814365b3031325d3f25643f25642b252e5b3031325d3f25643f25642b252e5b3031325d3f25643f25642b252e5b3031325d3f25643f25641300000000000000000004054e616d65040844656661756c74040b282e2b292e6c6f63616c04064d6f64656c040553746f7004114950206e6f74207265736f6c7665642109000000000001080103010401010100010201050107000000005100000017000000170000001700000017000000170000001700000018000000180000001800000018000000180000001800000018000000190000001900000019000000190000001a0000001a0000001a0000001a0000001a0000001a0000001a0000001a0000001a0000001b0000001b0000001b0000001b0000001c0000001c0000001c0000001c0000001d0000001d0000001d0000001d0000001d0000001d0000001e0000001e0000001e0000001e0000001e0000001e0000001f0000001f0000001f0000001f0000001f0000001f0000001f0000001f0000001f0000002000000020000000200000002000000020000000200000002000000020000000200000002000000020000000200000002100000021000000210000002200000022000000240000002400000024000000240000002600000026000000260000002600000028000000030000000873756363657373220000005100000005657865632200000051000000077369676e616c220000005100000009000000055f454e5604746d700a446973635461626c650a49504c755461626c6509667269656e646c79056e616d65066d6f64656c106d616b65646973706c61794c6973740a6b696c6c74696d6572002a0000002e00000003000c12000000c100000006414000078140024001000081c10000c50180005dc1810224010101c6014100000200024642410081820100c00280029dc20205c002000364028001e44100002600800007000000040104036f730408657865637574650404203e2004076173736572740409746f737472696e67041145786563757465204661696c65643a20020000000000010800000000120000002b0000002c0000002c0000002c0000002c0000002c0000002c0000002c0000002d0000002d0000002d0000002d0000002d0000002d0000002d0000002d0000002d0000002e0000000700000008636d646c696e650000000012000000087061747465726e0000000012000000086361707475726500000000120000000872737472696e6701000000120000000873756363657373080000001200000005657865630800000012000000077369676e616c080000001200000002000000055f454e5604746d70170000001100000011000000110000001200000012000000120000001300000013000000130000001300000013000000130000001400000028000000280000002e0000002f0000002f0000002f000000300000003000000030000000310000000e000000056e616d65000000001700000009667269656e646c790000000017000000066d6f64656c00000000170000000a446973635461626c6500000000170000000a49504c755461626c650000000017000000106d616b65646973706c61794c6973740000000017000000096b696c6c74696d6500000000170000000a6b696c6c74696d6572030000001700000004746d70060000001700000008636d646c696e650c00000017000000087061747465726e0d0000001700000008636170747572650d000000170000000872737472696e670d0000001700000004436d64100000001700000001000000055f454e56")) end
+
+function mDNSBrowse()
+  if not e then
+    mDNS = BonjourBrowser.New()
+    mDNS.EventHandler = function( record ) -- record contents Domain=local. Type=_shure._tcp. NetIf=2 Added=true Name=(friendly name)
+      if record.Type=="_shure._tcp." then
+        --[[for k,v in pairs(record) do
+          if type(v) == "table" then
+            for a,b in pairs(v) do
+              print("  --"..k,a,b)
+            end
+          else
+            print("  "..k,v)
+          end
+        end]]
+        if record.Added then
+          local r = BonjourResolver.New()
+          r.EventHandler = function( rc )
+            local model = rc.Values.model
+            if rc.Values.model~=nil then
+              if model:find("^MXA910") then
+                --ResolveBonjourName(     name,                     friendly,                            model,DiscTable, IPLuTable,makedisplayList, killtime)
+                ResolveBonjourName(string.match(rc.Target,"(.+)%."),string.match(rc.Name,"(.+)%._shure"),model,Discovered,IPLookup,MakeDisplayList,.06)
+              end
+            end
+          end
+          r:Resolve( record )
+        else
+          DeleteBonjourEntry(record.Name)
+        end
+      end
+    end   
+    mDNS:Start( "_shure._tcp", 0, "local" )
+  end
+end
+
+
+function DeleteBonjourEntry(friendly)
+  if IPLookup[friendly]~=nil then
+    local ipa = IPLookup[friendly]
+    if Discovered[ipa]~=nil then
+      if Discovered[ipa].Name==friendly then
+        Discovered[ipa] = nil
+        IPLookup[friendly] = nil
+        MakeDisplayList()
+      end
+    end
+  end
+end
+
+function ExpiredDiscovery(ipa)
+  if unit.String~="None" then
+    if Discovered[ipa]==nil then
+      unit.String="None"
+    else
+      local name = Discovered[ipa].Name
+      Discovered[ipa].Timer:Stop()
+      Discovered[ipa] = nil
+      IPLookup[name] = nil
+    end
+  end
+end
+
+function SendShureQuery()
+  mxdQuery:Send(mDNSIP,5353,ShureQuery)
+end
+
+-- Discovery Parsing into Discovery table
+discovery.EventHandler = function(mxwapi, packet)
+  if string.find(packet.Data,"acn%-uacn=MXA910") then
+    if e then SendShureQuery() end
+    local ipa = packet.Address
+    if Discovered[ipa]==nil then
+      Discovered[ipa]={ Timer = Timer.New() }
+    end
+  end
+end
+
+-- mDNS Receive
+
+function MakeDisplayList()
+  DisplayList = {"None"}
+  for key,item in pairs(Discovered) do
+    if item.Name~=nil then
+      table.insert(DisplayList,item.Name)
+    end
+  end
+  unit.Choices = DisplayList
+  unit.EventHandler = UnitHandler
+end
+
+function ParseName(data)
+  local default,name = data:match("\0\0\0x..\r(.-)\5local\0\x0c(.-)\5_http")
+  local model = data:match("model=(.-)\x05dante")
+  return name,model,default
+end
+
+mxdQuery.EventHandler = function(mxwapi, packet)
+  local resp = packet.Data
+  if resp:find("MXA910") and resp:sub(2,3)=="\x00\x84" and not resp:find("_netaudio") then -- filter models and mDNS Response packets
+    if string.find(resp,"\xc0.-\x06_shure\xc0.\x00") then
+      local name, model, default = ParseName(resp)
+      if Discovered[packet.Address]==nil then Discovered[packet.Address]={ Timer = Timer.New() } end
+      if name~= nil and Discovered[packet.Address] ~= nil then
+        if Discovered[packet.Address].Name ~= name then
+          Discovered[packet.Address].Name = name
+          Discovered[packet.Address].Model = model
+          Discovered[packet.Address].Default = default
+          IPLookup[name] = packet.Address
+          MakeDisplayList()
+        end
+        if MXA.IsConnected and name == lastDev.name then
+          BuildDetails()
+        end
+      else
+        print("Shure Discovery packet not yet parsed",packet.Address,name)
+        print(DebugFormat(packet.Data,true))
+      end
+    else
+      --print("Not parsed",DebugFormat(packet.Data))
+    end
+  end
+end
+
+function UnitHandler()
+  if unit.String~="None" then
+    local ipa = IPLookup[unit.String]
+    if ipa~=nil then
+      ip.String = ipa
+      id.String = unit.String
+    end
+  else
+    connect.Boolean = false
+    MXA:Disconnect()
+    ip.String = ""
+    mxaname.String = ""
+    Details = {}
+    AssembleDetails()
+  end
+end
+
+function HideDiscControls(bool)
+  if e then nic.IsDisabled=bool else nic.IsDisabled=true end
+  unit.IsInvisible = bool
+  ip.IsInvisible = not bool
+end
+
+-- Initiate Discovery of Shure MXA910
+function DiscoverDevices()
+  if mode.String == "Manual" then
+    HideDiscControls(true)
+  else -- Discovery
+    HideDiscControls(false)
+    MakeDisplayList()
+    if e then
+      discovery:Open( GetNICIP(nic), ShureQueryPort ) -- IP address/port are not needed
+      discovery:JoinMulticast(ShureQueryIP) -- Sends a multicast join report for the Shure multicast address
+      mxdQuery:Open( GetNICIP(nic), 5353 ) -- IP address/port are not needed
+      mxdQuery:JoinMulticast(mDNSIP) -- Sends a multicast join report for the Shure multicast address
+    else
+      mDNSBrowse()
+    end
+  end
+end
+
+function AssembleDetails()
+  local detailstr = {}
+  if Details.Model ~= nil and Details.Serial ~= nil then table.insert(detailstr,"Model: "..Details.Model.."    Ser: "..Details.Serial) end
+  if Details.IP ~= nil and Details.FW ~= nil then
+    table.insert(detailstr,"IP: "..Details.IP.."    Firmware: "..Details.FW)
+    lastDev.ip.String = Details.IP end
+  if Details.AudIP ~= nil then table.insert(detailstr,"Audio IP: "..Details.AudIP) end
+  if Details.Service ~= nil then table.insert(detailstr,"Service Name: "..Details.Service) end
+  details.String = table.concat(detailstr,"\r")
+end
+
+-- End Discovery and Connect Functions
+---------------------------------
+-- MXA Control
+
+function Send(str) if MXA.IsConnected then MXA:Write(str) end end
+function ParseChName(str) return string.match(str,"{(.-)%s+}") end
+
+function PresetButton(num)
+  for i=1,10 do
+    preset[i].Color = num==i and "#32CBDE" or ""
+  end
+  if num==0 then
+    presetname.String="None"
+  elseif PresetNames~=nil then
+    presetname.String = PresetNames[tostring(num)]
+  end
+end
+
+function LEDPreview(color)
+  local function AdjustLED(noRestart)
+    local colorname = ledstate.Boolean and ledmutedcolor.String or ledunmutedcolor.String
+    local behavior = ledstate.Boolean and ledmutedbehavior.String or ledunmutedbehavior.String
+    local bright = ledbright.Boolean and "Bright" or "Dim"
+    local color = "#"..ColorPreview[bright][colorname]
+    if behavior~="OFF" then
+      ledpreview.Color = color
+      ledpreview.Boolean = true
+      if behavior=="FLASHING" then
+        if noRestart~=true then
+          Flash.Preview.Toggle:Start(.7)
+        end
+      else
+        Flash.Preview.Toggle:Stop()
+      end
+    else
+      ledpreview.Color = ""
+      ledpreview.Boolean = false
+    end
+  end   
+
+  Flash.Preview.Toggle.EventHandler = function()
+    local colorname = ledstate.Boolean and ledmutedcolor.String or ledunmutedcolor.String
+    local bright = ledbright.Boolean and "Bright" or "Dim"
+    local color = "#"..ColorPreview[bright][colorname]
+    Flash.Preview.State = not Flash.Preview.State
+    ledpreview.Color = Flash.Preview.State and color or "#252D32"
+    ledpreview.Boolean = Flash.Preview.State
+  end
+  
+  if color~=nil then
+    ledpreview.Boolean = true
+    ledpreview.Color = color
+  else
+    AdjustLED()
+  end
+end
+
+function PresetNameUpdate(id,name)
+  if PresetNames==nil then PresetNames = {} for i=1,10 do PresetNames[tostring(i)] = "Preset "..i end end
+  if id~=nil and name~=nil then
+    presetList = {}
+    PresetNames[id] = name
+    for i=1,10 do
+      local pName = PresetNames[tostring(i)]
+      table.insert(presetList,i.." "..pName)
+    end
+    presetname.Choices = presetList
+  end
+end
+
+local ignore = {
+  global = {"DISABLE_LEDS","IP_GATEWAY_NET_AUDIO_PRIMARY","METER_RATE","NA_DEVICE_NAME","IP_SUBNET_NET_AUDIO_PRIMARY","NUM_ACTIVE_MICS","IP_GATEWAY_SHURE_CONTROL","IP_SUBNET_SHURE_CONTROL","CONTROL_MAC_ADDR"},
+  ch = {"BEAM_W","BEAM_Z","BEAM_Y","BEAM_X","AUTOMIX_GATE_OUT_EXT_SIG","NA_CHAN_NAME","CHAN_AUTOMIX_SOLO_EN"} }
+function dvc_decode( msg, raw )
+  -- Metering
+  if msg[2] == "SAMPLE" then
+    for i=3,10 do
+      chmeter[i-2].Value = -60+tonumber(msg[i])
+    end
+  elseif msg[2] == "REP" then
+    local ch = tonumber( msg[3] )
+    -- channel message
+    if ch ~= nil then
+      local key = msg[4]
+      local value = msg[5]
+      if not find(key,ignore.ch) and ch<=8 then
+        -- Channel/Mic availability change
+        if key:find("CHAN_NAME")then
+          local num = tonumber(string.match(msg[3],"%d$"))
+          chlabel[num].String = ParseChName(raw)
+        elseif key:find("AUDIO_MUTE") and ch<=8 then
+          mute[ch].Boolean = msg[5]=="ON"
+          local mwait = false
+          if Waits["mute"..ch]~=nil then
+            if Waits["mute"..ch]==mute[ch].Boolean then
+              Waits["mute"..ch]=nil
+            else
+              mwait = true
+            end
+          end
+          if not mwait then
+            mute[ch].Boolean = msg[5]=="ON"
+          end
+        elseif key:find("AUDIO_GAIN_HI_RES") and ch<=8 then
+          if not GainTimer[tostring(ch)].State then
+            local gain = FaderIn(msg[5])
+            chfader[ch].Value = gain
+            chfadertext[ch].Value = gain
+          end
+        elseif key=="AUDIO_OUT_CLIP_INDICATOR" then
+          --print(raw)
+        elseif key=="AUDIO_IN_PEAK_LVL" then
+          --print(raw)
+        elseif key=="AUDIO_IN_RMS_LVL" then --ignore
+        else
+           print( ch, key, value )
+        end
+      end
+    elseif not find(msg[3],ignore.global) then
+      local key = msg[3]
+      local val = msg[4]
+      if key=="DEVICE_ID" then
+        local DeviceID = string.gsub(val,"{","")
+        print("DeviceID",DeviceID)
+        mxaname.String = DeviceID
+        lastDev.name.String = DeviceID
+      elseif key=="DEVICE_AUDIO_MUTE" then
+        local dmwait = false
+        if Waits.devmute~=nil then
+          if Waits.devmute==muteall.Boolean then
+            Waits.devmute=nil
+          else
+            dmwait = true
+          end
+        end
+        if not dmwait then 
+          muteall.Boolean  = val=="ON"
+          ledstate.Boolean = val=="OFF" and LedStateLast or true
+          if mutealltoOFF then mutealltoOFF = nil else LEDPreview() end
+        end
+      elseif key=="DEV_MUTE_STATUS_LED_STATE" then
+        local swait = false
+        if Waits.ledstate~=nil then
+          if Waits.ledstate==(ledstate.Boolean and "OFF" or "ON") then
+            Waits.ledstate=nil
+          else
+            swait = true
+          end
+        end
+        if not swait then
+          ledstate.Boolean = val=="ON"
+        end
+      elseif key=="DEV_LED_IN_STATE" then
+        local swait = false
+        if Waits.ledstate~=nil then
+          if Waits.ledstate==(ledstate.Boolean and "ON" or "OFF") then
+            Waits.ledstate=nil
+          else
+            swait = true
+          end
+        end
+        if not swait then
+          ledstate.Boolean = val=="OFF"
+          LEDPreview()
+        end
+      elseif key=="PRESET" then
+        PresetButton(tonumber(val))
+      elseif string.find(key,"PRESET") then
+        if string.find(key,"%d$") then
+          local id = string.match(key,"%d+$")
+          PresetNameUpdate(id,ParseChName(raw))
+        end
+      elseif key=="LED_COLOR_MUTED" then
+        ledmutedcolor.String = val
+          LEDPreview()
+      elseif key=="LED_COLOR_UNMUTED" then
+        ledunmutedcolor.String = val
+        LEDPreview()
+      elseif key=="LED_STATE_MUTED" then
+        ledmutedbehavior.String = val
+        LEDPreview()
+      elseif key=="LED_STATE_UNMUTED" then
+        ledunmutedbehavior.String = val
+        LEDPreview()
+      elseif key=="LED_BRIGHTNESS" then
+        local bwait = false
+        if Waits.ledbright~=nil then
+          if Waits.ledbright==(ledbright.Boolean and 2 or 1) then
+            Waits.ledbright=nil
+          else
+            bwait = true
+          end
+        end
+        if not bwait then
+          ledbright.Boolean = val=="2"
+          LEDPreview()
+        end
+      elseif key=="MODEL" then
+        local Model = string.gsub(val,"{","")
+        print("Model",Model)
+        Details.Model = Model
+        AssembleDetails()
+      elseif key=="IP_ADDR_NET_AUDIO_PRIMARY" then
+        Details.AudIP = ParseChName(raw)
+        AssembleDetails()
+      elseif key=="DNS_SERVICE_NAME" then
+        Details.Service = ParseChName(raw)
+        AssembleDetails()
+      elseif key=="SERIAL_NUM" then
+        Details.Serial = ParseChName(raw)
+        AssembleDetails()
+      elseif key=="IP_ADDR_SHURE_CONTROL" then
+        Details.IP = ParseChName(raw)
+        AssembleDetails()
+      elseif key=="FW_VER" then
+        Details.FW = ParseChName(raw)
+        AssembleDetails()
+      elseif key=="FLASH" then --ignore
+        id.Boolean = val=="ON"
+        LEDPreview()
+      else
+        print(key,":  ",raw)
+      end
+    end
+  end
+end
+
+function dvc_start()
+  Details = {}
+  ledpreview.Boolean = true
+  Send( "< SET METER_RATE 0 >" ) -- Suspend Meter Updates to speed up initialization
+  Send( "< GET 0 ALL >" )
+
+  for key,ctl in pairs{ledmutedcolor,ledunmutedcolor} do
+    local names = {"MUTED","UNMUTED"}
+    ctl.Choices = Colors
+    ctl.EventHandler = function(ctl)
+      if not id.Boolean then
+        Send( "< SET LED_COLOR_"..names[key].." "..ctl.String.." >" )
+      end
+      LEDPreview()
+    end
+  end
+  
+  for key,ctl in pairs{ledmutedbehavior,ledunmutedbehavior} do
+    local names = {"MUTED","UNMUTED"}
+    ctl.EventHandler = function(ctl)
+      if not id.Boolean then
+        Send( "< SET LED_STATE_"..names[key].." "..ctl.String.." >" )
+      end
+      LEDPreview()
+    end
+  end
+
+  --Gain
+  local UpdateInterval = .1
+  local TouchInterval = .3
+  for ix,_ in pairs(chfader) do
+    GainTimer[tostring(ix)] = {
+      UpdateTimer = Timer.New(), -- timer for sending
+      TouchTimer = Timer.New(), -- Create timer for lockout
+      State = false,
+      Value = 0
+    }
+    GainTimer[tostring(ix)].UpdateTimer.EventHandler = function(timer)
+      if GainTimer[tostring(ix)].State then
+        local newval = FaderOut(chfader[ix].Value)
+        if newval~= GainTimer[tostring(ix)].Value then
+          Send( "< SET "..ix.." AUDIO_GAIN_HI_RES "..FaderOut(chfader[ix].Value).." >" )
+          GainTimer[tostring(ix)].Value = newval
+        end
+      else
+        timer:Stop()
+      end
+    end
+    GainTimer[tostring(ix)].TouchTimer.EventHandler = function(timer)
+      timer:Stop()
+      GainTimer[tostring(ix)].State = false
+    end
+  
+    for i,item in pairs{chfader,fgroup} do
+      item[ix].EventHandler = function()
+        chfadertext[ix].Value = chfader[ix].Value
+        if i==1 then -- Only for faders
+          GainTimer[tostring(ix)].TouchTimer:Start(TouchInterval)
+          if not GainTimer[tostring(ix)].State then GainTimer[tostring(ix)].UpdateTimer:Start(UpdateInterval) end
+          GainTimer[tostring(ix)].State = true
+        end
+      end
+    end
+  end
+  
+  for ix,ctl in pairs(chfadertext) do
+    ctl.EventHandler = function()
+      chfader[ix].Value = ctl.Value
+      GainTimer[tostring(ix)].TouchTimer:Start(TouchInterval)
+      if not GainTimer[tostring(ix)].State then GainTimer[tostring(ix)].UpdateTimer:Start(UpdateInterval) end
+      GainTimer[tostring(ix)].State = true
+    end
+  end
+  for ix,ctl in pairs(chfaderbup) do
+    ctl.EventHandler = function()
+      chfader[ix].Value = chfader[ix].Value + 1
+      chfadertext[ix].Value = chfader[ix].Value
+      Send( "< SET "..ix.." AUDIO_GAIN_HI_RES "..FaderOut(chfader[ix].Value).." >" )
+    end
+  end
+  for ix,ctl in pairs(chfaderbdn) do
+    ctl.EventHandler = function()
+      chfader[ix].Value = chfader[ix].Value - 1
+      chfadertext[ix].Value = chfader[ix].Value
+      Send( "< SET "..ix.." AUDIO_GAIN_HI_RES "..FaderOut(chfader[ix].Value).." >" )
+    end
+  end
+
+  -- Mutes
+  muteall.EventHandler = function(ctl)
+    Send("< SET DEVICE_AUDIO_MUTE O"..tostring(ctl.Boolean and "N" or "FF").." >")
+    Waits.devmute = ctl.Boolean
+    ledstate.Boolean = ctl.Boolean
+    if not ctl.Boolean then ledstate.Boolean = LedStateLast end
+    if not ctl.Boolean then mutealltoOFF = true end
+    LEDPreview()
+  end
+
+  for i=1,8 do
+    mute[i].EventHandler = function(ctl)
+      Send( "< SET "..i.." AUDIO_MUTE O"..tostring(ctl.Boolean and "N" or "FF").." >" )
+      Waits["mute"..i]=ctl.Boolean
+    end
+  end
+
+  -- LED Control
+  Flash.ID.Toggle.EventHandler = function()
+    Flash.ID.State = not Flash.ID.State
+    id.Color = tostring(Flash.ID.State and "#1891AE" or "#52636D")
+    LEDPreview(Flash.ID.State and "Lime" or "#52636D")
+  end
+
+  Flash.ID.Delay.EventHandler = function()
+    Flash.ID.Toggle:Stop()
+    Flash.ID.Delay:Stop()
+    Flash.ID.State = false
+    id.Boolean = false
+    id.Color = ""
+    LEDPreview()
+  end
+  
+  id.EventHandler = function()
+    Send( "< SET FLASH O"..tostring(id.Boolean and "N" or "FF").." >" )
+    if id.Boolean then
+      Flash.Preview.Toggle:Stop()
+      Flash.ID.Delay:Start(30)
+      Flash.ID.Toggle:Start(.7)
+    else
+      Flash.ID.Delay:Stop()
+      Flash.ID.Toggle:Stop()
+      Flash.ID.State = false
+      LEDPreview()
+    end
+    id.Color = id.Boolean and "#1891AE" or ""
+  end
+
+  ledbright.EventHandler = function(ctl)
+    Send( "< SET LED_BRIGHTNESS "..tonumber(ledbright.Boolean and 2 or 1).." >" )
+    Waits.ledbright = ledbright.Boolean and 2 or 1
+   if not id.Boolean then
+     LEDPreview() end
+  end
+  
+  ledstate.EventHandler = function(ctl)
+    LedStateLast = ctl.Boolean
+    if not muteall.Boolean then
+      Send("< SET DEV_LED_IN_STATE O"..tostring(ctl.Boolean and "FF" or "N").." >")
+      Waits.ledstate = tostring(ctl.Boolean and "ON" or "OFF")
+    else 
+      ledstate.Boolean = muteall.Boolean 
+    end
+    if not id.Boolean then
+      LEDPreview() end
+  end
+
+  -- Presets
+  PresetPollTimer.EventHandler = function()
+    Send( "< GET PRESET >" )
+    PresetPollTimer:Stop()
+  end
+
+  local function LoadPreset(i)
+    Send( "< SET PRESET "..i.." >" )
+    presetname.String = PresetNames[tostring(i)]
+    PresetPollTimer:Start(10)  -- Change to 1 or less when finished
+  end
+  
+  for i=1,10 do
+    preset[i].EventHandler = function()
+      PresetButton(i)
+      LoadPreset(i)
+    end
+  end
+  presetname.EventHandler = function(ctl)
+    local num = string.match(ctl.String,"^%d+")
+    if num~=nil then
+      PresetButton(tonumber(num))
+      LoadPreset(tonumber(num))
+    end
+  end
+
+  -- Channel Names
+  for ix,label in pairs(chlabel) do
+    label.EventHandler = function(ctl)
+      --Send( "< SET "..ix.." CHAN_NAME "..ctl.String.." >" )
+    end
+  end
+
+  -- Restart Meter Updates
+  Send( "< SET METER_RATE 100 >" )
+end
+
+MXA.EventHandler = function( sock, evt, err )
+  if evt == TcpSocket.Events.Connected then
+    Status( "Connected", "OK" )
+    Waits = {}
+    dvc_start()
+    AssembleDetails()
+  elseif evt == TcpSocket.Events.Reconnect then
+    Status( "Reconnecting...", "INITIALIZING"  )
+  elseif evt == TcpSocket.Events.Data then
+    local msg = sock:ReadLine( TcpSocket.EOL.Custom, ">" )
+    while msg do
+      tokens = {}
+      for i in string.gmatch( msg, "%S+" ) do
+        table.insert( tokens, i )
+      end
+      dvc_decode( tokens, msg )
+      msg = sock:ReadLine( TcpSocket.EOL.Custom, ">" )
+    end
+  elseif evt == TcpSocket.Events.Closed then
+    Status( "Connection closed by remote", "FAULT" )
+  elseif evt == TcpSocket.Events.Error then
+    Status( "Connection closed due to error: "..err, "FAULT" )
+  elseif evt == TcpSocket.Events.Timeout then
+    Status( "Connection closed due to timeout", "FAULT" )
+  end
+end
+
+--[[function Connect()
+  if not string.find(ip.String,ippattern) then
+    Status( "Invalid Device IP Address", "FAULT" )
+    connect.Boolean = false
+  end
+  if connect.Boolean and not MXA.IsConnected then
+    Status( "Connecting...", "INITIALIZING" )
+    local ipa = mode.String =="Manual" and ip.String or IPLookup[unit.String]
+    if ipa~=nil then MXA:Connect(ipa, 2202 )
+    else connect.Boolean = false end
+  elseif MXA.IsConnected then
+    if not string.find(status.String,"Disconnected") then Status( "Disconnected", "OK",true ) end
+    MXA:Disconnect() -- there is no disconnected event
+  end
+end]]--
+
+function Connect()
+  if connect.Boolean then
+    if not string.find(ip.String,ippattern) then
+      Status( "Invalid Device IP Address", "FAULT" )
+      connect.Boolean = false
+    end
+    if e and mode.String=="Discovery" and string.find(nic.String,"Choose") then
+      Status( "No local Network Interface selected", "FAULT" )
+      connect.Boolean = false
+    end
+    if connect.Boolean and not MXA.IsConnected then
+      Status( "Connecting...", "INITIALIZING" )
+      local ipa = mode.String =="Manual" and ip.String or IPLookup[unit.String]
+      if ipa~=nil then MXA:Connect(ipa, 2202 )
+      else connect.Boolean = false end
+    end
+  elseif MXA.IsConnected then
+    if not string.find(status.String,"Disconnected") then Status( "Disconnected", "OK",true ) end
+    MXA:Disconnect() -- there is no disconnected event
+  end
+end
+
+function StartInit()
+  mode.Choices = {"Discovery","Manual"}
+  if mode.String=="" then mode.String="Discovery" end
+  mode.EventHandler = DiscoverDevices
+
+  -- Copy last settings if found to unit and ip textboxes
+  if lastDev.ip.String == "" and lastDev.name.String == "" and unit.String == "" and mode.String=="Discovery" then
+    unit.String="None"
+    ip.String = ""
+    Details = {}
+  elseif lastDev.ip ~= "" and connect.Boolean then
+    ip.String = lastDev.ip.String
+    if mode.String=="Discovery" then
+      IPLookup[lastDev.name.String] = lastDev.ip.String
+      unit.String = lastDev.name.String
+    end
+  end
+  unit.EventHandler = UnitHandler
+  
+  -- Get Local IP Addresses and Check saved selection
+  nic.IsDisabled = not e
+  if e then
+    SourceNIC()
+    NICTimer.EventHandler = SourceNIC
+    NICTimer:Start(15)
+    nic.EventHandler = function()
+      discovery:Close()
+      mxdQuery:Close()
+      AssignIP()
+      DiscoverDevices()
+    end
+  else
+    nic.String = "not applicable"
+  end
+
+  -- Assign Combobox Choices
+  for ix,ctl in pairs{ledmutedcolor,ledunmutedcolor} do
+    ctl.Choices = Colors
+    if ctl.String == "" then
+      ctl.String = Colors[ix]
+    end
+  end
+  for ix,ctl in pairs{ledmutedbehavior,ledunmutedbehavior} do
+    ctl.Choices = Behavior
+    if ctl.String == "" then
+      ctl.String = Behavior[ix]
+    end
+  end
+
+  DiscoverDevices()
+  id.Boolean = false
+  connect.EventHandler = Connect
+  Connect()
+end
+
+Status( "Discovering", "INITIALIZING" )
+StartInit()
+
+end
