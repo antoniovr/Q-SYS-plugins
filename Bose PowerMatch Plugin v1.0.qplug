@@ -1,0 +1,5230 @@
+PluginInfo = 
+{
+  Name = "Bose PowerMatch",
+  Version = "1.0",
+  Id = "c09eac08-8d57-47c9-b720-6b39622c8645",
+  Description = "",
+  ShowDebug = false,
+}
+
+function GetPrettyName( props )
+  return PluginInfo.Name
+end
+
+function GetColor( props )
+  return { 207, 207, 207 }
+end
+
+function GetProperties()
+  return{
+	{
+		Name = "Model",
+		Type = "enum",
+		Choices = {"PM4500N","PM8500N"},
+		Value = "PM8500N",
+    },
+    {
+		Name = "Mode",
+		Type = "enum",
+		Choices = {"Basic","Advanced"},
+		Value = "Basic",
+    },
+  }
+end
+
+function GetControls( props )
+    local channelcount
+    if props["Model"].Value == "PM4500N" then
+        channelcount = 4
+    elseif props["Model"].Value == "PM8500N" then
+        channelcount = 8
+    else   
+        channelcount = 8
+    end
+
+
+
+    ctrls = {
+    {
+      Name = "Name",
+      Count = 1,
+      ControlType = "Text",
+      TextType = "TextBox",
+      UserPin = false,
+    },
+    {
+      Name = "IP Address",
+      Count = 1,
+      ControlType = "Text",
+      TextType = "TextBox",
+      UserPin = false,
+    },
+    {
+      Name = "Status",
+      Count = 1,
+      ControlType = "Indicator",
+      IndicatorType = "Status",
+      UserPin = true,
+      PinStyle = "Output",
+    },
+    {
+      Name = "Quad Mode",
+      Count = (channelcount/4),
+      ControlType = "Indicator",
+      IndicatorType = "Led",
+      UserPin = true,
+      PinStyle = "Output",
+    },
+    {
+      Name = "Mono",
+      Count = (channelcount/2),
+      ControlType = "Indicator",
+      IndicatorType = "Led",
+      UserPin = true,
+      PinStyle = "Output",
+    },
+    {
+      Name = "V-Bridge",
+      Count = (channelcount/2),
+      ControlType = "Indicator",
+      IndicatorType = "Led",
+      UserPin = true,
+      PinStyle = "Output",
+    },
+    {
+      Name = "I-Share",
+      Count = (channelcount/2),
+      ControlType = "Indicator",
+      IndicatorType = "Led",
+      UserPin = true,
+      PinStyle = "Output",
+    },
+    {
+      Name = "Fault",
+      Count = (channelcount+1),
+      ControlType = "Indicator",
+      IndicatorType = "Led",
+      UserPin = true,
+      PinStyle = "Output",
+    },
+  }
+
+
+    if props["Mode"].Value == "Basic" then
+      table.insert(ctrls, {
+        Name = "Input Signal",
+        Count = channelcount,
+        ControlType = "Indicator",
+        IndicatorType = "LED",
+        UserPin = true,
+        PinStyle = "Output",
+      })
+      
+      table.insert(ctrls, {
+          Name = "Output Meter",
+          Count = channelcount,
+          ControlType = "Indicator",
+          IndicatorType = "LED",
+          UserPin = true,
+          PinStyle = "Output",
+        })
+
+    elseif props["Mode"].Value == "Advanced" then
+      table.insert(ctrls, {
+        Name = "Input Signal",
+        Count = channelcount,
+        ControlType = "Indicator",
+        IndicatorType = "Meter",
+        UserPin = true,
+        PinStyle = "Output",
+      })
+
+      table.insert(ctrls, {
+        Name = "Output Meter",
+        Count = channelcount,
+        ControlType = "Indicator",
+        IndicatorType = "Meter",
+        UserPin = true,
+        PinStyle = "Output",
+      })
+
+      table.insert(ctrls, {
+        Name = "Toggle Standby",
+        Count = 1,
+        ControlType = "Button",
+        ButtonType = "Toggle",
+        UserPin = true,
+        PinStyle = "Both",
+      })
+
+      table.insert(ctrls, {
+        Name = "Standby",
+        Count = 1,
+        ControlType = "Indicator",
+        IndicatorType = "LED",
+        UserPin = true,
+        PinStyle = "Output",
+      })
+
+      table.insert(ctrls, {
+        Name = "Power",
+        Count = 1,
+        ControlType = "Indicator",
+        IndicatorType = "LED",
+        UserPin = true,
+        PinStyle = "Output",
+      })
+
+      table.insert(ctrls, {
+        Name = "Fault Clear",
+        Count = 1,
+        ControlType = "Button",
+        ButtonType = "Trigger",
+        UserPin = true,
+        PinStyle = "Both",
+      })
+
+      table.insert(ctrls, {
+        Name = "Output Mute",
+        Count = channelcount,
+        ControlType = "Button",
+        ButtonType = "Toggle",
+        UserPin = true,
+        PinStyle = "Both",
+      })
+
+    end
+
+  return ctrls
+end
+
+function GetControlLayout( props )
+  layout = {}
+  local bump = 35
+  local shift = 0
+  local mode
+  local channelcount
+  local LETTERS = {"A","B","C","D","E","F","G","H"}
+  local shift1 = 0
+  local shift2 = 0
+
+  if props["Model"].Value == "PM4500N" then
+    bump = bump + 55
+    mode = "4"
+    channelcount = 4
+    shift1 = 0
+    shift2 = 38
+  elseif props["Model"].Value == "PM8500N" then
+    mode = "8"
+    channelcount = 8
+    shift1 = 116
+  end
+
+  if props["Mode"].Value == "Basic" then
+    mode = mode.."B"
+  elseif props["Mode"].Value == "Advanced" then
+    mode = mode.."A"
+  end
+
+  layout["Name"] = 
+  {
+    PrettyName = "Name",
+    Position = { 37, 26 + 35},
+    Size = { 120, 16 },
+    Color = { 255, 255, 255 },
+    Style = "TextBox",
+    TextBoxStyle = "Normal",
+    TextFontSize = 10,
+    HTextAlign = "Center",
+    VTextAlign = "Center",
+    WordWrap = false,
+    IsBold = false,
+    Margin = 0,
+    Radius = 0,
+    IsReadOnly = false,
+  }
+
+  layout["IP Address"] = 
+  {
+    PrettyName = "IP Address",
+    Position = { 157, 26 + 35},
+    Size = { 76, 16 },
+    Color = { 255, 255, 255 },
+    Style = "TextBox",
+    TextBoxStyle = "Normal",
+    TextFontSize = 10,
+    HTextAlign = "Center",
+    VTextAlign = "Center",
+    WordWrap = false,
+    IsBold = false,
+    Margin = 0,
+    Radius = 0,
+    IsReadOnly = false,
+  }
+
+  layout["Status"] = 
+  {
+    PrettyName = "Status",
+    Position = { 37, 58 + 35 },
+    Size = { 196, 16 },
+    Color = { 194, 194, 194 },
+    Margin = 0,
+    Radius = 0,
+    Style = "Text",
+    TextFontSize = 10,
+    WordWrap = true,
+    IsBold = false,
+    IsReadOnly = false,
+  }
+
+  if props["Mode"].Value == "Advanced" then
+    for i=1, channelcount do
+    layout[tostring("Input Signal " .. i)] = 
+    {
+      PrettyName = "Channel "..tostring(i).."~Input Meter",
+      Position = { 32 + (58*(i-1)), 148 + bump },
+      Size = { 36,112 },
+      Color = { 0, 159, 60 },
+      Margin = 0,
+      Radius = 3,
+      Style = "Meter",
+      MeterStyle = "Standard",
+      IsReadOnly = false,
+    }
+
+    layout[tostring("Output Meter " .. i)] = 
+    {
+      PrettyName = "Channel "..tostring(i).."~Output Meter",
+      Position = { 32 + (58*(i-1)), 467 + bump },
+      Size = { 36, 112 },
+      Color = { 0, 159, 60 },
+      Margin = 0,
+      Radius = 3,
+      Style = "Meter",
+      MeterStyle = "Standard",
+      IsReadOnly = false,
+    }
+
+    layout[tostring("Output Mute " .. i)] = 
+    {
+      PrettyName = "Channel "..tostring(i).."~Output Mute",
+      Style = "Button",
+      Position = { 32 + (58*(i-1)), 585 + bump },
+      Size = { 36, 16 },
+      Color = { 255, 255, 255 },
+      UnlinkOffColor = false,
+      --OffColor = { r, g, b },
+      ButtonStyle = "Toggle",
+      HTextAlign = "Center",
+      VTextAlign = "Center",
+      Legend = "Mute",
+      WordWrap = false,
+      IsBold = false,
+      TextFontSize = 10,
+      Margin = 2,
+      Radius = 2,
+      IsReadOnly = false,
+    }
+
+    layout[tostring("Fault " .. i)] = 
+    {
+      PrettyName = "Channel "..tostring(i).."~Fault",
+      Position = { 55 + (58*(i-1)), 447 + bump },
+      Size = { 16 , 16 },
+      Color = { 255, 0, 0 },
+      StrokeColor = { 188, 0, 0 },
+      Margin = 3,
+      Radius = 0,
+      Style = "Led",
+      UnlinkOffColor = false,
+      --OffColor = {  },
+      IsReadOnly = false,
+    }
+
+    end
+
+    for i=1, channelcount/2 do
+
+    layout[tostring("Mono " .. i)] = 
+    {
+      PrettyName = "Channel "..tostring((i*2)-1).."~Mono",
+      Position = { 31 + (116*(i-1)), 400 + bump },
+      Size = { 16 , 16 },
+      Color = { 255, 0, 0 },
+      StrokeColor = { 188, 0, 0 },
+      Margin = 3,
+      Radius = 0,
+      Style = "Led",
+      UnlinkOffColor = false,
+      --OffColor = {  },
+      IsReadOnly = false,
+    }
+
+    layout[tostring("V-Bridge " .. i)] = 
+    {
+      PrettyName = "Channel "..tostring((i*2)-1).."~V-Bridge",
+      Position = { 68 + (116*(i-1)), 400 + bump },
+      Size = { 16 , 16 },
+      Color = { 255, 0, 0 },
+      StrokeColor = { 188, 0, 0 },
+      Margin = 3,
+      Radius = 0,
+      Style = "Led",
+      UnlinkOffColor = false,
+      --OffColor = {  },
+      IsReadOnly = false,
+    }
+
+    layout[tostring("I-Share " .. i)] = 
+    {
+      PrettyName = "Channel "..tostring((i*2)-1).."~I-Share",
+      Position = { 105 + (116*(i-1)), 400 + bump },
+      Size = { 16 , 16 },
+      Color = { 255, 0, 0 },
+      StrokeColor = { 188, 0, 0 },
+      Margin = 3,
+      Radius = 0,
+      Style = "Led",
+      UnlinkOffColor = false,
+      --OffColor = {  },
+      IsReadOnly = false,
+    }
+
+    end
+    if channelcount == 4 then
+
+      layout[tostring("Quad Mode")] = 
+        {
+          PrettyName = "Channel "..tostring(1).."~Quad Mode",
+          Position = { 127, 359 + bump },
+          Size = { 16 , 16 },
+          Color = { 255, 0, 0 },
+          StrokeColor = { 188, 0, 0 },
+          Margin = 3,
+          Radius = 0,
+          Style = "Led",
+          UnlinkOffColor = false,
+          --OffColor = {  },
+          IsReadOnly = false,
+        }
+  
+    elseif channelcount == 8 then
+      for i=1, channelcount/4 do
+
+      layout[tostring("Quad Mode " .. i)] = 
+      {
+        PrettyName = "Channel "..tostring((i*4)-3).."~Quad Mode",
+        Position = { 127 + (232*(i-1)), 359 + bump },
+        Size = { 16 , 16 },
+        Color = { 255, 0, 0 },
+        StrokeColor = { 188, 0, 0 },
+        Margin = 3,
+        Radius = 0,
+        Style = "Led",
+        UnlinkOffColor = false,
+        --OffColor = {  },
+        IsReadOnly = false,
+      }
+
+      end
+    end
+    
+    layout[tostring("Fault " .. (channelcount+1))] = 
+    {
+      PrettyName = "Fault",
+      Position = { 127 + shift1, 320 + bump },
+      Size = { 16 , 16 },
+      Color = { 255, 0, 0 },
+      StrokeColor = { 188, 0, 0 },
+      Margin = 3,
+      Radius = 0,
+      Style = "Led",
+      UnlinkOffColor = false,
+      --OffColor = {  },
+      IsReadOnly = false,
+    }
+
+    layout[tostring("Fault Clear")] = 
+    {
+      PrettyName = "Clear Faults",
+      Style = "Button",
+      Position = { 146 + shift1, 320 + bump },
+      Size = { 36, 16 },
+      Color = { 255, 255, 255 },
+      UnlinkOffColor = false,
+      --OffColor = { r, g, b },
+      ButtonStyle = "Trigger",
+      HTextAlign = "Center",
+      VTextAlign = "Center",
+      Legend = "",
+      WordWrap = false,
+      IsBold = false,
+      TextFontSize = 12,
+      Margin = 2,
+      Radius = 2,
+      IsReadOnly = false,
+    }
+
+    if channelcount == 4 then
+    layout[tostring("Toggle Standby")] = 
+      {
+        PrettyName = "Power Button",
+        Style = "Button",
+        Position = { 52, 97 + 35 },
+        Size = { 83, 32 },
+        Color = { 255, 255, 255 },
+        UnlinkOffColor = false,
+        --OffColor = { r, g, b },
+        ButtonStyle = "Toggle",
+        HTextAlign = "Center",
+        VTextAlign = "Center",
+        Legend = "Power",
+        WordWrap = false,
+        IsBold = false,
+        TextFontSize = 13,
+        Margin = 2,
+        Radius = 2,
+        IsReadOnly = false,
+      }
+
+      layout[tostring("Standby")] = 
+      {
+        PrettyName = "Standby LED",
+        Position = { 198, 97 + 35 },
+        Size = { 16 , 16 },
+        Color = { 255, 0, 0 },
+        StrokeColor = { 188, 0, 0 },
+        Margin = 3,
+        Radius = 0,
+        Style = "Led",
+        UnlinkOffColor = false,
+        --OffColor = {  },
+        IsReadOnly = false,
+      }      
+      
+      layout[tostring("Power")] = 
+      {
+        PrettyName = "Power LED",
+        Position = { 198, 113 + 35 },
+        Size = { 16 , 16 },
+        Color = { 255, 0, 0 },
+        StrokeColor = { 188, 0, 0 },
+        Margin = 3,
+        Radius = 0,
+        Style = "Led",
+        UnlinkOffColor = false,
+        --OffColor = {  },
+        IsReadOnly = false,
+      }
+
+      elseif channelcount == 8 then
+      layout[tostring("Toggle Standby")] = 
+        {
+          PrettyName = "Power Button",
+          Style = "Button",
+          Position = { 288, 26 + 35 },
+          Size = { 83, 32 },
+          Color = { 255, 255, 255 },
+          UnlinkOffColor = false,
+          --OffColor = { r, g, b },
+          ButtonStyle = "Toggle",
+          HTextAlign = "Center",
+          VTextAlign = "Center",
+          Legend = "Power",
+          WordWrap = false,
+          IsBold = false,
+          TextFontSize = 13,
+          Margin = 2,
+          Radius = 2,
+          IsReadOnly = false,
+        }
+  
+        layout[tostring("Standby")] = 
+        {
+          PrettyName = "Standby LED",
+          Position = { 434, 26 + 35 },
+          Size = { 16 , 16 },
+          Color = { 255, 0, 0 },
+          StrokeColor = { 188, 0, 0 },
+          Margin = 3,
+          Radius = 0,
+          Style = "Led",
+          UnlinkOffColor = false,
+          --OffColor = {  },
+          IsReadOnly = false,
+        }      
+        
+        layout[tostring("Power")] = 
+        {
+          PrettyName = "Power LED",
+          Position = { 434, 42 + 35 },
+          Size = { 16 , 16 },
+          Color = { 255, 0, 0 },
+          StrokeColor = { 188, 0, 0 },
+          Margin = 3,
+          Radius = 0,
+          Style = "Led",
+          UnlinkOffColor = false,
+          --OffColor = {  },
+          IsReadOnly = false,
+        }
+
+
+    end
+  
+  
+  elseif props["Mode"].Value == "Basic" then
+  
+    for i=1, channelcount do
+    layout[tostring("Input Signal " .. i)] = 
+    {
+      PrettyName = "Channel "..tostring(i).."~Input Signal",
+      Position = { 82 + (16*(i-1)) + shift2, 143 },
+      Size = { 16 , 16 },
+      Color = { 255, 0, 0 },
+      StrokeColor = { 188, 0, 0 },
+      Margin = 3,
+      Radius = 0,
+      Style = "Led",
+      UnlinkOffColor = false,
+      --OffColor = {  },
+      IsReadOnly = false,
+    }
+
+    layout[tostring("Output Meter " .. i)] = 
+    {
+      PrettyName = "Channel "..tostring(i).."~Output Signal",
+      Position = { 82 + (16*(i-1)) + shift2, 222 },
+      Size = { 16 , 16 },
+      Color = { 255, 0, 0 },
+      StrokeColor = { 188, 0, 0 },
+      Margin = 3,
+      Radius = 0,
+      Style = "Led",
+      UnlinkOffColor = false,
+      --OffColor = {  },
+      IsReadOnly = false,
+    }
+
+    layout[tostring("Fault " .. i)] = 
+    {
+      PrettyName = "Channel "..tostring(i).."~Fault",
+      Position = { 82 + (16*(i-1)) + shift2, 206 },
+      Size = { 16 , 16 },
+      Color = { 255, 0, 0 },
+      StrokeColor = { 188, 0, 0 },
+      Margin = 3,
+      Radius = 0,
+      Style = "Led",
+      UnlinkOffColor = false,
+      --OffColor = {  },
+      IsReadOnly = false,
+    }
+
+    end
+
+    for i=1, channelcount/2 do
+
+      layout[tostring("Mono " .. i)] = 
+      {
+        PrettyName = "Channel "..tostring((i*2)-1).."~Mono",
+        Position = { 90 + (32*(i-1)) + shift2, 274 },
+        Size = { 16 , 16 },
+        Color = { 255, 0, 0 },
+        StrokeColor = { 188, 0, 0 },
+        Margin = 3,
+        Radius = 0,
+        Style = "Led",
+        UnlinkOffColor = false,
+        --OffColor = {  },
+        IsReadOnly = false,
+      }
+
+      layout[tostring("V-Bridge " .. i)] = 
+      {
+        PrettyName = "Channel "..tostring((i*2)-1).."~V-Bridge",
+        Position = { 90 + (32*(i-1)) + shift2, 290 },
+        Size = { 16 , 16 },
+        Color = { 255, 0, 0 },
+        StrokeColor = { 188, 0, 0 },
+        Margin = 3,
+        Radius = 0,
+        Style = "Led",
+        UnlinkOffColor = false,
+        --OffColor = {  },
+        IsReadOnly = false,
+      }
+
+      layout[tostring("I-Share " .. i)] = 
+      {
+        PrettyName = "Channel "..tostring((i*2)-1).."~I-Share",
+        Position = { 90 + (32*(i-1)) + shift2, 306 },
+        Size = { 16 , 16 },
+        Color = { 255, 0, 0 },
+        StrokeColor = { 188, 0, 0 },
+        Margin = 3,
+        Radius = 0,
+        Style = "Led",
+        UnlinkOffColor = false,
+        --OffColor = {  },
+        IsReadOnly = false,
+      }
+
+      if channelcount == 4 then
+        layout[tostring("Quad Mode")] = 
+          {
+            PrettyName = "Channel "..tostring(1).."~Quad Mode",
+            Position = { 144, 258 },
+            Size = { 16 , 16 },
+            Color = { 255, 0, 0 },
+            StrokeColor = { 188, 0, 0 },
+            Margin = 3,
+            Radius = 0,
+            Style = "Led",
+            UnlinkOffColor = false,
+            --OffColor = {  },
+            IsReadOnly = false,
+          }
+
+      elseif channelcount == 8 then
+        for i=1, channelcount/4 do
+
+        layout[tostring("Quad Mode " .. i)] = 
+        {
+          PrettyName = "Channel "..tostring((i*4)-3).."~Quad Mode",
+          Position = { 106 + (64*(i-1)), 258 },
+          Size = { 16 , 16 },
+          Color = { 255, 0, 0 },
+          StrokeColor = { 188, 0, 0 },
+          Margin = 3,
+          Radius = 0,
+          Style = "Led",
+          UnlinkOffColor = false,
+          --OffColor = {  },
+          IsReadOnly = false,
+        }
+
+        end
+      end
+
+
+    end
+
+  
+  
+  
+  end --end Basic/Advanced mode
+--[[
+  for i=1, 2 do
+  layout[tostring("Quad Mode " .. i)] = 
+  {
+    PrettyName = "",
+    Position = {  },
+    Size = {  },
+    Color = {  },
+    Margin = 0,
+    Radius = 0,
+    Style = "Led",
+    UnlinkOffColor = false,
+    --OffColor = {  },
+    IsReadOnly = false,
+  }
+  end
+
+  for i=1, 4 do
+  layout[tostring("Mono " .. i)] = 
+  {
+    PrettyName = "",
+    Position = {  },
+    Size = {  },
+    Color = {  },
+    Margin = 0,
+    Radius = 0,
+    Style = "Led",
+    UnlinkOffColor = false,
+    --OffColor = {  },
+    IsReadOnly = false,
+  }
+  end
+
+  for i=1, 4 do
+  layout[tostring("V-Bridge " .. i)] = 
+  {
+    PrettyName = "",
+    Position = {  },
+    Size = {  },
+    Color = {  },
+    Margin = 0,
+    Radius = 0,
+    Style = "Led",
+    UnlinkOffColor = false,
+    --OffColor = {  },
+    IsReadOnly = false,
+  }
+  end
+
+  for i=1, 4 do
+  layout[tostring("I-Share " .. i)] = 
+  {
+    PrettyName = "",
+    Position = {  },
+    Size = {  },
+    Color = {  },
+    Margin = 0,
+    Radius = 0,
+    Style = "Led",
+    UnlinkOffColor = false,
+    --OffColor = {  },
+    IsReadOnly = false,
+  }
+  end
+
+  for i=1, 9 do
+  layout[tostring("Fault " .. i)] = 
+  {
+    PrettyName = "",
+    Position = {  },
+    Size = {  },
+    Color = {  },
+    Margin = 0,
+    Radius = 0,
+    Style = "Led",
+    UnlinkOffColor = false,
+    --OffColor = {  },
+    IsReadOnly = false,
+  }
+  end
+
+
+  ]]
+  graphics = {
+    { --Bose Logo
+      Type = "Image",
+      Image = "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",
+      Position = { 37, 10 },
+      Size = { 196, 25 }
+    },
+    {
+      Type = "Label",
+      Position = { 37, 45 },
+      Size = { 120, 16},
+      Text = "Name",
+      TextSize = 11,
+      HTextAlign = "Center",
+      VTextAlign = "Center",
+      IsBold = false,
+      Color = { 0, 0, 0 },
+      --StrokeColor = { r, g, b },
+      --Fill = { r, g, b },
+      StrokeWidth = 0,
+      CornerRadius = 0,
+    },
+    {
+      Type = "Label",
+      Position = { 157, 45 },
+      Size = { 76, 16 },
+      Text = "IP Address",
+      TextSize = 11,
+      HTextAlign = "Center",
+      VTextAlign = "Center",
+      IsBold = false,
+      Color = { 0, 0, 0 },
+      --StrokeColor = { r, g, b },
+      --Fill = { r, g, b },
+      StrokeWidth = 0,
+      CornerRadius = 0,
+    },
+    {
+      Type = "Label",
+      Position = { 37, 77 },
+      Size = { 196, 16 },
+      Text = "Status",
+      TextSize = 11,
+      HTextAlign = "Center",
+      VTextAlign = "Center",
+      IsBold = false,
+      Color = { 0, 0, 0 },
+      --StrokeColor = { r, g, b },
+      --Fill = { r, g, b },
+      StrokeWidth = 0,
+      CornerRadius = 0,
+    },
+  }
+
+
+  if props["Mode"].Value == "Advanced" then
+    local width1
+    if channelcount == 4 then width1 = 251
+    elseif channelcount == 8 then width1 = 482 end
+
+    table.insert(graphics, {
+      Type = "GroupBox",
+      Position = { 10, 94 + bump },
+      Size = { width1, 187 },
+      Text = "Inputs",
+      TextSize = 12,
+      HTextAlign = "Left",
+      IsBold = false,
+      TextColor = { 0, 0, 0 },
+      StrokeColor = { 0, 0, 0 },
+      --Fill = { r, g, b },
+      StrokeWidth = 1,
+      CornerRadius = 8,
+    })
+    
+    table.insert(graphics, {
+      Type = "GroupBox",
+      Position = { 10, 309 + bump },
+      Size = { width1, 310 },
+      Text = "Outputs",
+      TextSize = 12,
+      HTextAlign = "Left",
+      IsBold = false,
+      TextColor = { 0, 0, 0 },
+      StrokeColor = { 0, 0, 0 },
+      --Fill = { r, g, b },
+      StrokeWidth = 1,
+      CornerRadius = 8,
+    })
+
+
+
+    for i=1, channelcount do
+      table.insert(graphics, {
+        Type = "GroupBox",
+        Position = { 20 + (58*(i-1)), 118 + bump },
+        Size = { 58, 153 },
+        Text = LETTERS[i],
+        TextSize = 12,
+        HTextAlign = "Left",
+        IsBold = false,
+        TextColor = { 0, 0, 0 },
+        StrokeColor = { 0, 0, 0 },
+        --Fill = { r, g, b },
+        StrokeWidth = 1,
+        CornerRadius = 8,
+      })
+
+      table.insert(graphics, {
+        Type = "GroupBox",
+        Position = { 20 + (58*(i-1)), 426 + bump },
+        Size = { 58, 183 },
+        Text = tostring(i),
+        TextSize = 12,
+        HTextAlign = "Left",
+        IsBold = false,
+        TextColor = { 0, 0, 0 },
+        StrokeColor = { 0, 0, 0 },
+        --Fill = { r, g, b },
+        StrokeWidth = 1,
+        CornerRadius = 8,
+      })
+
+      table.insert(graphics, {
+        Type = "Label",
+        Position = { 29 + (58*(i-1)), 447 + bump },
+        Size = { 25, 16 },
+        Text = "Fault",
+        TextSize = 10,
+        HTextAlign = "Right",
+        VTextAlign = "Center",
+        IsBold = false,
+        --Color = { , 0, 0 },
+        --StrokeColor = { r, g, b },
+        --Fill = { r, g, b },
+        StrokeWidth = 0,
+        CornerRadius = 0,
+      })
+
+    end
+
+    for i=1, channelcount/2 do
+      table.insert(graphics, {
+        Type = "GroupBox",
+        Position = { 20 + (116*(i-1)), 379 + bump },
+        Size = { 116, 230 },
+        Text = "",
+        TextSize = 12,
+        HTextAlign = "Left",
+        IsBold = false,
+        TextColor = { 0, 0, 0 },
+        StrokeColor = { 0, 0, 0 },
+        --Fill = { r, g, b },
+        StrokeWidth = 1,
+        CornerRadius = 8,
+      })
+
+      table.insert(graphics, {
+        Type = "Label",
+        Position = { 19 + (116*(i-1)), 385 + bump },
+        Size = { 40, 16 },
+        Text = "Mono",
+        TextSize = 10,
+        HTextAlign = "Center",
+        VTextAlign = "Center",
+        IsBold = false,
+        --Color = { , 0, 0 },
+        --StrokeColor = { r, g, b },
+        --Fill = { r, g, b },
+        StrokeWidth = 0,
+        CornerRadius = 0,
+      })
+
+      table.insert(graphics, {
+        Type = "Label",
+        Position = { 56 + (116*(i-1)), 385 + bump },
+        Size = { 40, 16 },
+        Text = "V-Bridge",
+        TextSize = 10,
+        HTextAlign = "Center",
+        VTextAlign = "Center",
+        IsBold = false,
+        --Color = { , 0, 0 },
+        --StrokeColor = { r, g, b },
+        --Fill = { r, g, b },
+        StrokeWidth = 0,
+        CornerRadius = 0,
+      })
+
+      table.insert(graphics, {
+        Type = "Label",
+        Position = { 94 + (116*(i-1)), 385 + bump },
+        Size = { 40, 16 },
+        Text = "I-Share",
+        TextSize = 10,
+        HTextAlign = "Center",
+        VTextAlign = "Center",
+        IsBold = false,
+        --Color = { , 0, 0 },
+        --StrokeColor = { r, g, b },
+        --Fill = { r, g, b },
+        StrokeWidth = 0,
+        CornerRadius = 0,
+      })
+
+    end
+
+    for i=1, channelcount/4 do
+      table.insert(graphics, {
+        Type = "Header",
+        Position = { 23 + (231*(i-1)), 346 + bump },
+        Size = { 225, 16 },
+        Text = "Quad",
+        TextSize = 10,
+        HTextAlign = "Center",
+        VTextAlign = "Center",
+        IsBold = false,
+        --Color = { , 0, 0 },
+        --StrokeColor = { r, g, b },
+        --Fill = { r, g, b },
+        StrokeWidth = 0,
+        CornerRadius = 0,
+      })
+    end
+
+    table.insert(graphics, {
+      Type = "Label",
+      Position = { 65 + shift1, 320 + bump },
+      Size = { 62, 16 },
+      Text = "Clear Faults",
+      TextSize = 12,
+      HTextAlign = "Center",
+      VTextAlign = "Center",
+      IsBold = false,
+      --Color = { , 0, 0 },
+      --StrokeColor = { r, g, b },
+      --Fill = { r, g, b },
+      StrokeWidth = 0,
+      CornerRadius = 0,
+    })
+
+
+    if channelcount == 4 then
+      table.insert(graphics, {
+        Type = "Label",
+        Position = { 148, 97 + 35 },
+        Size = { 48, 16 },
+        Text = "Standby",
+        TextSize = 12,
+        HTextAlign = "Center",
+        VTextAlign = "Center",
+        IsBold = false,
+        --Color = { , 0, 0 },
+        --StrokeColor = { r, g, b },
+        --Fill = { r, g, b },
+        StrokeWidth = 0,
+        CornerRadius = 0,
+      })
+
+      table.insert(graphics, {
+        Type = "Label",
+        Position = { 148, 113 + 35 },
+        Size = { 48, 16 },
+        Text = "Power",
+        TextSize = 12,
+        HTextAlign = "Center",
+        VTextAlign = "Center",
+        IsBold = false,
+        --Color = { , 0, 0 },
+        --StrokeColor = { r, g, b },
+        --Fill = { r, g, b },
+        StrokeWidth = 0,
+        CornerRadius = 0,
+      })
+
+      elseif channelcount == 8 then
+      table.insert(graphics, {
+        Type = "Label",
+        Position = { 384, 26 + 35 },
+        Size = { 48, 16 },
+        Text = "Standby",
+        TextSize = 12,
+        HTextAlign = "Center",
+        VTextAlign = "Center",
+        IsBold = false,
+        --Color = { , 0, 0 },
+        --StrokeColor = { r, g, b },
+        --Fill = { r, g, b },
+        StrokeWidth = 0,
+        CornerRadius = 0,
+      })
+
+      table.insert(graphics, {
+        Type = "Label",
+        Position = { 384, 42 + 35 },
+        Size = { 48, 16 },
+        Text = "Power",
+        TextSize = 12,
+        HTextAlign = "Center",
+        VTextAlign = "Center",
+        IsBold = false,
+        --Color = { , 0, 0 },
+        --StrokeColor = { r, g, b },
+        --Fill = { r, g, b },
+        StrokeWidth = 0,
+        CornerRadius = 0,
+      })
+
+    end
+
+  elseif props["Mode"].Value == "Basic" then
+
+    for i=1, channelcount do
+      table.insert(graphics, {
+        Type = "Label",
+        Position = { 82 + (16*(i-1)) + shift2, 127 },
+        Size = { 16, 16 },
+        Text = LETTERS[i],
+        TextSize = 12,
+        HTextAlign = "Center",
+        VTextAlign = "Center",
+        IsBold = false,
+        --Color = { , 0, 0 },
+        --StrokeColor = { r, g, b },
+        --Fill = { r, g, b },
+        StrokeWidth = 0,
+        CornerRadius = 0,
+      })
+
+      table.insert(graphics, {
+        Type = "Label",
+        Position = { 82 + (16*(i-1)) + shift2, 190 },
+        Size = { 16, 16 },
+        Text = tostring(i),
+        TextSize = 12,
+        HTextAlign = "Center",
+        VTextAlign = "Center",
+        IsBold = false,
+        --Color = { , 0, 0 },
+        --StrokeColor = { r, g, b },
+        --Fill = { r, g, b },
+        StrokeWidth = 0,
+        CornerRadius = 0,
+      })
+
+    end
+
+    table.insert(graphics, {
+      Type = "Label",
+      Position = { 28 + shift2, 143 },
+      Size = { 54, 16 },
+      Text = "Signal/Clip",
+      TextSize = 10,
+      HTextAlign = "Right",
+      VTextAlign = "Center",
+      IsBold = false,
+      --Color = { , 0, 0 },
+      --StrokeColor = { r, g, b },
+      --Fill = { r, g, b },
+      StrokeWidth = 0,
+      CornerRadius = 0,
+    })
+
+    table.insert(graphics, {
+      Type = "Label",
+      Position = { 42 + shift2, 206 },
+      Size = { 40, 16 },
+      Text = "Fault",
+      TextSize = 10,
+      HTextAlign = "Right",
+      VTextAlign = "Center",
+      IsBold = false,
+      --Color = { , 0, 0 },
+      --StrokeColor = { r, g, b },
+      --Fill = { r, g, b },
+      StrokeWidth = 0,
+      CornerRadius = 0,
+    })
+
+    table.insert(graphics, {
+      Type = "Label",
+      Position = { 42 + shift2, 222 },
+      Size = { 40, 16 },
+      Text = "Signal",
+      TextSize = 10,
+      HTextAlign = "Right",
+      VTextAlign = "Center",
+      IsBold = false,
+      --Color = { , 0, 0 },
+      --StrokeColor = { r, g, b },
+      --Fill = { r, g, b },
+      StrokeWidth = 0,
+      CornerRadius = 0,
+    })
+
+    table.insert(graphics, {
+      Type = "Label",
+      Position = { 42 + shift2, 274 },
+      Size = { 40, 16 },
+      Text = "Mono",
+      TextSize = 10,
+      HTextAlign = "Right",
+      VTextAlign = "Center",
+      IsBold = false,
+      --Color = { , 0, 0 },
+      --StrokeColor = { r, g, b },
+      --Fill = { r, g, b },
+      StrokeWidth = 0,
+      CornerRadius = 0,
+    })
+
+    table.insert(graphics, {
+      Type = "Label",
+      Position = { 42 + shift2, 290 },
+      Size = { 40, 16 },
+      Text = "V-Bridge",
+      TextSize = 10,
+      HTextAlign = "Right",
+      VTextAlign = "Center",
+      IsBold = false,
+      --Color = { , 0, 0 },
+      --StrokeColor = { r, g, b },
+      --Fill = { r, g, b },
+      StrokeWidth = 0,
+      CornerRadius = 0,
+    })
+
+    table.insert(graphics, {
+      Type = "Label",
+      Position = { 42 + shift2, 306 },
+      Size = { 40, 16 },
+      Text = "I-Share",
+      TextSize = 10,
+      HTextAlign = "Right",
+      VTextAlign = "Center",
+      IsBold = false,
+      --Color = { , 0, 0 },
+      --StrokeColor = { r, g, b },
+      --Fill = { r, g, b },
+      StrokeWidth = 0,
+      CornerRadius = 0,
+    })
+
+    if channelcount == 4 then
+
+      table.insert(graphics, {
+        Type = "GroupBox",
+        Position = { 37, 117 },
+        Size = { 196, 52 },
+        Text = "Input",
+        TextSize = 12,
+        HTextAlign = "Left",
+        IsBold = false,
+        TextColor = { 0, 0, 0 },
+        StrokeColor = { 0, 0, 0 },
+        --Fill = { r, g, b },
+        StrokeWidth = 1,
+        CornerRadius = 8,
+      })
+
+      table.insert(graphics, {
+        Type = "GroupBox",
+        Position = { 37, 179 },
+        Size = { 196, 154 },
+        Text = "Output",
+        TextSize = 12,
+        HTextAlign = "Left",
+        IsBold = false,
+        TextColor = { 0, 0, 0 },
+        StrokeColor = { 0, 0, 0 },
+        --Fill = { r, g, b },
+        StrokeWidth = 1,
+        CornerRadius = 8,
+      })
+
+      table.insert(graphics, {
+        Type = "Header",
+        Position = { 122, 244 },
+        Size = { 60, 16 },
+        Text = "Quad",
+        TextSize = 12,
+        HTextAlign = "Center",
+        VTextAlign = "Center",
+        IsBold = false,
+        --Color = { , 0, 0 },
+        --StrokeColor = { r, g, b },
+        --Fill = { r, g, b },
+        StrokeWidth = 0,
+        CornerRadius = 0,
+      })
+
+    elseif channelcount == 8 then
+
+      table.insert(graphics, {
+        Type = "GroupBox",
+        Position = { 10, 117 },
+        Size = { 241, 52 },
+        Text = "Input",
+        TextSize = 12,
+        HTextAlign = "Left",
+        IsBold = false,
+        TextColor = { 0, 0, 0 },
+        StrokeColor = { 0, 0, 0 },
+        --Fill = { r, g, b },
+        StrokeWidth = 1,
+        CornerRadius = 8,
+      })
+
+      table.insert(graphics, {
+        Type = "GroupBox",
+        Position = { 10, 179 },
+        Size = { 241, 154 },
+        Text = "Output",
+        TextSize = 12,
+        HTextAlign = "Left",
+        IsBold = false,
+        TextColor = { 0, 0, 0 },
+        StrokeColor = { 0, 0, 0 },
+        --Fill = { r, g, b },
+        StrokeWidth = 1,
+        CornerRadius = 8,
+      })
+
+      table.insert(graphics, {
+        Type = "Header",
+        Position = { 84, 244 },
+        Size = { 60, 16 },
+        Text = "Quad",
+        TextSize = 12,
+        HTextAlign = "Center",
+        VTextAlign = "Center",
+        IsBold = false,
+        --Color = { , 0, 0 },
+        --StrokeColor = { r, g, b },
+        --Fill = { r, g, b },
+        StrokeWidth = 0,
+        CornerRadius = 0,
+      })
+
+      table.insert(graphics, {
+        Type = "Header",
+        Position = { 148, 244 },
+        Size = { 60, 16 },
+        Text = "Quad",
+        TextSize = 12,
+        HTextAlign = "Center",
+        VTextAlign = "Center",
+        IsBold = false,
+        --Color = { , 0, 0 },
+        --StrokeColor = { r, g, b },
+        --Fill = { r, g, b },
+        StrokeWidth = 0,
+        CornerRadius = 0,
+      })
+
+    end
+
+  
+  end -- End Basic/Advanced mode
+  --table.insert(graphics, {})
+  
+  return layout, graphics
+end
+
+function GetPins( props )
+  local pins = {}
+  
+  return pins
+end
+
+function GetComponents( props )
+  return
+  {
+    
+  }
+end
+
+function GetWiring( props )
+  local wiring = {}
+  
+  return wiring
+end
+
+if Controls then
+----------------------------------------------------------------------------------------------------
+if Properties["Model"].Value == "PM8500N" and Properties["Mode"].Value == "Advanced" then
+  --print("8 Advanced")
+-----------------------------------------
+--   Bose PM8500 4.3 Advanced - Version 1.0
+--   Copyright 2015 by Kurta Technology Solutions, LLC.
+--   Author: Joe Kurta  - Joe@KurtaTech.com
+-----------------------------------------
+
+--[[  Help file
+
+ This goal of this script is to query and control an Amplifier with advanced functionality.
+ Code was tested on a QSC Core 500i with (5) PM8500N on an isolated network.
+  
+ Expanding or removing controls is not recommended or supported
+ 
+--]]
+
+
+--[[  Release notes
+  1.0   Release version
+        Fixed issue with reconnect not changing mode settings
+        Added mode polling for changes via front panel
+        Added control pins for fault indicators
+        Changed fault indicators to include any channel state change (warnings, etc).
+        Changed Power Toggle to on/off toggle rather than trigger
+  0.8   Fixed bug with fault clear button not working as expected
+  0.7   Deleted input status indicators, changed input LEDs into meters
+        Merged Output limit and fault into single indicator
+        Added Fault Clear button
+  0.6   Continue channel configuration and enable/disable controls
+  0.5   Began adding channel configuration check and parsing
+        Fixed issues with input/output metering
+  0.4   Reworked mute button polling and parsing
+        Improved input and output meter parsing
+  0.3   General test and debug
+  0.1   Restructured and added controls
+  0.0   Initial rough draft
+]]--
+
+
+
+
+---------------------------------------------------------
+--   vvvv   'Constant' (variable) Definitions   vvvv   --
+
+
+  -- Serial port settings
+  ETHERNET = {
+    socket    = TcpSocket.New(),
+    ip        = Controls["IP Address"],
+    port      = 10055
+  }
+  
+  -- External Variables
+  MYNAME = Controls["Name"].String .. ": " -- Used for logging to Q-Sys log
+  MaxChannels = 8                         -- 8 Channel amplifier
+  
+  -- Message Syntax
+  EOM                 = "\r"  -- End of MessageGL
+  
+  -- Timer settings for Production
+  WATCHDOGTHRESHOLD   = 25           -- How many polls to wait for a response before noting an error
+  POLLWATCHDOG        = 5            -- Check this often if the timtout has been exceeded
+  POLLTIMEBUTTONS     = .5           -- Polls while cycling through buttons table at this interval
+  POLLTIMEMETERS      = .12          -- Polling for meters, etc.
+  POLLTIMESETTINGS    = 10           -- Polls while cycling through settings table at this interval
+  
+  --[[
+  --  Timer Settings for Debug
+  WATCHDOGTHRESHOLD   = 25           -- How many polls to wait for a response before noting an error
+  POLLWATCHDOG        = 1            -- Check this often if the timtout has been exceeded
+  POLLTIMEBUTTONS     = 5           -- Polls while cycling through buttons table at this interval
+  POLLTIMEMETERS      = 125         -- Polling for meters, etc.
+  POLLTIMESETTINGS    = 2            -- Polls while cycling through settings table at this interval
+  ]]--
+  
+  -- Debugging Enable/Disable
+  DEBUGENABLE         = 0             -- Enable General Debugging
+  DEBUGLOG            = 0             -- Enable debug messages to be written to log on core
+
+
+
+--[[
+ The polling of the amplifier button states is performed in a round robbin format.
+ Each time the poll period occurs, the next parameter in the list below is requested 
+ from the device.  So, if a poll rate of 1 second is set and there are 6 parameters
+ to poll in total, each will only be updated every 6 seconds.  This takes place
+ independant of setting and meter polling.
+]]--
+
+  AMPBUTTONS = {
+    {index = 6,  name = 'Power',  subindex = 1, parameter = '',     state = 99, enabled = 0},
+    {index = 47, name = 'Mute',   subindex = 1, parameter = '2,1',  state = 99, enabled = 0},  
+    {index = 48, name = 'Mute',   subindex = 2, parameter = '2,2',  state = 99, enabled = 0},
+    {index = 49, name = 'Mute',   subindex = 3, parameter = '2,3',  state = 99, enabled = 0},
+    {index = 50, name = 'Mute',   subindex = 4, parameter = '2,4',  state = 99, enabled = 0},
+    {index = 51, name = 'Mute',   subindex = 5, parameter = '4,1',  state = 99, enabled = 0},
+    {index = 52, name = 'Mute',   subindex = 6, parameter = '4,2',  state = 99, enabled = 0},
+    {index = 53, name = 'Mute',   subindex = 7, parameter = '4,3',  state = 99, enabled = 0},
+    {index = 54, name = 'Mute',   subindex = 8, parameter = '4,4',  state = 99, enabled = 0}
+  }
+
+
+
+--[[
+ The polling of the amplifier settings is performed in a round robbin format.
+ Each time the poll period occurs, the next parameter in the list below is requested 
+ from the device.  So, if a poll rate of 1 second is set and there are 6 parameters
+ to poll in total, each will only be updated every 6 seconds.  This takes place
+ independant of button and meter polling.
+]]--
+
+  -- TODO: Update the settings table (and this description)
+  AMPSETTINGS = {
+    --"xx", "xx", "xx", "xx", "xx", "xx", "xx", "xx"
+  }
+  
+  
+  
+  --[[
+ The polling of the amplifier meters is performed in a round robbin format.
+ Each time the poll period occurs, the next parameter in the list below is requested 
+ from the device.  So, if a poll rate of 1 second is set and there are 6 parameters
+ to poll in total, each will only be updated every 6 seconds.  This takes place
+ independant of button and setting polling.
+]]--
+
+  -- TODO: Update the meter polling
+  AMPMETERS = {
+    {index = 7,  name = 'Level',  subindex = 1, parameter = '1',    state = 99},  --inputs
+    {index = 38, name = 'Level',  subindex = 1, parameter = '2',    state = 99}   --outputs
+  }
+  
+
+  
+--   ^^^^   'Constant' (variable) Definitions   ^^^^   --
+---------------------------------------------------------
+
+
+
+---------------------------------------------------------
+--   vvvv      Global Variable Definitions      vvvv   --
+
+
+  waitForResponse     = 0
+  lastPolledButton    = 0
+  lastPolledSetting   = 0
+  lastPolledMeter     = 0
+
+
+--   ^^^^      Global Variable Definitions      ^^^^   --
+---------------------------------------------------------
+
+
+
+---------------------------------------------------
+--   vvvv   Function/Method Definitions   vvvv   --
+
+
+  
+  function Debug (incoming)
+  -- Send a string out to Debug (date/time stamp)
+    if (DEBUGENABLE == 1) then
+      print( os.date() .. " - " .. incoming)
+      
+      if (DEBUGLOG == 1) then
+        Log.Message(incoming)
+      end
+    end
+  end
+
+
+
+  -- Load initial values and reset the serial port
+  function Status(state)
+  
+    --Debug('Entered Status')
+    
+    --  0 = OK – Green,           1 = Compromised – Orange,     2 = Fault – Red,
+    --  3 = Not Present – Gray,   4 = Missing – Red,            5 = Initializing – Blue
+    
+    -- Update status indicator
+    if      state == 'OK'           then Controls["Status"].Value = 0
+      elseif  state == 'Compromised'  then Controls["Status"].Value = 1
+      elseif  state == 'Fault'        then Controls["Status"].Value = 2
+      elseif  state == 'Not Present'  then Controls["Status"].Value = 3
+      elseif  state == 'Missing'      then Controls["Status"].Value = 4
+      elseif  state == 'Initializing' then Controls["Status"].Value = 5
+      else Log.Error(MYNAME .. '(Status) State not recognized')
+    end
+  
+  end
+  
+  
+  
+  -- Load initial values and reset the serial port
+  function Watchdog()
+    
+    -- If no responese reset port
+    --Debug("WaitForResponse: " .. waitForResponse)
+    if (waitForResponse >= WATCHDOGTHRESHOLD) then
+      
+      waitForResponse = 0     -- Stop re-trigger
+      Status('Initializing')  -- Update status indicator
+      
+      -- Instantiate the device communications
+      Debug('(Watchdog) Resetting port')
+      Log.Error(MYNAME .. '(Watchdog) Resetting port')
+      DeviceConnect()
+    end
+  
+  end
+
+
+
+  -- Poll Buttons from Device
+  -- Necessary to allow user feedback to update (slow)
+  function PollButtons()
+    
+    -- Loop through defined parameters
+    lastPolledButton = lastPolledButton + 1
+    if (lastPolledButton > #AMPBUTTONS) then lastPolledButton = 1 end
+    
+    -- Form the proper query
+    if (AMPBUTTONS[lastPolledButton].name == 'Mute') then
+      --Debug("TX: GM " .. AMPBUTTONS[lastPolledButton].parameter)
+      DeviceTx("GM " .. AMPBUTTONS[lastPolledButton].parameter)
+    elseif (AMPBUTTONS[lastPolledButton].name == 'Power') then
+      --Debug("TX: GY")
+      DeviceTx("GY")
+    end
+  end
+
+
+
+  -- Poll meter state from Device
+  function PollMeters()
+     
+    -- Loop through defined parameters
+    lastPolledMeter = lastPolledMeter + 1
+    if (lastPolledMeter > #AMPMETERS) then lastPolledMeter = 1 end
+
+    -- Send the query
+    DeviceTx("GL " .. AMPMETERS[lastPolledMeter].parameter)
+  end
+
+
+
+  -- Validate IP address and flag to start connection
+  function ValidIp(ip)
+    
+    local ipChunks = {ip:match("(%d+)%.(%d+)%.(%d+)%.(%d+)")}
+    if (#ipChunks == 4) then
+      for _,v in pairs(ipChunks) do
+        if (tonumber(v) < 0 or tonumber(v) > 255) then
+          return 0
+        end
+      end
+     
+      return 1
+    else
+      return 0
+    end
+  end
+
+
+
+  -- transmit a message to the device
+  function DeviceTx(incoming)
+  
+    --Debug("TX: "..incoming)
+    error = ETHERNET.socket:Write(incoming .. EOM)
+   
+    if error then
+      Debug('ERROR (DeviceTx): ' .. error)
+      Log.Error(MYNAME .. '(DeviceTx Error): ' .. error)      
+      DeviceDisconnect()
+    else
+      waitForResponse = waitForResponse + 1         -- Count toward watchdog
+    end
+  end
+  
+  
+  
+  -- Change the color of an LED indicator
+  function LedColor (value)
+    local myColor
+    
+    if value <= -60 then
+      myColor = 'LightGray'     -- No signal
+    elseif value < -20 then
+      myColor = 'Green'         -- Normal
+    elseif value < -6 then
+      myColor = 'Yellow'        -- Medium
+    elseif value < -2 then
+      myColor = 'Orange'        -- High
+    else
+      myColor = 'Red'           -- Clipping?
+    end
+    
+    return myColor
+  end
+  
+  
+  
+  -- Change enabled state of buttons
+  function EnableChannel (myChannel, myState)
+  
+    -- Find the button properties in question
+    for i = 1, #AMPBUTTONS do
+      -- Found a match
+      if (AMPBUTTONS[i].name == 'Mute') and (AMPBUTTONS[i].subindex == myChannel) then
+        AMPBUTTONS[i].enabled = myState
+        
+        if myState == 1 then
+          Controls['Input Signal'][myChannel].IsDisabled  = false
+         
+          Controls['Fault'][myChannel].IsDisabled         = false
+          Controls['Output Meter'][myChannel].IsDisabled  = false
+          Controls['Output Mute'][myChannel].IsDisabled   = false
+        else
+          Controls['Input Signal'][myChannel].IsDisabled  = true
+
+          Controls['Fault'][myChannel].IsDisabled         = true
+          Controls['Output Meter'][myChannel].IsDisabled  = true
+          Controls['Output Mute'][myChannel].IsDisabled   = true
+          
+          --Clear fault indicators
+          Controls['Fault'][myChannel].Boolean            = false
+        end
+      end
+    end
+  end
+
+
+
+  function DisableControls (state)
+
+    if state == 1 then
+      myDisabled  = true
+      myColor     = 'LightGray'
+      myBoolean   = false
+      
+      -- Clear amp setting table
+      AMPSETTINGS = {  }
+      
+    else
+      myDisabled  = false
+      myColor     = 'Green'
+      myBoolean   = false
+    end
+    
+    -- Initialize controls (disable until connection)
+    Controls['Toggle Standby'].Boolean      = myBoolean
+    Controls['Toggle Standby'].IsDisabled   = myDisabled
+    Controls['Standby'].Boolean             = myBoolean
+    Controls['Standby'].IsDisabled          = myDisabled
+    --Controls['Power'].Boolean               = myBoolean
+    Controls['Power'].IsDisabled            = myDisabled
+    
+    for i = 1, MaxChannels do
+      EnableChannel(i, 0)
+
+      if (i % 2) == 0 then
+        Controls['Mono'][i/2].Boolean           = myBoolean
+        Controls['Mono'][i/2].IsDisabled        = myDisabled
+        Controls['Mono'][i/2].Color             = myColor
+        
+        Controls['V-Bridge'][i/2].Boolean       = myBoolean
+        Controls['V-Bridge'][i/2].IsDisabled    = myDisabled
+        Controls['V-Bridge'][i/2].Color         = myColor
+        
+        Controls['I-Share'][i/2].Boolean        = myBoolean
+        Controls['I-Share'][i/2].IsDisabled     = myDisabled
+        Controls['I-Share'][i/2].Color          = myColor
+      
+      end
+
+      if (i % 4) == 0 then
+        Controls['Quad Mode'][i/4].Boolean      = myBoolean 
+        Controls['Quad Mode'][i/4].IsDisabled   = myDisabled  
+        Controls['Quad Mode'][i/4].Color        = myColor
+      end
+    end
+  
+  end
+  
+  
+
+  -- Clear all fault indicators
+  function ClearFaults()
+    
+    Debug("Clearing all fault indicators")
+    for i, myControl in ipairs( Controls['Fault']) do
+      myControl.Boolean = false
+    end
+  end
+  
+  
+  
+--   ^^^^   Function/Method Definitions   ^^^^   --
+---------------------------------------------------
+
+
+
+
+
+
+------------------------------------------------------
+--   vvvv   Classes/Object-ish Definitions   vvvv   --
+
+
+
+ --v   Serial Object/Handlers   v--
+
+-- Sockeet Event Handler (state changes, data, errors, etc)
+  ETHERNET.socket.EventHandler = function(mySocket, myEvent, myError)
+    
+    if myEvent == TcpSocket.Events.Connected then
+      
+      Debug ('Socket Connected: ' .. ETHERNET.ip.String)
+      
+      -- Send initial setup parameters to amplifier (channel fault setup)
+      Log.Error(MYNAME .. '(Socket) Init connection has cleared all faults')
+      DeviceTx('CF')        -- Clear Alarm/Faults
+      DeviceTx('SR O')      -- Set Alarm Reporting On
+      DeviceTx('SF O')      -- Set Fault Reporting On
+      DeviceTx('GC')        -- Grab Channel Configuration
+      
+      -- Preset watch dog (a few of the above sends don't respond anything)
+      waitForResponse = waitForResponse - 2
+      
+      -- Turn on Polling
+      TimerPollSettings:Start(POLLTIMESETTINGS)
+      TimerPollButtons:Start(POLLTIMEBUTTONS)
+      TimerPollMeters:Start(POLLTIMEMETERS)
+      
+      -- Enable Controls
+      Status('OK')           -- Update status indicator
+      DisableControls(0)
+      
+    elseif myEvent == TcpSocket.Events.Reconnect then
+      Debug ('Socket Reconnecting ' )
+      Status('Initializing') -- Update status indicator
+      DisableControls(1)
+      
+    elseif myEvent == TcpSocket.Events.Data then
+      
+      -- ControlSpace protocol dictates each command terminated with 0x0D (CR)
+      local incoming = mySocket:ReadLine( TcpSocket.EOL.Any )
+      
+      --Test responses
+      if string.match(incoming, string.char(06)) then     --Ack (to CF command)
+        waitForResponse = waitForResponse - 1   -- ACK the Message
+        Status('OK')          -- Update status indicator
+        ClearFaults()
+        
+      elseif (#incoming > 2) then                         -- All other response
+        waitForResponse = waitForResponse - 1   -- ACK the Message
+        Status('OK')          -- Update status indicator
+
+        --Debug('RX: ' .. incoming)
+        ParseRx(incoming)
+      end 
+      
+    elseif myEvent == TcpSocket.Events.Closed then
+      Debug ('Socket Closed by remote')
+      Status('Missing')                     -- Update status indicator
+      DisableControls(1)
+      
+    elseif myEvent == TcpSocket.Events.Error then
+      
+      Debug ('ERROR (SocketRx): Closed due to error: '.. myEvent)
+      Log.Error(MYNAME .. '(SocketRx): ' .. myError)
+      Status('Missing')                     -- Update status indicator
+      DisableControls(1)
+      ETHERNET.socket:Disconnect()
+      
+      waitForResponse = WATCHDOGTHRESHOLD   -- Force Watchdog Reset
+      Status('Compromised')                 -- Update status indicator
+
+    elseif myEvent == TcpSocket.Events.Timeout then
+      Debug ('Socket Closed due to timeout')
+      Status('Missing')                     -- Update status indicator
+      DisableControls(1)
+      
+    else
+      Debug ('Unknown Socket Event: '.. myEvent)
+      Status('Missing')                     -- Update status indicator
+      DisableControls(1)
+      
+    end
+  end
+
+
+
+  -- Instantiate the port and start listening
+  function DeviceConnect()
+    
+    -- Stop Polling (start again in socket connect)
+    TimerPollButtons:Stop()
+    TimerPollSettings:Stop()
+    TimerPollMeters:Stop()
+    DisableControls(1)
+    
+    Debug ('Closing Socket - Change of IP?')      
+    ETHERNET.socket:Disconnect()
+ 
+    -- Check for Valid IP
+    if (1 == ValidIp(ETHERNET.ip.String)) then
+      
+      Debug ('Socket Connecting: ' .. ETHERNET.ip.String)
+      Log.Error(MYNAME .. '(Socket) Connecting: ' .. ETHERNET.ip.String)
+      
+      -- Start the connection
+      ETHERNET.socket:Connect(ETHERNET.ip.String, ETHERNET.port)
+       
+    else
+      
+      Debug ('Socket Closed - Invalid IP')
+      Log.Error(MYNAME .. '(Socket) Closed - Invalid IP')
+    end
+
+  end
+
+
+
+  -- Closes the port and stops listening
+  function DeviceDisconnect()
+    Socket:Disconnect()
+    
+    Debug ('Socket Disconnect command sent')
+    Log.Error(MYNAME .. '(Socket) Disconnect command sent')
+  end
+
+  
+  
+  -- Parse responses from the socket handler
+  function ParseRx(incoming)
+  
+    --trim white space from start of message
+    while (incoming:sub(1,1) == "") do
+      incoming = incoming:sub(2)
+    end
+    
+    -- Response from Meters Query
+    if incoming:sub(1, 2) == "GL" then
+
+      --Parse Response: Signal Level "GL 1 [4a,4a,4a,4a,4a,4a,4a,4a]"
+      local slot, channel1, channel2, channel3, channel4, channel5, channel6, channel7, channel8 = string.match(incoming,'GL (%d) %[(%x+),(%x+),(%x+),(%x+),(%x+),(%x+),(%x+),(%x+)%]' )
+
+      if slot == '1' then
+      
+        --Used if indicator is an LED
+        --[[
+        Controls['Input Signal'][1].Color =  LedColor( (tonumber(channel1, 16) / 2) - 60)
+        Controls['Input Signal'][2].Color =  LedColor( (tonumber(channel2, 16) / 2) - 60)
+        Controls['Input Signal'][3].Color =  LedColor( (tonumber(channel3, 16) / 2) - 60)
+        Controls['Input Signal'][4].Color =  LedColor( (tonumber(channel4, 16) / 2) - 60)
+        Controls['Input Signal'][5].Color =  LedColor( (tonumber(channel5, 16) / 2) - 60)
+        Controls['Input Signal'][6].Color =  LedColor( (tonumber(channel6, 16) / 2) - 60)
+        Controls['Input Signal'][7].Color =  LedColor( (tonumber(channel7, 16) / 2) - 60)
+        Controls['Input Signal'][8].Color =  LedColor( (tonumber(channel8, 16) / 2) - 60)
+        ]]--
+        
+        --Used if indicator is a meter
+        Controls['Input Signal'][1].Value = (tonumber(channel1, 16) / 2) - 60 
+        Controls['Input Signal'][2].Value = (tonumber(channel2, 16) / 2) - 60 
+        Controls['Input Signal'][3].Value = (tonumber(channel3, 16) / 2) - 60 
+        Controls['Input Signal'][4].Value = (tonumber(channel4, 16) / 2) - 60
+        Controls['Input Signal'][5].Value = (tonumber(channel5, 16) / 2) - 60 
+        Controls['Input Signal'][6].Value = (tonumber(channel6, 16) / 2) - 60 
+        Controls['Input Signal'][7].Value = (tonumber(channel7, 16) / 2) - 60 
+        Controls['Input Signal'][8].Value = (tonumber(channel8, 16) / 2) - 60 
+        
+      elseif slot == '2' then
+        
+        --Used if indicator is an LED
+        --[[
+        Controls['Output Meter'][1].Color =  LedColor( (tonumber(channel1, 16) / 2) - 60)
+        Controls['Output Meter'][2].Color =  LedColor( (tonumber(channel2, 16) / 2) - 60)
+        Controls['Output Meter'][3].Color =  LedColor( (tonumber(channel3, 16) / 2) - 60)
+        Controls['Output Meter'][4].Color =  LedColor( (tonumber(channel4, 16) / 2) - 60)
+        Controls['Output Meter'][5].Color =  LedColor( (tonumber(channel5, 16) / 2) - 60)
+        Controls['Output Meter'][6].Color =  LedColor( (tonumber(channel6, 16) / 2) - 60)
+        Controls['Output Meter'][7].Color =  LedColor( (tonumber(channel7, 16) / 2) - 60)
+        Controls['Output Meter'][8].Color =  LedColor( (tonumber(channel8, 16) / 2) - 60)
+        ]]--
+        
+        --Used if indicator is a meter
+        Controls['Output Meter'][1].Value = (tonumber(channel1, 16) / 2) - 60
+        Controls['Output Meter'][2].Value = (tonumber(channel2, 16) / 2) - 60
+        Controls['Output Meter'][3].Value = (tonumber(channel3, 16) / 2) - 60
+        Controls['Output Meter'][4].Value = (tonumber(channel4, 16) / 2) - 60
+        Controls['Output Meter'][5].Value = (tonumber(channel5, 16) / 2) - 60
+        Controls['Output Meter'][6].Value = (tonumber(channel6, 16) / 2) - 60
+        Controls['Output Meter'][7].Value = (tonumber(channel7, 16) / 2) - 60
+        Controls['Output Meter'][8].Value = (tonumber(channel8, 16) / 2) - 60
+      end
+      
+      
+    -- Response from Power Query
+    --if string.find(incoming, "GY") then  --(Drop the find for lighter method)
+    elseif incoming:sub(1, 2) == "GY" then
+      --Debug("RX Power: " ..incoming)
+
+      -- Parse Response: Power Status "GY N"
+      local state = string.match(incoming,"GY (%a)")
+      
+      -- Update controls
+      --if (state == 'N') and (Controls['Power'].Boolean == false) then   -- Power on
+      if (state == 'N') then
+        AMPBUTTONS[1].state = 1
+        
+        -- Update Indicators
+        Controls['Standby'].Boolean = false
+        Controls['Power'].Boolean   = true
+        
+        -- Update Button
+        if (Controls['Toggle Standby'].Boolean == false) then
+          Controls['Toggle Standby'].Boolean = true
+        end
+        
+        --Debug('Power Status: On') 
+        
+      elseif (state == 'S') then
+        AMPBUTTONS[1].state = 0
+        
+        -- Update Indicators
+        Controls['Standby'].Boolean = true
+        Controls['Power'].Boolean = false
+      
+        -- Update Button
+        if (Controls['Toggle Standby'].Boolean == true) then
+          Controls['Toggle Standby'].Boolean = false
+        end
+        
+        --Debug('Power Status: Standby')
+      end
+
+    
+    -- Response from Fault (unsolicited)
+    elseif incoming:sub(1, 2) == "GF" then   
+      local state = string.match(incoming,"GF (%a)")
+      
+      if (state == 'F') and (Controls['Fault'][9].Boolean == false) then
+        Controls['Fault'][9].Boolean = true
+        Log.Error(MYNAME .. '(Fault Status) In Fault (New)')
+        Debug('Fault Status: In Fault!')
+        
+      elseif (state == 'F') and (Controls['Fault'][9].Boolean == true) then
+        Log.Error(MYNAME .. '(Fault Status) In Fault (Repeat)')
+        Debug('Fault Status: In Fault! (repeat)')
+      
+      elseif (state == 'C') and (Controls['Fault'][9].Boolean == true) then
+        Controls['Fault'][9].Boolean = false
+        Log.Error(MYNAME .. '(Fault Status) Cleared')
+        Debug('Fault Status: Cleared')
+
+      elseif (state == 'C') and (Controls['Fault'][9].Boolean == false) then
+        Debug('Fault Status: Cleared (repeat)')
+        
+      end
+   
+
+    -- Response from Mute Button Query
+    elseif incoming:sub(1, 2) == "GM" then
+
+      -- Parse Response: Mute Status "GM 2,1,U"
+      local slot, channel, state = string.match(incoming,"GM (%d),(%d),(%a)")
+      
+      if tonumber(slot) > 2 then
+        channel = channel + 4
+      end
+      
+      -- Only update button if it's out of state (amp initiated change)
+      if (state == 'U') and (Controls['Output Mute'][tonumber(channel)].Boolean == true) then
+        AMPBUTTONS[channel + 1].state = 0                      -- store state
+        Controls['Output Mute'][tonumber(channel)].Boolean = false   -- update button
+        Debug('Mute Status: '.. channel ..' Status: Unmuted')
+            
+      elseif (state == 'M') and (Controls['Output Mute'][tonumber(channel)].Boolean == false) then
+        AMPBUTTONS[channel + 1].state = 1                      -- store state
+        Controls['Output Mute'][tonumber(channel)].Boolean = true    -- update button
+        Debug('Mute Status: '.. channel ..' Status: Muted')
+      end
+    
+    
+    -- Response from Reporting Status (unsolicited)
+    elseif incoming:sub(1, 2) == "GR" then
+    
+      -- Parse Response: Alarm Reporting/Status "GR c,s,t,x"
+      local statusChannel, statusSeverity, statusType, statusCondition = string.match(incoming,'GR (%d+),(%a+),(%a+),(%a+)' )
+      
+      --Debug (incoming)
+      --Debug("statusChannel ".. statusChannel)
+      
+      --Debug("statusSeverity ".. statusSeverity)
+      --Debug("statusType ".. statusType)
+      --Debug("statusCondition ".. statusCondition)
+      
+      -- Form log message
+      local myMessage = "(Alarm Reporting) "
+
+      -- Handle severity
+      if (statusSeverity == 'W') then
+        myMessage = myMessage .. "WARNING "
+      elseif (statusSeverity == 'F') then
+        myMessage = myMessage .. "FAULT "
+      elseif (statusSeverity == 'S') then
+        myMessage = myMessage .. "SYSTEM message  "
+      end
+      
+      -- Handle condition
+      if (statusCondition == 'S') then
+        myMessage = myMessage .. "activated "
+        Controls['Fault'][tonumber(statusChannel)].Boolean = true
+      elseif (statusCondition == 'C') then
+        myMessage = myMessage .. "cleared "
+        Controls['Fault'][tonumber(statusChannel)].Boolean = false
+      end
+      
+      myMessage = myMessage .. "on channel " .. statusChannel .. ": "
+
+      -- Handle Type
+      if (statusType == 'N') then
+        myMessage = myMessage .. "No alarm "
+      elseif (statusType == 'O') then
+        myMessage = myMessage .. "Open circuit "
+      elseif (statusType == 'S') then
+        myMessage = myMessage .. "Short circuit "
+      elseif (statusType == 'A') then
+        myMessage = myMessage .. "AC Loss "
+      elseif (statusType == 'D') then
+        myMessage = myMessage .. "Digital audio loss "
+      elseif (statusType == 'I') then
+        myMessage = myMessage .. "I-Share jumper missing "
+      elseif (statusType == 'L') then
+        myMessage = myMessage .. "Limiting "
+      elseif (statusType == 'C') then
+        myMessage = myMessage .. "Clip "
+      elseif (statusType == 'P') then
+        myMessage = myMessage .. "Protection "
+      elseif (statusType == 'Z') then
+        myMessage = myMessage .. "Something unknown (other) "
+      end
+
+     
+      -- Write to Log
+      Log.Message(MYNAME .. myMessage)
+      Debug(MYNAME .. myMessage)
+    
+    
+    -- Response from channel configuration (only on connection)
+    elseif incoming:sub(1, 2) == "GC" then
+      --Debug("Configuration Raw: ".. incoming)
+      OnConfig(incoming)
+      
+    -- Response of unknown type
+    else
+      Debug('Unhandled Response: ' .. incoming)
+    end
+
+  end
+  
+  
+
+  -- Mute button handler 
+  function OnMute (ctl)
+    TimerPollButtons:Stop()
+
+    --find parameter to send
+    for i = 1, #AMPBUTTONS do
+      if AMPBUTTONS[i].index == ctl.Index then
+    
+        if (ctl.Boolean == true) and (AMPBUTTONS[i].state ~= 1) then
+          --Debug('TX: SM '.. AMPBUTTONS[i].parameter ..',M')
+          AMPBUTTONS[i].state = 1
+          DeviceTx('SM '.. AMPBUTTONS[i].parameter ..',M')
+        elseif (ctl.Boolean == false) and (AMPBUTTONS[i].state ~= 0) then
+          --Debug('TX: SM '.. AMPBUTTONS[i].parameter ..',U')
+          AMPBUTTONS[i].state = 0
+          DeviceTx('SM '.. AMPBUTTONS[i].parameter ..',U')
+        end
+      end
+    end
+    
+    TimerPollButtons:Start(1)    -- Delay the next poll
+  end
+  
+  
+  
+  -- Process the channel configurations
+  function OnConfig (myConfig)
+      
+    -- Parse Response: Alarm Reporting/Status "GC IN,IN,BL,BL,Q7,Q7,Q7,Q7"
+
+    -- Extract each number or letter pair (after GC) and build and array of responses
+    local myMatch = "%w%w"
+     for line, _ in myConfig:gmatch(myMatch) do
+        if line ~= "GC" then
+          table.insert(AMPSETTINGS, line)
+        end
+     end
+
+    --[[
+    Debug("Parsing original String : " .. myConfig)
+    Debug("Entered Config parsing 1: " .. AMPSETTINGS[1])
+    Debug("Entered Config parsing 2: " .. AMPSETTINGS[2])
+    Debug("Entered Config parsing 3: " .. AMPSETTINGS[3])
+    Debug("Entered Config parsing 4: " .. AMPSETTINGS[4])
+    Debug("Entered Config parsing 5: " .. AMPSETTINGS[5])
+    Debug("Entered Config parsing 6: " .. AMPSETTINGS[6])
+    Debug("Entered Config parsing 7: " .. AMPSETTINGS[7])
+    Debug("Entered Config parsing 8: " .. AMPSETTINGS[8])
+    ]]--
+    
+    -- Evaluate the first 4 channels
+    if ( string.sub(AMPSETTINGS[1], 1, 1) == 'Q') then
+      --Debug("Quad 1 config received")
+      
+      -- Light the Quad LED and update others
+      Controls['Quad Mode'][1].Boolean  = true
+      EnableChannel (1, 1)
+      
+      if (string.sub(AMPSETTINGS[1], 2, 2) == 'L') then
+        Controls['I-Share'][1].Boolean  = true
+        Controls['I-Share'][2].Boolean  = true
+      elseif (string.sub(AMPSETTINGS[1], 2, 2) == '7') then
+        Controls['I-Share'][1].Boolean  = true
+        Controls['I-Share'][2].Boolean  = true
+      elseif (string.sub(AMPSETTINGS[1], 2, 2) == '1') then
+        Controls['I-Share'][1].Boolean  = true
+        Controls['I-Share'][2].Boolean  = true
+      end
+      
+    else
+    
+      -- Update the first channel pair (1-2)
+      if( string.sub(AMPSETTINGS[1], 1, 1) == 'B') then
+        --Debug("Bridged config for Channel 1/2")
+
+        -- Light the Bridge LED and update others
+        Controls['V-Bridge'][1].Boolean  = true
+        EnableChannel (1, 1)
+        
+      elseif( string.sub(AMPSETTINGS[1], 1, 1) == 'P') then
+        --Debug("Bridged config for Channel 1/2")
+        
+        -- Light the Bridge LED and update others
+        Controls['I-Share'][1].Boolean  = true
+        EnableChannel (1, 1)
+        
+      elseif (AMPSETTINGS[1]:sub(1,1) == 'I' and AMPSETTINGS[2]:sub(1,1) == 'I') then
+        --Debug("Mono config for Channel 1/2")
+        
+        -- Light the Mono LED and update others
+        Controls['Mono'][1].Boolean       = true
+        EnableChannel (1, 1)
+        EnableChannel (2, 1)
+      end
+
+      -- Update the second channel pair (3-4)
+      if( string.sub(AMPSETTINGS[3], 1, 1) == 'B') then
+        --Debug("Bridged config for Channel 3/4")
+
+        -- Light the Bridge LED and update others
+        Controls['V-Bridge'][2].Boolean  = true
+        EnableChannel (3, 1)
+                
+      elseif( string.sub(AMPSETTINGS[3], 1, 1) == 'P') then
+        --Debug("Bridged config for Channel 3/4")
+        
+        -- Light the Bridge LED and update others
+        Controls['I-Share'][2].Boolean  = true
+        EnableChannel (3, 1)
+        
+      elseif (AMPSETTINGS[3]:sub(1,1) == 'I' and AMPSETTINGS[4]:sub(1,1) == 'I') then
+        --Debug("Mono config for Channel 3/4")
+        
+        -- Light the Mono LED and update others
+        Controls['Mono'][2].Boolean       = true
+        EnableChannel (3, 1)
+        EnableChannel (4, 1)
+      end
+    end
+  
+    -- Evaluate the second 4 channels
+    if ( string.sub(AMPSETTINGS[5], 1, 1) == 'Q') then
+      --Debug("Quad 2 config received")
+      
+      -- Light the Quad LED and update others
+      Controls['Quad Mode'][2].Boolean  = true
+      EnableChannel (5, 1)
+      
+      if (string.sub(AMPSETTINGS[5], 2, 2) == 'L') then
+        Controls['I-Share'][3].Boolean  = true
+        Controls['I-Share'][4].Boolean  = true
+      elseif (string.sub(AMPSETTINGS[5], 2, 2) == '7') then
+        Controls['I-Share'][3].Boolean  = true
+        Controls['I-Share'][4].Boolean  = true
+      elseif (string.sub(AMPSETTINGS[5], 2, 2) == '1') then
+        Controls['I-Share'][3].Boolean  = true
+        Controls['I-Share'][4].Boolean  = true
+      end
+      
+    else
+    
+      -- Update the first channel pair (5-6)
+      if( string.sub(AMPSETTINGS[5], 1, 1) == 'B') then
+        --Debug("Bridged config for Channel 5/6")
+
+        -- Light the Bridge LED and update others
+        Controls['V-Bridge'][3].Boolean  = true
+        EnableChannel (5, 1)
+                
+      elseif( string.sub(AMPSETTINGS[5], 1, 1) == 'P') then
+        --Debug("Bridged config for Channel 5/6")
+        
+        -- Light the Bridge LED and update others
+        Controls['I-Share'][3].Boolean  = true
+        EnableChannel (5, 1)
+        
+      elseif (AMPSETTINGS[5]:sub(1,1) == 'I' and AMPSETTINGS[6]:sub(1,1) == 'I') then
+        --Debug("Mono config for Channel 5/6")
+        
+        -- Light the Mono LED and update others
+        Controls['Mono'][3].Boolean       = true
+        EnableChannel (5, 1)
+        EnableChannel (6, 1)
+      end
+
+      -- Update the second channel pair (7-8)
+      if( string.sub(AMPSETTINGS[7], 1, 1) == 'B') then
+        --Debug("Bridged config for Channel 7/8")
+        
+        -- Light the Bridge LED and update others
+        Controls['V-Bridge'][4].Boolean  = true
+        EnableChannel (7, 1)
+        
+      elseif( string.sub(AMPSETTINGS[7], 1, 1) == 'P') then
+        --Debug("Bridged config for Channel 7/8")
+        
+        -- Light the Bridge LED and update others
+        Controls['I-Share'][4].Boolean  = true
+        EnableChannel (7, 1)
+        
+      elseif (AMPSETTINGS[7]:sub(1,1) == 'I' and AMPSETTINGS[8]:sub(1,1) == 'I') then
+        --Debug("Mono config for Channel 7/8")
+        
+        -- Light the Mono LED and update others
+        Controls['Mono'][4].Boolean       = true
+        EnableChannel (7, 1)
+        EnableChannel (8, 1)
+      end
+    end
+  end
+
+
+
+--   ^^^^   Classes/Object-ish Definitions   ^^^^   --
+------------------------------------------------------
+
+
+
+------------------------------------------------------
+--   vvvv   Controls/Button Event Handlers   vvvv   --
+
+
+  -- Change of IP address
+  Controls['IP Address'].EventHandler = function(ctl)
+    DeviceConnect()                       -- Handles reconnect based on current port state
+    waitForResponse = WATCHDOGTHRESHOLD   -- Force watchdog to reset port
+  end
+
+
+
+  --Power Button Handler
+  Controls['Toggle Standby'].EventHandler = function(ctl)
+    --local sendstring = "SY "..tostring(Controls['Power'].Boolean and 'S' or 'N')
+    if AMPBUTTONS[1].state == 1 then
+      DeviceTx("SY S")
+      --Debug("SY S")
+    else
+      DeviceTx("SY N")
+      --Debug("SY N")
+    end
+  end
+
+
+
+  -- Mute Button Handler
+  for i = 1, #Controls['Output Mute'] do
+    Controls['Output Mute'][i].EventHandler = OnMute
+  end
+  
+  
+  --Fault Clear button handler
+  Controls['Fault Clear'].EventHandler = function(ctl)
+    Log.Error(MYNAME .. 'User has cleared all faults')
+    DeviceTx('CF')
+  end
+
+
+
+--   ^^^^   Controls/Button Event Handlers   ^^^^   --
+------------------------------------------------------
+
+ 
+------------------------------------
+--   vvvv   Main Program   vvvv   --
+
+  Status('Initializing')  -- Update status indicator
+  
+  -- Initialize controls (disable until connection)
+  DisableControls(1)
+    
+  -- Setup Watchdog to poll device and track responses
+  TimerWatchdog = Timer.New()
+  TimerWatchdog.EventHandler = Watchdog         -- Resets serial and creates Zones (start timer on error)
+  TimerWatchdog:Start(POLLWATCHDOG)
+  
+  -- Setup polling timers.  Start them in the connection event.
+  TimerPollButtons = Timer.New()
+  TimerPollButtons.EventHandler = PollButtons
+  
+  TimerPollSettings = Timer.New()
+  TimerPollSettings.EventHandler = function () DeviceTx('GC') end
+
+  TimerPollMeters = Timer.New()
+  TimerPollMeters.EventHandler = PollMeters
+
+  waitForResponse = WATCHDOGTHRESHOLD         -- Force watchdog
+  
+  Debug("Script Started...")
+
+
+--   ^^^^   Main Program   ^^^^   --
+------------------------------------
+----------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------------
+elseif Properties["Model"].Value == "PM4500N" and Properties["Mode"].Value == "Advanced" then
+  --print("4 Advanced")
+
+
+---------------------------------------------------------
+--   vvvv   'Constant' (variable) Definitions   vvvv   --
+
+
+  -- Serial port settings
+  ETHERNET = {
+    socket    = TcpSocket.New(),
+    ip        = Controls["IP Address"],
+    port      = 10055
+  }
+  
+  -- External Variables
+  MYNAME = Controls["Name"].String .. ": " -- Used for logging to Q-Sys log
+  MaxChannels = 4                         -- 8 Channel amplifier
+  
+  -- Message Syntax
+  EOM                 = "\r"  -- End of MessageGL
+  
+  -- Timer settings for Production
+  --[[
+  WATCHDOGTHRESHOLD   = 25          -- How many polls to wait for a response before noting an error
+  POLLWATCHDOG        = 5           -- Check this often if the timtout has been exceeded
+  POLLTIMEBUTTONS     = .5          -- Polls while cycling through buttons table at this interval
+  POLLTIMEMETERS      = .12         -- Polling for meters, etc.
+  POLLTIMESETTINGS    = 10          -- Polls while cycling through settings table at this interval
+  ]]--
+  --
+  --  Timer Settings for Debug
+  WATCHDOGTHRESHOLD   = 25          -- How many polls to wait for a response before noting an error
+  POLLWATCHDOG        = 1           -- Check this often if the timtout has been exceeded
+  POLLTIMEBUTTONS     = 5           -- Polls while cycling through buttons table at this interval
+  POLLTIMEMETERS      = 125         -- Polling for meters, etc.
+  POLLTIMESETTINGS    = 10          -- Polls while cycling through settings table at this interval
+  --
+  
+  -- Debugging Enable/Disable
+  DEBUGENABLE         = 0             -- Enable General Debugging
+  DEBUGLOG            = 0             -- Enable debug messages to be written to log on core
+
+
+
+--[[
+ The polling of the amplifier button states is performed in a round robbin format.
+ Each time the poll period occurs, the next parameter in the list below is requested 
+ from the device.  So, if a poll rate of 1 second is set and there are 6 parameters
+ to poll in total, each will only be updated every 6 seconds.  This takes place
+ independant of setting and meter polling.
+]]--
+
+  AMPBUTTONS = {
+    {index = 6,  name = 'Power',  subindex = 1, parameter = '',     state = 99, enabled = 0},
+    {index = 28, name = 'Mute',   subindex = 1, parameter = '2,1',  state = 99, enabled = 0},  
+    {index = 29, name = 'Mute',   subindex = 2, parameter = '2,2',  state = 99, enabled = 0},
+    {index = 30, name = 'Mute',   subindex = 3, parameter = '2,3',  state = 99, enabled = 0},
+    {index = 31, name = 'Mute',   subindex = 4, parameter = '2,4',  state = 99, enabled = 0}
+  }
+
+
+
+--[[
+ The polling of the amplifier settings is performed in a round robbin format.
+ Each time the poll period occurs, the next parameter in the list below is requested 
+ from the device.  So, if a poll rate of 1 second is set and there are 6 parameters
+ to poll in total, each will only be updated every 6 seconds.  This takes place
+ independant of button and meter polling.
+]]--
+
+  -- TODO: Update the settings table (and this description)
+  AMPSETTINGS = {
+    --"xx", "xx", "xx", "xx", "xx", "xx", "xx", "xx"
+  }
+  
+  
+  
+  --[[
+ The polling of the amplifier meters is performed in a round robbin format.
+ Each time the poll period occurs, the next parameter in the list below is requested 
+ from the device.  So, if a poll rate of 1 second is set and there are 6 parameters
+ to poll in total, each will only be updated every 6 seconds.  This takes place
+ independant of button and setting polling.
+]]--
+
+  -- TODO: Update the meter polling
+  AMPMETERS = {
+    {index = 7,  name = 'Level',  subindex = 1, parameter = '1',    state = 99},  --inputs
+    {index = 24, name = 'Level',  subindex = 1, parameter = '2',    state = 99}   --outputs
+  }
+  
+
+  
+--   ^^^^   'Constant' (variable) Definitions   ^^^^   --
+---------------------------------------------------------
+
+
+
+---------------------------------------------------------
+--   vvvv      Global Variable Definitions      vvvv   --
+
+
+  waitForResponse     = 0
+  lastPolledButton    = 0
+  lastPolledSetting   = 0
+  lastPolledMeter     = 0
+
+
+--   ^^^^      Global Variable Definitions      ^^^^   --
+---------------------------------------------------------
+
+
+
+---------------------------------------------------
+--   vvvv   Function/Method Definitions   vvvv   --
+
+
+  
+  function Debug (incoming)
+  -- Send a string out to Debug (date/time stamp)
+    if (DEBUGENABLE == 1) then
+      print( os.date() .. " - " .. incoming)
+      
+      if (DEBUGLOG == 1) then
+        Log.Message(incoming)
+      end
+    end
+  end
+
+
+
+  -- Load initial values and reset the serial port
+  function Status(state)
+  
+    --Debug('Entered Status')
+    
+    --  0 = OK – Green,           1 = Compromised – Orange,     2 = Fault – Red,
+    --  3 = Not Present – Gray,   4 = Missing – Red,            5 = Initializing – Blue
+    
+    -- Update status indicator
+    if      state == 'OK'           then Controls["Status"].Value = 0
+      elseif  state == 'Compromised'  then Controls["Status"].Value = 1
+      elseif  state == 'Fault'        then Controls["Status"].Value = 2
+      elseif  state == 'Not Present'  then Controls["Status"].Value = 3
+      elseif  state == 'Missing'      then Controls["Status"].Value = 4
+      elseif  state == 'Initializing' then Controls["Status"].Value = 5
+      else Log.Error(MYNAME .. '(Status) State not recognized')
+    end
+  
+  end
+  
+  
+  
+  -- Load initial values and reset the serial port
+  function Watchdog()
+    
+    -- If no responese reset port
+    --Debug("WaitForResponse: " .. waitForResponse)
+    if (waitForResponse >= WATCHDOGTHRESHOLD) then
+      
+      waitForResponse = 0     -- Stop re-trigger
+      Status('Initializing')  -- Update status indicator
+      
+      -- Instantiate the device communications
+      Debug('(Watchdog) Resetting port')
+      Log.Error(MYNAME .. '(Watchdog) Resetting port')
+      DeviceConnect()
+    end
+  
+  end
+
+
+
+  -- Poll Buttons from Device
+  -- Necessary to allow user feedback to update (slow)
+  function PollButtons()
+    
+    -- Loop through defined parameters
+    lastPolledButton = lastPolledButton + 1
+    if (lastPolledButton > #AMPBUTTONS) then lastPolledButton = 1 end
+    
+    -- Form the proper query
+    if (AMPBUTTONS[lastPolledButton].name == 'Mute') then
+      --Debug("TX: GM " .. AMPBUTTONS[lastPolledButton].parameter)
+      DeviceTx("GM " .. AMPBUTTONS[lastPolledButton].parameter)
+    elseif (AMPBUTTONS[lastPolledButton].name == 'Power') then
+      --Debug("TX: GY")
+      DeviceTx("GY")
+    end
+  end
+
+
+
+  -- Poll meter state from Device
+  function PollMeters()
+     
+    -- Loop through defined parameters
+    lastPolledMeter = lastPolledMeter + 1
+    if (lastPolledMeter > #AMPMETERS) then lastPolledMeter = 1 end
+
+    -- Send the query
+    DeviceTx("GL " .. AMPMETERS[lastPolledMeter].parameter)
+  end
+
+
+
+  -- Validate IP address and flag to start connection
+  function ValidIp(ip)
+    
+    local ipChunks = {ip:match("(%d+)%.(%d+)%.(%d+)%.(%d+)")}
+    if (#ipChunks == 4) then
+      for _,v in pairs(ipChunks) do
+        if (tonumber(v) < 0 or tonumber(v) > 255) then
+          return 0
+        end
+      end
+     
+      return 1
+    else
+      return 0
+    end
+  end
+
+
+
+  -- transmit a message to the device
+  function DeviceTx(incoming)
+  
+    --Debug("TX: "..incoming)
+    error = ETHERNET.socket:Write(incoming .. EOM)
+   
+    if error then
+      Debug('ERROR (DeviceTx): ' .. error)
+      Log.Error(MYNAME .. '(DeviceTx Error): ' .. error)      
+      DeviceDisconnect()
+    else
+      waitForResponse = waitForResponse + 1         -- Count toward watchdog
+    end
+  end
+  
+  
+  
+  -- Change the color of an LED indicator
+  function LedColor (value)
+    local myColor
+    
+    if value <= -60 then
+      myColor = 'LightGray'     -- No signal
+    elseif value < -20 then
+      myColor = 'Green'         -- Normal
+    elseif value < -6 then
+      myColor = 'Yellow'        -- Medium
+    elseif value < -2 then
+      myColor = 'Orange'        -- High
+    else
+      myColor = 'Red'           -- Clipping?
+    end
+    
+    return myColor
+  end
+  
+  
+  
+  -- Change enabled state of buttons
+  function EnableChannel (myChannel, myState)
+  
+    -- Find the button properties in question
+    for i = 1, #AMPBUTTONS do
+      -- Found a match
+      if (AMPBUTTONS[i].name == 'Mute') and (AMPBUTTONS[i].subindex == myChannel) then
+        AMPBUTTONS[i].enabled = myState
+        
+        if myState == 1 then
+          Controls['Input Signal'][myChannel].IsDisabled  = false
+         
+          Controls['Fault'][myChannel].IsDisabled         = false
+          Controls['Output Meter'][myChannel].IsDisabled  = false
+          Controls['Output Mute'][myChannel].IsDisabled   = false
+        else
+          Controls['Input Signal'][myChannel].IsDisabled  = true
+
+          Controls['Fault'][myChannel].IsDisabled         = true
+          Controls['Output Meter'][myChannel].IsDisabled  = true
+          Controls['Output Mute'][myChannel].IsDisabled   = true
+          
+          --Clear fault indicators
+          Controls['Fault'][myChannel].Boolean            = false
+        end
+      end
+    end
+  end
+
+
+
+  function DisableControls (state)
+
+    if state == 1 then
+      myDisabled  = true
+      myColor     = 'LightGray'
+      myBoolean   = false
+      
+      -- Clear amp setting table
+      AMPSETTINGS = {  }
+      
+    else
+      myDisabled  = false
+      myColor     = 'Green'
+      myBoolean   = false
+    end
+    
+    -- Initialize controls (disable until connection)
+    Controls['Toggle Standby'].Boolean      = myBoolean
+    Controls['Toggle Standby'].IsDisabled   = myDisabled
+    Controls['Standby'].Boolean             = myBoolean
+    Controls['Standby'].IsDisabled          = myDisabled
+    --Controls['Power'].Boolean               = myBoolean
+    Controls['Power'].IsDisabled            = myDisabled
+    
+    for i = 1, MaxChannels do
+      EnableChannel(i, 0)
+
+      if (i % 2) == 0 then
+        Controls['Mono'][i/2].Boolean           = myBoolean
+        Controls['Mono'][i/2].IsDisabled        = myDisabled
+        Controls['Mono'][i/2].Color             = myColor
+        
+        Controls['V-Bridge'][i/2].Boolean       = myBoolean
+        Controls['V-Bridge'][i/2].IsDisabled    = myDisabled
+        Controls['V-Bridge'][i/2].Color         = myColor
+        
+        Controls['I-Share'][i/2].Boolean        = myBoolean
+        Controls['I-Share'][i/2].IsDisabled     = myDisabled
+        Controls['I-Share'][i/2].Color          = myColor
+      
+      end
+
+      if (i % 4) == 0 then
+        Controls['Quad Mode'].Boolean      = myBoolean 
+        Controls['Quad Mode'].IsDisabled   = myDisabled  
+        Controls['Quad Mode'].Color        = myColor
+      end
+    end
+  
+  end
+  
+  
+
+  -- Clear all fault indicators
+  function ClearFaults()
+    
+    Debug("Clearing all fault indicators")
+    for i, myControl in ipairs( Controls['Fault']) do
+      myControl.Boolean = false
+    end
+  end
+  
+  
+  
+--   ^^^^   Function/Method Definitions   ^^^^   --
+---------------------------------------------------
+
+
+
+
+
+
+------------------------------------------------------
+--   vvvv   Classes/Object-ish Definitions   vvvv   --
+
+
+
+ --v   Serial Object/Handlers   v--
+
+-- Sockeet Event Handler (state changes, data, errors, etc)
+  ETHERNET.socket.EventHandler = function(mySocket, myEvent, myError)
+    
+    if myEvent == TcpSocket.Events.Connected then
+      
+      Debug ('Socket Connected: ' .. ETHERNET.ip.String)
+      
+      -- Send initial setup parameters to amplifier (channel fault setup)
+      Log.Error(MYNAME .. '(Socket) Init connection has cleared all faults')
+      DeviceTx('CF')        -- Clear Alarm/Faults
+      DeviceTx('SR O')      -- Set Alarm Reporting On
+      DeviceTx('SF O')      -- Set Fault Reporting On
+      DeviceTx('GC')        -- Grab Channel Configuration
+      
+      -- Preset watch dog (a few of the above sends don't respond anything)
+      waitForResponse = waitForResponse - 2
+      
+      -- Turn on Polling
+      TimerPollSettings:Start(POLLTIMESETTINGS)
+      TimerPollButtons:Start(POLLTIMEBUTTONS)
+      TimerPollMeters:Start(POLLTIMEMETERS)
+      
+      -- Enable Controls
+      Status('OK')           -- Update status indicator
+      DisableControls(0)
+      
+    elseif myEvent == TcpSocket.Events.Reconnect then
+      Debug ('Socket Reconnecting ' )
+      Status('Initializing') -- Update status indicator
+      DisableControls(1)
+      
+    elseif myEvent == TcpSocket.Events.Data then
+      
+      -- ControlSpace protocol dictates each command terminated with 0x0D (CR)
+      local incoming = mySocket:ReadLine( TcpSocket.EOL.Any )
+      
+      --Test responses
+      if string.match(incoming, string.char(06)) then     --Ack (to CF command)
+        waitForResponse = waitForResponse - 1   -- ACK the Message
+        Status('OK')          -- Update status indicator
+        ClearFaults()
+        
+      elseif (#incoming > 2) then                         -- All other response
+        waitForResponse = waitForResponse - 1   -- ACK the Message
+        Status('OK')          -- Update status indicator
+
+        Debug('RX: ' .. incoming)
+        ParseRx(incoming)
+      end 
+      
+    elseif myEvent == TcpSocket.Events.Closed then
+      Debug ('Socket Closed by remote')
+      Status('Missing')                     -- Update status indicator
+      DisableControls(1)
+      
+    elseif myEvent == TcpSocket.Events.Error then
+      
+      Debug ('ERROR (SocketRx): Closed due to error: '.. myEvent)
+      Log.Error(MYNAME .. '(SocketRx): ' .. myError)
+      Status('Missing')                     -- Update status indicator
+      DisableControls(1)
+      ETHERNET.socket:Disconnect()
+      
+      waitForResponse = WATCHDOGTHRESHOLD   -- Force Watchdog Reset
+      Status('Compromised')                 -- Update status indicator
+
+    elseif myEvent == TcpSocket.Events.Timeout then
+      Debug ('Socket Closed due to timeout')
+      Status('Missing')                     -- Update status indicator
+      DisableControls(1)
+      
+    else
+      Debug ('Unknown Socket Event: '.. myEvent)
+      Status('Missing')                     -- Update status indicator
+      DisableControls(1)
+      
+    end
+  end
+
+
+
+  -- Instantiate the port and start listening
+  function DeviceConnect()
+    
+    -- Stop Polling (start again in socket connect)
+    TimerPollButtons:Stop()
+    TimerPollSettings:Stop()
+    TimerPollMeters:Stop()
+    DisableControls(1)
+    
+    Debug ('Closing Socket - Change of IP?')      
+    ETHERNET.socket:Disconnect()
+ 
+    -- Check for Valid IP
+    if (1 == ValidIp(ETHERNET.ip.String)) then
+      
+      Debug ('Socket Connecting: ' .. ETHERNET.ip.String)
+      Log.Error(MYNAME .. '(Socket) Connecting: ' .. ETHERNET.ip.String)
+      
+      -- Start the connection
+      ETHERNET.socket:Connect(ETHERNET.ip.String, ETHERNET.port)
+       
+    else
+      
+      Debug ('Socket Closed - Invalid IP')
+      Log.Error(MYNAME .. '(Socket) Closed - Invalid IP')
+    end
+
+  end
+
+
+
+  -- Closes the port and stops listening
+  function DeviceDisconnect()
+    Socket:Disconnect()
+    
+    Debug ('Socket Disconnect command sent')
+    Log.Error(MYNAME .. '(Socket) Disconnect command sent')
+  end
+
+  
+  
+  -- Parse responses from the socket handler
+  function ParseRx(incoming)
+  
+    --trim white space from start of message
+    while (incoming:sub(1,1) == "") do
+      incoming = incoming:sub(2)
+    end
+    
+    -- Response from Meters Query
+    if incoming:sub(1, 2) == "GL" then
+
+      --Parse Response: Signal Level "GL 1 [4a,4a,4a,4a]"
+      local slot, channel1, channel2, channel3, channel4 = string.match(incoming,'GL (%d) %[(%x+),(%x+),(%x+),(%x+)%]' )
+
+      if slot == '1' then
+      
+        --Used if indicator is an LED
+        --[[
+        Controls['Input Signal'][1].Color =  LedColor( (tonumber(channel1, 16) / 2) - 60)
+        Controls['Input Signal'][2].Color =  LedColor( (tonumber(channel2, 16) / 2) - 60)
+        Controls['Input Signal'][3].Color =  LedColor( (tonumber(channel3, 16) / 2) - 60)
+        Controls['Input Signal'][4].Color =  LedColor( (tonumber(channel4, 16) / 2) - 60)
+        ]]--
+        
+        --Used if indicator is a meter
+        Controls['Input Signal'][1].Value = (tonumber(channel1, 16) / 2) - 60 
+        Controls['Input Signal'][2].Value = (tonumber(channel2, 16) / 2) - 60 
+        Controls['Input Signal'][3].Value = (tonumber(channel3, 16) / 2) - 60 
+        Controls['Input Signal'][4].Value = (tonumber(channel4, 16) / 2) - 60
+        
+      elseif slot == '2' then
+        
+        --Used if indicator is an LED
+        --[[
+        Controls['Output Meter'][1].Color =  LedColor( (tonumber(channel1, 16) / 2) - 60)
+        Controls['Output Meter'][2].Color =  LedColor( (tonumber(channel2, 16) / 2) - 60)
+        Controls['Output Meter'][3].Color =  LedColor( (tonumber(channel3, 16) / 2) - 60)
+        Controls['Output Meter'][4].Color =  LedColor( (tonumber(channel4, 16) / 2) - 60)
+        ]]--
+        
+        --Used if indicator is a meter
+        Controls['Output Meter'][1].Value = (tonumber(channel1, 16) / 2) - 60
+        Controls['Output Meter'][2].Value = (tonumber(channel2, 16) / 2) - 60
+        Controls['Output Meter'][3].Value = (tonumber(channel3, 16) / 2) - 60
+        Controls['Output Meter'][4].Value = (tonumber(channel4, 16) / 2) - 60
+      end
+      
+      
+    -- Response from Power Query
+    elseif incoming:sub(1, 2) == "GY" then
+      --Debug("RX Power: " ..incoming)
+
+      -- Parse Response: Power Status "GY N"
+      local state = string.match(incoming,"GY (%a)")
+      
+      -- Update controls
+      if (state == 'N') then
+        AMPBUTTONS[1].state = 1
+        
+        -- Update Indicators
+        Controls['Standby'].Boolean = false
+        Controls['Power'].Boolean   = true
+        
+        -- Update Button
+        if (Controls['Toggle Standby'].Boolean == false) then
+          Controls['Toggle Standby'].Boolean = true
+        end
+        
+        --Debug('Power Status: On') 
+        
+      elseif (state == 'S') then
+        AMPBUTTONS[1].state = 0
+        
+        -- Update Indicators
+        Controls['Standby'].Boolean = true
+        Controls['Power'].Boolean = false
+      
+        -- Update Button
+        if (Controls['Toggle Standby'].Boolean == true) then
+          Controls['Toggle Standby'].Boolean = false
+        end
+        
+        --Debug('Power Status: Standby')
+      end
+
+    
+    -- Response from Fault (unsolicited)
+    elseif incoming:sub(1, 2) == "GF" then   
+      Debug('RX fault status from AMP!')
+      
+      local state = string.match(incoming,"GF (%a)")
+      
+      if (state == 'F') and (Controls['Fault'][5].Boolean == false) then
+        Controls['Fault'][5].Boolean = true
+        Log.Error(MYNAME .. '(Fault Status) In Fault (New)')
+        Debug('Fault Status: In Fault!')
+        
+      elseif (state == 'F') and (Controls['Fault'][5].Boolean == true) then
+        Log.Error(MYNAME .. '(Fault Status) In Fault (Repeat)')
+        Debug('Fault Status: In Fault! (repeat)')
+      
+      elseif (state == 'C') and (Controls['Fault'][5].Boolean == true) then
+        Controls['Fault'][5].Boolean = false
+        Log.Error(MYNAME .. '(Fault Status) Cleared')
+        Debug('Fault Status: Cleared')
+
+      elseif (state == 'C') and (Controls['Fault'][5].Boolean == false) then
+        Debug('Fault Status: Cleared (repeat)')
+        
+      end
+   
+
+    -- Response from Mute Button Query
+    elseif incoming:sub(1, 2) == "GM" then
+
+      -- Parse Response: Mute Status "GM 2,1,U"
+      local slot, channel, state = string.match(incoming,"GM (%d),(%d),(%a)")
+      
+      if tonumber(slot) > 2 then
+        channel = channel + 4
+      end
+      
+      -- Only update button if it's out of state (amp initiated change)
+      if (state == 'U') and (Controls['Output Mute'][tonumber(channel)].Boolean == true) then
+        AMPBUTTONS[channel + 1].state = 0                      -- store state
+        Controls['Output Mute'][tonumber(channel)].Boolean = false   -- update button
+        Debug('Mute Status: '.. channel ..' Status: Unmuted')
+            
+      elseif (state == 'M') and (Controls['Output Mute'][tonumber(channel)].Boolean == false) then
+        AMPBUTTONS[channel + 1].state = 1                      -- store state
+        Controls['Output Mute'][tonumber(channel)].Boolean = true    -- update button
+        Debug('Mute Status: '.. channel ..' Status: Muted')
+      end
+    
+    
+    -- Response from Reporting Status (unsolicited)
+    elseif incoming:sub(1, 2) == "GR" then
+    
+      -- Parse Response: Alarm Reporting/Status "GR c,s,t,x"
+      local statusChannel, statusSeverity, statusType, statusCondition = string.match(incoming,'GR (%d+),(%a+),(%a+),(%a+)' )
+      
+      --Debug ("Received Alarm: " .. incoming)
+      --Debug("statusChannel ".. statusChannel)
+      
+      --Debug("statusSeverity ".. statusSeverity)
+      --Debug("statusType ".. statusType)
+      --Debug("statusCondition ".. statusCondition)
+      
+      -- Form log message
+      local myMessage = "(Alarm Reporting) "
+
+      -- Handle severity
+      if (statusSeverity == 'W') then
+        myMessage = myMessage .. "WARNING "
+      elseif (statusSeverity == 'F') then
+        myMessage = myMessage .. "FAULT "
+      elseif (statusSeverity == 'S') then
+        myMessage = myMessage .. "SYSTEM message  "
+      end
+      
+      -- Handle condition
+      if (statusCondition == 'S') then
+        myMessage = myMessage .. "activated "
+        Controls['Fault'][tonumber(statusChannel)].Boolean = true
+      elseif (statusCondition == 'C') then
+        myMessage = myMessage .. "cleared "
+        Controls['Fault'][tonumber(statusChannel)].Boolean = false
+      end
+      
+      myMessage = myMessage .. "on channel " .. statusChannel .. ": "
+
+      -- Handle Type
+      if (statusType == 'N') then
+        myMessage = myMessage .. "No alarm "
+      elseif (statusType == 'O') then
+        myMessage = myMessage .. "Open circuit "
+      elseif (statusType == 'S') then
+        myMessage = myMessage .. "Short circuit "
+      elseif (statusType == 'A') then
+        myMessage = myMessage .. "AC Loss "
+      elseif (statusType == 'D') then
+        myMessage = myMessage .. "Digital audio loss "
+      elseif (statusType == 'I') then
+        myMessage = myMessage .. "I-Share jumper missing "
+      elseif (statusType == 'L') then
+        myMessage = myMessage .. "Limiting "
+      elseif (statusType == 'C') then
+        myMessage = myMessage .. "Clip "
+      elseif (statusType == 'P') then
+        myMessage = myMessage .. "Protection "
+      elseif (statusType == 'Z') then
+        myMessage = myMessage .. "Something unknown (other) "
+      end
+
+     
+      -- Write to Log
+      Log.Message(MYNAME .. myMessage)
+      Debug(MYNAME .. myMessage)
+    
+    
+    -- Response from channel configuration (only on connection)
+    elseif incoming:sub(1, 2) == "GC" then
+      --Debug("Configuration Raw: ".. incoming)
+      OnConfig(incoming)
+      
+    -- Response of unknown type
+    else
+      Debug('Unhandled Response: ' .. incoming)
+    end
+
+  end
+  
+  
+
+  -- Mute button handler 
+  function OnMute (ctl)
+    TimerPollButtons:Stop()
+
+    --find parameter to send
+    for i = 1, #AMPBUTTONS do
+      if AMPBUTTONS[i].index == ctl.Index then
+    
+        if (ctl.Boolean == true) and (AMPBUTTONS[i].state ~= 1) then
+          --Debug('TX: SM '.. AMPBUTTONS[i].parameter ..',M')
+          AMPBUTTONS[i].state = 1
+          DeviceTx('SM '.. AMPBUTTONS[i].parameter ..',M')
+        elseif (ctl.Boolean == false) and (AMPBUTTONS[i].state ~= 0) then
+          --Debug('TX: SM '.. AMPBUTTONS[i].parameter ..',U')
+          AMPBUTTONS[i].state = 0
+          DeviceTx('SM '.. AMPBUTTONS[i].parameter ..',U')
+        end
+      end
+    end
+    
+    TimerPollButtons:Start(1)    -- Delay the next poll
+  end
+  
+  
+  
+  -- Process the channel configurations
+  function OnConfig (myConfig)
+      
+    -- Parse Response: Alarm Reporting/Status "GC IN,IN,BL,BL"
+
+    -- Extract each number or letter pair (after GC) and build and array of responses
+    local myMatch = "%w%w"
+     for line, _ in myConfig:gmatch(myMatch) do
+        if line ~= "GC" then
+          table.insert(AMPSETTINGS, line)
+        end
+     end
+
+    --[[
+    Debug("Parsing original String : " .. myConfig)
+    Debug("Entered Config parsing 1: " .. AMPSETTINGS[1])
+    Debug("Entered Config parsing 2: " .. AMPSETTINGS[2])
+    Debug("Entered Config parsing 3: " .. AMPSETTINGS[3])
+    Debug("Entered Config parsing 4: " .. AMPSETTINGS[4])
+    ]]--
+    
+    -- Evaluate the first 4 channels
+    if ( string.sub(AMPSETTINGS[1], 1, 1) == 'Q') then
+      --Debug("Quad 1 config received")
+      
+      -- Light the Quad LED and update others
+      Controls['Quad Mode'].Boolean  = true
+      EnableChannel (1, 1)
+      
+      if (string.sub(AMPSETTINGS[1], 2, 2) == 'L') then
+        Controls['I-Share'][1].Boolean  = true
+        Controls['I-Share'][2].Boolean  = true
+      elseif (string.sub(AMPSETTINGS[1], 2, 2) == '7') then
+        Controls['I-Share'][1].Boolean  = true
+        Controls['I-Share'][2].Boolean  = true
+      elseif (string.sub(AMPSETTINGS[1], 2, 2) == '1') then
+        Controls['I-Share'][1].Boolean  = true
+        Controls['I-Share'][2].Boolean  = true
+      end
+      
+    else
+    
+      -- Update the first channel pair (1-2)
+      if( string.sub(AMPSETTINGS[1], 1, 1) == 'B') then
+        --Debug("Bridged config for Channel 1/2")
+
+        -- Light the Bridge LED and update others
+        Controls['V-Bridge'][1].Boolean  = true
+        EnableChannel (1, 1)
+        
+      elseif( string.sub(AMPSETTINGS[1], 1, 1) == 'P') then
+        --Debug("Bridged config for Channel 1/2")
+        
+        -- Light the Bridge LED and update others
+        Controls['I-Share'][1].Boolean  = true
+        EnableChannel (1, 1)
+        
+      elseif (AMPSETTINGS[1]:sub(1,1) == 'I' and AMPSETTINGS[2]:sub(1,1) == 'I') then
+        --Debug("Mono config for Channel 1/2")
+        
+        -- Light the Mono LED and update others
+        Controls['Mono'][1].Boolean       = true
+        EnableChannel (1, 1)
+        EnableChannel (2, 1)
+      end
+
+      -- Update the second channel pair (3-4)
+      if( string.sub(AMPSETTINGS[3], 1, 1) == 'B') then
+        --Debug("Bridged config for Channel 3/4")
+
+        -- Light the Bridge LED and update others
+        Controls['V-Bridge'][2].Boolean  = true
+        EnableChannel (3, 1)
+                
+      elseif( string.sub(AMPSETTINGS[3], 1, 1) == 'P') then
+        --Debug("Bridged config for Channel 3/4")
+        
+        -- Light the Bridge LED and update others
+        Controls['I-Share'][2].Boolean  = true
+        EnableChannel (3, 1)
+        
+      elseif (AMPSETTINGS[3]:sub(1,1) == 'I' and AMPSETTINGS[4]:sub(1,1) == 'I') then
+        --Debug("Mono config for Channel 3/4")
+        
+        -- Light the Mono LED and update others
+        Controls['Mono'][2].Boolean       = true
+        EnableChannel (3, 1)
+        EnableChannel (4, 1)
+      end
+    end
+  end
+
+
+
+--   ^^^^   Classes/Object-ish Definitions   ^^^^   --
+------------------------------------------------------
+
+
+
+------------------------------------------------------
+--   vvvv   Controls/Button Event Handlers   vvvv   --
+
+
+  -- Change of IP address
+  Controls['IP Address'].EventHandler = function(ctl)
+    DeviceConnect()                       -- Handles reconnect based on current port state
+    waitForResponse = WATCHDOGTHRESHOLD   -- Force watchdog to reset port
+  end
+
+
+
+  --Power Button Handler
+  Controls['Toggle Standby'].EventHandler = function(ctl)
+    if AMPBUTTONS[1].state == 1 then
+      DeviceTx("SY S")
+      --Debug("SY S")
+    else
+      DeviceTx("SY N")
+      --Debug("SY N")
+    end
+  end
+
+
+
+  -- Mute Button Handler
+  for i = 1, #Controls['Output Mute'] do
+    Controls['Output Mute'][i].EventHandler = OnMute
+  end
+  
+  
+  
+  --Fault Clear button handler
+  Controls['Fault Clear'].EventHandler = function(ctl)
+    Log.Error(MYNAME .. 'User has cleared all faults')
+    DeviceTx('CF')
+  end
+
+
+
+--   ^^^^   Controls/Button Event Handlers   ^^^^   --
+------------------------------------------------------
+
+ 
+------------------------------------
+--   vvvv   Main Program   vvvv   --
+
+  Status('Initializing')  -- Update status indicator
+  
+  -- Initialize controls (disable until connection)
+  DisableControls(1)
+    
+  -- Setup Watchdog to poll device and track responses
+  TimerWatchdog = Timer.New()
+  TimerWatchdog.EventHandler = Watchdog         -- Resets serial and creates Zones (start timer on error)
+  TimerWatchdog:Start(POLLWATCHDOG)
+  
+  -- Setup polling timers.  Start them in the connection event.
+  TimerPollButtons = Timer.New()
+  TimerPollButtons.EventHandler = PollButtons
+  
+  TimerPollSettings = Timer.New()
+  TimerPollSettings.EventHandler = function () DeviceTx('GC') end
+  --TimerPollSettings.EventHandler = PollSettings
+
+  TimerPollMeters = Timer.New()
+  TimerPollMeters.EventHandler = PollMeters
+
+  waitForResponse = WATCHDOGTHRESHOLD         -- Force watchdog
+  
+  Debug("Script Started...")
+
+
+--   ^^^^   Main Program   ^^^^   --
+------------------------------------
+  ----------------------------------------------------------------------------------------------------
+  ----------------------------------------------------------------------------------------------------
+elseif Properties["Model"].Value == "PM8500N" and Properties["Mode"].Value == "Basic" then
+  --print("8 Basic")
+
+
+---------------------------------------------------------
+--   vvvv   'Constant' (variable) Definitions   vvvv   --
+
+
+  -- Serial port settings
+  ETHERNET = {
+    socket    = TcpSocket.New(),
+    ip        = Controls["IP Address"],
+    port      = 10055
+  }
+  
+  -- External Variables
+  MYNAME = Controls["Name"].String .. ": " -- Used for logging to Q-Sys log
+  MaxChannels = 8                         -- 8 Channel amplifier
+  
+  -- Message Syntax
+  EOM                 = "\r"  -- End of MessageGL
+  
+  -- Timer settings for Production
+  WATCHDOGTHRESHOLD   = 25           -- How many polls to wait for a response before noting an error
+  POLLWATCHDOG        = 5            -- Check this often if the timtout has been exceeded
+  POLLTIMEBUTTONS     = .5           -- Polls while cycling through buttons table at this interval
+  POLLTIMEMETERS      = .12          -- Polling for meters, etc.
+  POLLTIMESETTINGS    = 10           -- Polls while cycling through settings table at this interva
+  
+  --  Timer Settings for Debug
+  --[[
+  WATCHDOGTHRESHOLD   = 25           -- How many polls to wait for a response before noting an error
+  POLLWATCHDOG        = 1            -- Check this often if the timtout has been exceeded
+  POLLTIMEBUTTONS     = .5           -- Polls while cycling through buttons table at this interval
+  POLLTIMEMETERS      = 5         -- Polling for meters, etc.
+  POLLTIMESETTINGS    = 122            -- Polls while cycling through settings table at this interval
+  ]]--
+  
+  -- Debugging Enable/Disable
+  DEBUGENABLE         = 0             -- Enable General Debugging
+  DEBUGLOG            = 0             -- Enable debug messages to be written to log on core
+
+
+
+--[[
+ The polling of the amplifier button states is performed in a round robbin format.
+ Each time the poll period occurs, the next parameter in the list below is requested 
+ from the device.  So, if a poll rate of 1 second is set and there are 6 parameters
+ to poll in total, each will only be updated every 6 seconds.  This takes place
+ independant of setting and meter polling.
+]]--
+
+  AMPBUTTONS = {
+    {index = 6,  name = 'Power',  subindex = 1, parameter = '',     state = 99, enabled = 0},
+    {index = 47, name = 'Mute',   subindex = 1, parameter = '2,1',  state = 99, enabled = 0},  
+    {index = 48, name = 'Mute',   subindex = 2, parameter = '2,2',  state = 99, enabled = 0},
+    {index = 49, name = 'Mute',   subindex = 3, parameter = '2,3',  state = 99, enabled = 0},
+    {index = 50, name = 'Mute',   subindex = 4, parameter = '2,4',  state = 99, enabled = 0},
+    {index = 51, name = 'Mute',   subindex = 5, parameter = '4,1',  state = 99, enabled = 0},
+    {index = 52, name = 'Mute',   subindex = 6, parameter = '4,2',  state = 99, enabled = 0},
+    {index = 53, name = 'Mute',   subindex = 7, parameter = '4,3',  state = 99, enabled = 0},
+    {index = 54, name = 'Mute',   subindex = 8, parameter = '4,4',  state = 99, enabled = 0}
+  }
+
+
+--[[
+ The polling of the amplifier settings is performed in a round robbin format.
+ Each time the poll period occurs, the next parameter in the list below is requested 
+ from the device.  So, if a poll rate of 1 second is set and there are 6 parameters
+ to poll in total, each will only be updated every 6 seconds.  This takes place
+ independant of button and meter polling.
+]]--
+
+  -- TODO: Update the settings table (and this description)
+  AMPSETTINGS = {
+    --"xx", "xx", "xx", "xx", "xx", "xx", "xx", "xx"
+  }
+  
+  
+  
+  --[[
+ The polling of the amplifier meters is performed in a round robbin format.
+ Each time the poll period occurs, the next parameter in the list below is requested 
+ from the device.  So, if a poll rate of 1 second is set and there are 6 parameters
+ to poll in total, each will only be updated every 6 seconds.  This takes place
+ independant of button and setting polling.
+]]--
+
+  -- TODO: Update the meter polling
+  AMPMETERS = {
+    {index = 4,  name = 'Level',  subindex = 1, parameter = '1',    state = 99},  --inputs
+    {index = 35, name = 'Level',  subindex = 1, parameter = '2',    state = 99}   --outputs
+  }
+  
+
+  
+--   ^^^^   'Constant' (variable) Definitions   ^^^^   --
+---------------------------------------------------------
+
+
+
+---------------------------------------------------------
+--   vvvv      Global Variable Definitions      vvvv   --
+
+
+  waitForResponse     = 0
+  lastPolledButton    = 0
+  lastPolledSetting   = 0
+  lastPolledMeter     = 0
+
+
+--   ^^^^      Global Variable Definitions      ^^^^   --
+---------------------------------------------------------
+
+
+
+---------------------------------------------------
+--   vvvv   Function/Method Definitions   vvvv   --
+
+
+  
+  function Debug (incoming)
+  -- Send a string out to Debug (date/time stamp)
+    if (DEBUGENABLE == 1) then
+      print( os.date() .. " - " .. incoming)
+      
+      if (DEBUGLOG == 1) then
+        Log.Message(incoming)
+      end
+    end
+  end
+
+
+
+  -- Load initial values and reset the serial port
+  function Status(state)
+  
+    --Debug('Entered Status')
+    
+    --  0 = OK – Green,           1 = Compromised – Orange,     2 = Fault – Red,
+    --  3 = Not Present – Gray,   4 = Missing – Red,            5 = Initializing – Blue
+    
+    -- Update status indicator
+    if      state == 'OK'           then Controls["Status"].Value = 0
+      elseif  state == 'Compromised'  then Controls["Status"].Value = 1
+      elseif  state == 'Fault'        then Controls["Status"].Value = 2
+      elseif  state == 'Not Present'  then Controls["Status"].Value = 3
+      elseif  state == 'Missing'      then Controls["Status"].Value = 4
+      elseif  state == 'Initializing' then Controls["Status"].Value = 5
+      else Log.Error(MYNAME .. '(Status) State not recognized')
+    end
+  
+  end
+  
+  
+  
+  -- Load initial values and reset the serial port
+  function Watchdog()
+    
+    -- If no responese reset port
+    --Debug("WaitForResponse: " .. waitForResponse)
+    if (waitForResponse >= WATCHDOGTHRESHOLD) then
+      
+      waitForResponse = 0     -- Stop re-trigger
+      Status('Initializing')  -- Update status indicator
+      
+      -- Instantiate the device communications
+      Debug('(Watchdog) Resetting port')
+      Log.Error(MYNAME .. '(Watchdog) Resetting port')
+      DeviceConnect()
+    end
+  
+  end
+
+
+
+  -- Poll Buttons from Device
+  -- Necessary to allow user feedback to update (slow)
+  function PollButtons()
+    
+    -- Loop through defined parameters
+    lastPolledButton = lastPolledButton + 1
+    if (lastPolledButton > #AMPBUTTONS) then lastPolledButton = 1 end
+    
+    -- Form the proper query
+    if (AMPBUTTONS[lastPolledButton].name == 'Mute') then
+      --Debug("TX: GM " .. AMPBUTTONS[lastPolledButton].parameter)
+      DeviceTx("GM " .. AMPBUTTONS[lastPolledButton].parameter)
+    elseif (AMPBUTTONS[lastPolledButton].name == 'Power') then
+      --Debug("TX: GY")
+      DeviceTx("GY")
+    end
+  end
+
+
+
+  -- Poll meter state from Device
+  function PollMeters()
+     
+    -- Loop through defined parameters
+    lastPolledMeter = lastPolledMeter + 1
+    if (lastPolledMeter > #AMPMETERS) then lastPolledMeter = 1 end
+
+    -- Send the query
+    DeviceTx("GL " .. AMPMETERS[lastPolledMeter].parameter)
+  end
+
+
+
+  -- Validate IP address and flag to start connection
+  function ValidIp(ip)
+    
+    local ipChunks = {ip:match("(%d+)%.(%d+)%.(%d+)%.(%d+)")}
+    if (#ipChunks == 4) then
+      for _,v in pairs(ipChunks) do
+        if (tonumber(v) < 0 or tonumber(v) > 255) then
+          return 0
+        end
+      end
+     
+      return 1
+    else
+      return 0
+    end
+  end
+
+
+
+  -- transmit a message to the device
+  function DeviceTx(incoming)
+  
+    --Debug("TX: "..incoming)
+    error = ETHERNET.socket:Write(incoming .. EOM)
+   
+    if error then
+      Debug('ERROR (DeviceTx): ' .. error)
+      Log.Error(MYNAME .. '(DeviceTx Error): ' .. error)      
+      DeviceDisconnect()
+    else
+      waitForResponse = waitForResponse + 1         -- Count toward watchdog
+    end
+  end
+  
+  
+  
+  -- Change the color of an LED indicator
+  function LedColor (value)
+    local myColor
+    
+    if value <= -60 then
+      myColor = 'LightGray'     -- No signal
+    elseif value < -20 then
+      myColor = 'Green'         -- Normal
+    elseif value < -6 then
+      myColor = 'Yellow'        -- Medium
+    elseif value < -2 then
+      myColor = 'Orange'        -- High
+    else
+      myColor = 'Red'           -- Clipping?
+    end
+    
+    return myColor
+  end
+  
+  
+  
+  -- Change enabled state of buttons
+  function EnableChannel (myChannel, myState)
+  
+    -- Find the button properties in question
+    for i = 1, #AMPBUTTONS do
+      -- Found a match
+      if (AMPBUTTONS[i].name == 'Mute') and (AMPBUTTONS[i].subindex == myChannel) then
+        AMPBUTTONS[i].enabled = myState
+        
+        if myState == 1 then
+          Controls['Input Signal'][myChannel].IsDisabled  = false
+         
+          Controls['Fault'][myChannel].IsDisabled         = false
+          Controls['Output Meter'][myChannel].IsDisabled  = false
+          --(Basic Version) Controls['Output Mute'][myChannel].IsDisabled   = false
+        else
+          Controls['Input Signal'][myChannel].IsDisabled  = true
+
+          Controls['Fault'][myChannel].IsDisabled         = true
+          Controls['Output Meter'][myChannel].IsDisabled  = true
+          ---(Basic Version) Controls['Output Mute'][myChannel].IsDisabled   = true
+          
+          --Clear fault indicators
+          Controls['Fault'][myChannel].Boolean            = false
+        end
+      end
+    end
+  end
+
+
+
+  function DisableControls (state)
+
+    if state == 1 then
+      myDisabled  = true
+      myColor     = 'LightGray'
+      myBoolean   = false
+      
+      -- Clear amp setting table
+      AMPSETTINGS = {  }
+      
+    else
+      myDisabled  = false
+      myColor     = 'Green'
+      myBoolean   = false
+    end
+    
+    -- Ignor Controls (Basic Version)
+    --[[
+    -- Initialize controls (disable until connection)
+    Controls['Toggle Standby'].Boolean      = myBoolean
+    Controls['Toggle Standby'].IsDisabled   = myDisabled
+    Controls['Standby'].Boolean             = myBoolean
+    Controls['Standby'].IsDisabled          = myDisabled
+    Controls['Power'].Boolean               = myBoolean
+    Controls['Power'].IsDisabled            = myDisabled
+    ]]--
+    
+    for i = 1, MaxChannels do
+      EnableChannel(i, 0)
+
+      
+      if (i % 2) == 0 then
+        Controls['Mono'][i/2].Boolean           = myBoolean
+        Controls['Mono'][i/2].IsDisabled        = myDisabled
+        Controls['Mono'][i/2].Color             = myColor
+        
+        Controls['V-Bridge'][i/2].Boolean       = myBoolean
+        Controls['V-Bridge'][i/2].IsDisabled    = myDisabled
+        Controls['V-Bridge'][i/2].Color         = myColor
+        
+        Controls['I-Share'][i/2].Boolean        = myBoolean
+        Controls['I-Share'][i/2].IsDisabled     = myDisabled
+        Controls['I-Share'][i/2].Color          = myColor
+      
+      end
+
+      if (i % 4) == 0 then
+        Controls['Quad Mode'][i/4].Boolean      = myBoolean 
+        Controls['Quad Mode'][i/4].IsDisabled   = myDisabled  
+        Controls['Quad Mode'][i/4].Color        = myColor
+      end
+    end
+  
+  end
+  
+  
+
+  -- Clear all fault indicators
+  function ClearFaults()
+    
+    Debug("Clearing all fault indicators")
+    for i, myControl in ipairs( Controls['Fault']) do
+      myControl.Boolean = false
+    end
+  end
+  
+  
+  
+--   ^^^^   Function/Method Definitions   ^^^^   --
+---------------------------------------------------
+
+
+
+
+
+
+------------------------------------------------------
+--   vvvv   Classes/Object-ish Definitions   vvvv   --
+
+
+
+ --v   Serial Object/Handlers   v--
+
+-- Sockeet Event Handler (state changes, data, errors, etc)
+  ETHERNET.socket.EventHandler = function(mySocket, myEvent, myError)
+    
+    if myEvent == TcpSocket.Events.Connected then
+      
+      Debug ('Socket Connected: ' .. ETHERNET.ip.String)
+      
+      -- Send initial setup parameters to amplifier (channel fault setup)
+      Log.Error(MYNAME .. '(Socket) Init connection has cleared all faults')
+      DeviceTx('CF')        -- Clear Alarm/Faults
+      DeviceTx('SR O')      -- Set Alarm Reporting On
+      DeviceTx('SF O')      -- Set Fault Reporting On
+      DeviceTx('GC')        -- Grab Channel Configuration
+      
+      -- Preset watch dog (a few of the above sends don't respond anything)
+      waitForResponse = waitForResponse - 2
+      
+      -- Turn on Polling
+      TimerPollSettings:Start(POLLTIMESETTINGS)
+      --(Basic Version) TimerPollButtons:Start(POLLTIMEBUTTONS)
+      TimerPollMeters:Start(POLLTIMEMETERS)
+      
+      -- Enable Controls
+      Status('OK')           -- Update status indicator
+      DisableControls(0)
+      
+    elseif myEvent == TcpSocket.Events.Reconnect then
+      Debug ('Socket Reconnecting ' )
+      Status('Initializing') -- Update status indicator
+      DisableControls(1)
+      
+    elseif myEvent == TcpSocket.Events.Data then
+      
+      -- ControlSpace protocol dictates each command terminated with 0x0D (CR)
+      local incoming = mySocket:ReadLine( TcpSocket.EOL.Any )
+      
+      --Test responses
+      if string.match(incoming, string.char(06)) then     --Ack (to CF command)
+        waitForResponse = waitForResponse - 1   -- ACK the Message
+        Status('OK')          -- Update status indicator
+        ClearFaults()
+        
+      elseif (#incoming > 2) then                         -- All other response
+        waitForResponse = waitForResponse - 1   -- ACK the Message
+        Status('OK')          -- Update status indicator
+        
+        --Debug('RX: ' .. incoming)
+        ParseRx(incoming)
+      end 
+      
+    elseif myEvent == TcpSocket.Events.Closed then
+      Debug ('Socket Closed by remote')
+      Status('Missing')                     -- Update status indicator
+      DisableControls(1)
+      
+    elseif myEvent == TcpSocket.Events.Error then
+      
+      Debug ('ERROR (SocketRx): Closed due to error: '.. myEvent)
+      Log.Error(MYNAME .. '(SocketRx): ' .. myError)
+      Status('Missing')                     -- Update status indicator
+      DisableControls(1)
+      ETHERNET.socket:Disconnect()
+      
+      waitForResponse = WATCHDOGTHRESHOLD   -- Force Watchdog Reset
+      Status('Compromised')                 -- Update status indicator
+      
+    elseif myEvent == TcpSocket.Events.Timeout then
+      Debug ('Socket Closed due to timeout')
+      Status('Missing')                     -- Update status indicator
+      DisableControls(1)
+      
+    else
+      Debug ('Unknown Socket Event: '.. myEvent)
+      Status('Missing')                     -- Update status indicator
+      DisableControls(1)
+      
+    end
+  end
+
+
+
+  -- Instantiate the port and start listening
+  function DeviceConnect()
+    
+    -- Stop Polling (start again in socket connect)
+    --(Basic Version) TimerPollButtons:Stop()
+    TimerPollSettings:Stop()
+    TimerPollMeters:Stop()
+    DisableControls(1)
+    
+    Debug ('Closing Socket - Change of IP?')
+    ETHERNET.socket:Disconnect()
+ 
+    -- Check for Valid IP
+    if (1 == ValidIp(ETHERNET.ip.String)) then
+      
+      Debug ('Socket Connecting: ' .. ETHERNET.ip.String)
+      Log.Error(MYNAME .. '(Socket) Connecting: ' .. ETHERNET.ip.String)
+      
+      -- Start the connection
+      ETHERNET.socket:Connect(ETHERNET.ip.String, ETHERNET.port)
+       
+    else
+      
+      Debug ('Socket Closed - Invalid IP')
+      Log.Error(MYNAME .. '(Socket) Closed - Invalid IP')
+    end
+
+  end
+
+
+
+  -- Closes the port and stops listening
+  function DeviceDisconnect()
+    Socket:Disconnect()
+    
+    Debug ('Socket Disconnect command sent')
+    Log.Error(MYNAME .. '(Socket) Disconnect command sent')
+  end
+
+  
+  
+  -- Parse responses from the socket handler
+  function ParseRx(incoming)
+  
+    --trim white space from start of message
+    while (incoming:sub(1,1) == "") do
+      incoming = incoming:sub(2)
+    end
+    
+    -- Response from Meters Query
+    if incoming:sub(1, 2) == "GL" then
+
+      --Parse Response: Signal Level "GL 1 [4a,4a,4a,4a,4a,4a,4a,4a]"
+      local slot, channel1, channel2, channel3, channel4, channel5, channel6, channel7, channel8 = string.match(incoming,'GL (%d) %[(%x+),(%x+),(%x+),(%x+),(%x+),(%x+),(%x+),(%x+)%]' )
+
+      if slot == '1' then
+      
+        --Used if indicator is an LED
+        Controls['Input Signal'][1].Color =  LedColor( (tonumber(channel1, 16) / 2) - 60)
+        Controls['Input Signal'][2].Color =  LedColor( (tonumber(channel2, 16) / 2) - 60)
+        Controls['Input Signal'][3].Color =  LedColor( (tonumber(channel3, 16) / 2) - 60)
+        Controls['Input Signal'][4].Color =  LedColor( (tonumber(channel4, 16) / 2) - 60)
+        Controls['Input Signal'][5].Color =  LedColor( (tonumber(channel5, 16) / 2) - 60)
+        Controls['Input Signal'][6].Color =  LedColor( (tonumber(channel6, 16) / 2) - 60)
+        Controls['Input Signal'][7].Color =  LedColor( (tonumber(channel7, 16) / 2) - 60)
+        Controls['Input Signal'][8].Color =  LedColor( (tonumber(channel8, 16) / 2) - 60)
+        
+        
+        --Used if indicator is a meter
+        --[[
+        Controls['Input Signal'][1].Value = (tonumber(channel1, 16) / 2) - 60 
+        Controls['Input Signal'][2].Value = (tonumber(channel2, 16) / 2) - 60 
+        Controls['Input Signal'][3].Value = (tonumber(channel3, 16) / 2) - 60 
+        Controls['Input Signal'][4].Value = (tonumber(channel4, 16) / 2) - 60
+        Controls['Input Signal'][5].Value = (tonumber(channel5, 16) / 2) - 60 
+        Controls['Input Signal'][6].Value = (tonumber(channel6, 16) / 2) - 60 
+        Controls['Input Signal'][7].Value = (tonumber(channel7, 16) / 2) - 60 
+        Controls['Input Signal'][8].Value = (tonumber(channel8, 16) / 2) - 60 
+        ]]--
+        
+      elseif slot == '2' then
+        
+        --Used if indicator is an LED
+        Controls['Output Meter'][1].Color =  LedColor( (tonumber(channel1, 16) / 2) - 60)
+        Controls['Output Meter'][2].Color =  LedColor( (tonumber(channel2, 16) / 2) - 60)
+        Controls['Output Meter'][3].Color =  LedColor( (tonumber(channel3, 16) / 2) - 60)
+        Controls['Output Meter'][4].Color =  LedColor( (tonumber(channel4, 16) / 2) - 60)
+        Controls['Output Meter'][5].Color =  LedColor( (tonumber(channel5, 16) / 2) - 60)
+        Controls['Output Meter'][6].Color =  LedColor( (tonumber(channel6, 16) / 2) - 60)
+        Controls['Output Meter'][7].Color =  LedColor( (tonumber(channel7, 16) / 2) - 60)
+        Controls['Output Meter'][8].Color =  LedColor( (tonumber(channel8, 16) / 2) - 60)
+        
+        --Used if indicator is a meter
+        --[[
+        Controls['Output Meter'][1].Value = (tonumber(channel1, 16) / 2) - 60
+        Controls['Output Meter'][2].Value = (tonumber(channel2, 16) / 2) - 60
+        Controls['Output Meter'][3].Value = (tonumber(channel3, 16) / 2) - 60
+        Controls['Output Meter'][4].Value = (tonumber(channel4, 16) / 2) - 60
+        Controls['Output Meter'][5].Value = (tonumber(channel5, 16) / 2) - 60
+        Controls['Output Meter'][6].Value = (tonumber(channel6, 16) / 2) - 60
+        Controls['Output Meter'][7].Value = (tonumber(channel7, 16) / 2) - 60
+        Controls['Output Meter'][8].Value = (tonumber(channel8, 16) / 2) - 60
+        ]]--
+      end
+      
+      
+    -- Response from Power Query
+    --if string.find(incoming, "GY") then  --(Drop the find for lighter method)
+    elseif incoming:sub(1, 2) == "GY" then
+      --Debug("RX Power: " ..incoming)
+
+      -- Ignore Power (Basic Version)
+      --[[
+      
+      -- Parse Response: Power Status "GY N"
+      local state = string.match(incoming,"GY (%a)")
+      
+      -- Update controls
+      if (state == 'N') and (Controls['Power'].Boolean == false) then
+        Controls['Standby'].Boolean = false
+        Controls['Power'].Boolean   = true
+        --Debug('Power Status: On')
+      
+      elseif (state == 'S') and (Controls['Power'].Boolean == true) then
+        Controls['Standby'].Boolean = true
+        Controls['Power'].Boolean = false
+        --Debug('Power Status: Standby')
+      end
+      ]]--
+    
+    -- Response from Fault (unsolicited)
+    elseif incoming:sub(1, 2) == "GF" then   
+      local state = string.match(incoming,"GF (%a)")
+      
+      if (state == 'F') and (Controls['Fault'][9].Boolean == false) then
+        Controls['Fault'][9].Boolean = true
+        Log.Error(MYNAME .. '(Fault Status) In Fault (New)')
+        Debug('Fault Status: In Fault!')
+        
+      elseif (state == 'F') and (Controls['Fault'][9].Boolean == true) then
+        Log.Error(MYNAME .. '(Fault Status) In Fault (Repeat)')
+        Debug('Fault Status: In Fault! (repeat)')
+      
+      elseif (state == 'C') and (Controls['Fault'][9].Boolean == true) then
+        Controls['Fault'][9].Boolean = false
+        Log.Error(MYNAME .. '(Fault Status) Cleared')
+        Debug('Fault Status: Cleared')
+
+      elseif (state == 'C') and (Controls['Fault'][9].Boolean == false) then
+        Debug('Fault Status: Cleared (repeat)')
+        
+      end
+   
+
+    -- Response from Mute Button Query
+    elseif incoming:sub(1, 2) == "GM" then
+    
+    --Ignore button responses (Basic Version)
+    --[[
+      -- Parse Response: Mute Status "GM 2,1,U"
+      local slot, channel, state = string.match(incoming,"GM (%d),(%d),(%a)")
+      
+      if tonumber(slot) > 2 then
+        channel = channel + 4
+      end
+      
+      -- Only update button if it's out of state (amp initiated change)
+      if (state == 'U') and (Controls['Output Mute'][tonumber(channel)].Boolean == true) then
+        AMPBUTTONS[channel + 1].state = 0                      -- store state
+        Controls['Output Mute'][tonumber(channel)].Boolean = false   -- update button
+        Debug('Mute Status: '.. channel ..' Status: Unmuted')
+            
+      elseif (state == 'M') and (Controls['Output Mute'][tonumber(channel)].Boolean == false) then
+        AMPBUTTONS[channel + 1].state = 1                      -- store state
+        Controls['Output Mute'][tonumber(channel)].Boolean = true    -- update button
+        Debug('Mute Status: '.. channel ..' Status: Muted')
+      end
+    ]]--
+    
+    -- Response from Reporting Status (unsolicited)
+    elseif incoming:sub(1, 2) == "GR" then
+    
+      -- Parse Response: Alarm Reporting/Status "GR c,s,t,x"
+      local statusChannel, statusSeverity, statusType, statusCondition = string.match(incoming,'GR (%d+),(%a+),(%a+),(%a+)' )
+      
+      --Debug (incoming)
+      --Debug("statusChannel ".. statusChannel)
+      
+      --Debug("statusSeverity ".. statusSeverity)
+      --Debug("statusType ".. statusType)
+      --Debug("statusCondition ".. statusCondition)
+      
+      -- Form log message
+      local myMessage = "(Alarm Reporting) "
+
+      -- Handle severity
+      if (statusSeverity == 'W') then
+        myMessage = myMessage .. "WARNING "
+      elseif (statusSeverity == 'F') then
+        myMessage = myMessage .. "FAULT "
+      elseif (statusSeverity == 'S') then
+        myMessage = myMessage .. "SYSTEM message  "
+      end
+      
+      -- Handle condition
+      if (statusCondition == 'S') then
+        myMessage = myMessage .. "activated "
+        Controls['Fault'][tonumber(statusChannel)].Boolean = true
+      elseif (statusCondition == 'C') then
+        myMessage = myMessage .. "cleared "
+        Controls['Fault'][tonumber(statusChannel)].Boolean = false
+      end
+      
+      myMessage = myMessage .. "on channel " .. statusChannel .. ": "
+
+      -- Handle Type
+      if (statusType == 'N') then
+        myMessage = myMessage .. "No alarm "
+      elseif (statusType == 'O') then
+        myMessage = myMessage .. "Open circuit "
+      elseif (statusType == 'S') then
+        myMessage = myMessage .. "Short circuit "
+      elseif (statusType == 'A') then
+        myMessage = myMessage .. "AC Loss "
+      elseif (statusType == 'D') then
+        myMessage = myMessage .. "Digital audio loss "
+      elseif (statusType == 'I') then
+        myMessage = myMessage .. "I-Share jumper missing "
+      elseif (statusType == 'L') then
+        myMessage = myMessage .. "Limiting "
+      elseif (statusType == 'C') then
+        myMessage = myMessage .. "Clip "
+      elseif (statusType == 'P') then
+        myMessage = myMessage .. "Protection "
+      elseif (statusType == 'Z') then
+        myMessage = myMessage .. "Something unknown (other) "
+      end
+
+     
+      -- Write to Log
+      Log.Message(MYNAME .. myMessage)
+      Debug(MYNAME .. myMessage)
+    
+    
+    -- Response from channel configuration (only on connection)
+    elseif incoming:sub(1, 2) == "GC" then
+      --Debug("Configuration Raw: ".. incoming)
+      OnConfig(incoming)
+      
+    -- Response of unknown type
+    else
+      Debug('Unhandled Response: ' .. incoming)
+    end
+
+  end
+  
+  
+
+  -- Mute button handler
+  -- Ignore button handler (Basic Version)
+  --[[
+  function OnMute (ctl)
+    TimerPollButtons:Stop()
+
+    --find parameter to send
+    for i = 1, #AMPBUTTONS do
+      if AMPBUTTONS[i].index == ctl.Index then
+    
+        if (ctl.Boolean == true) and (AMPBUTTONS[i].state ~= 1) then
+          --Debug('TX: SM '.. AMPBUTTONS[i].parameter ..',M')
+          AMPBUTTONS[i].state = 1
+          DeviceTx('SM '.. AMPBUTTONS[i].parameter ..',M')
+        elseif (ctl.Boolean == false) and (AMPBUTTONS[i].state ~= 0) then
+          --Debug('TX: SM '.. AMPBUTTONS[i].parameter ..',U')
+          AMPBUTTONS[i].state = 0
+          DeviceTx('SM '.. AMPBUTTONS[i].parameter ..',U')
+        end
+      end
+    end
+    
+    TimerPollButtons:Start(1)    -- Delay the next poll
+  end
+  ]]--
+  
+  
+  
+  -- Process the channel configurations
+  function OnConfig (myConfig)
+      
+    -- Parse Response: Alarm Reporting/Status "GC IN,IN,BL,BL,Q7,Q7,Q7,Q7"
+
+    -- Extract each number or letter pair (after GC) and build and array of responses
+    local myMatch = "%w%w"
+     for line, _ in myConfig:gmatch(myMatch) do
+        if line ~= "GC" then
+          table.insert(AMPSETTINGS, line)
+        end
+     end
+    
+    --[[
+    Debug("Parsing original String : " .. myConfig)
+    Debug("Entered Config parsing 1: " .. AMPSETTINGS[1])
+    Debug("Entered Config parsing 2: " .. AMPSETTINGS[2])
+    Debug("Entered Config parsing 3: " .. AMPSETTINGS[3])
+    Debug("Entered Config parsing 4: " .. AMPSETTINGS[4])
+    Debug("Entered Config parsing 5: " .. AMPSETTINGS[5])
+    Debug("Entered Config parsing 6: " .. AMPSETTINGS[6])
+    Debug("Entered Config parsing 7: " .. AMPSETTINGS[7])
+    Debug("Entered Config parsing 8: " .. AMPSETTINGS[8])
+    ]]--
+    
+    -- Evaluate the first 4 channels
+    if ( string.sub(AMPSETTINGS[1], 1, 1) == 'Q') then
+      --Debug("Quad 1 config received")
+      
+      -- Light the Quad LED and update others
+      Controls['Quad Mode'][1].Boolean  = true
+      EnableChannel (1, 1)
+      
+      if (string.sub(AMPSETTINGS[1], 2, 2) == 'L') then
+        Controls['I-Share'][1].Boolean  = true
+        Controls['I-Share'][2].Boolean  = true
+      elseif (string.sub(AMPSETTINGS[1], 2, 2) == '7') then
+        Controls['I-Share'][1].Boolean  = true
+        Controls['I-Share'][2].Boolean  = true
+      elseif (string.sub(AMPSETTINGS[1], 2, 2) == '1') then
+        Controls['I-Share'][1].Boolean  = true
+        Controls['I-Share'][2].Boolean  = true
+      end
+      
+    else
+    
+      -- Update the first channel pair (1-2)
+      if( string.sub(AMPSETTINGS[1], 1, 1) == 'B') then
+        --Debug("Bridged config for Channel 1/2")
+
+        -- Light the Bridge LED and update others
+        Controls['V-Bridge'][1].Boolean  = true
+        EnableChannel (1, 1)
+        
+      elseif( string.sub(AMPSETTINGS[1], 1, 1) == 'P') then
+        --Debug("Bridged config for Channel 1/2")
+        
+        -- Light the Bridge LED and update others
+        Controls['I-Share'][1].Boolean  = true
+        EnableChannel (1, 1)
+        
+      elseif (AMPSETTINGS[1]:sub(1,1) == 'I' and AMPSETTINGS[2]:sub(1,1) == 'I') then
+        --Debug("Mono config for Channel 1/2")
+        
+        -- Light the Mono LED and update others
+        Controls['Mono'][1].Boolean       = true
+        EnableChannel (1, 1)
+        EnableChannel (2, 1)
+      end
+
+      -- Update the second channel pair (3-4)
+      if( string.sub(AMPSETTINGS[3], 1, 1) == 'B') then
+        --Debug("Bridged config for Channel 3/4")
+
+        -- Light the Bridge LED and update others
+        Controls['V-Bridge'][2].Boolean  = true
+        EnableChannel (3, 1)
+                
+      elseif( string.sub(AMPSETTINGS[3], 1, 1) == 'P') then
+        --Debug("Bridged config for Channel 3/4")
+        
+        -- Light the Bridge LED and update others
+        Controls['I-Share'][2].Boolean  = true
+        EnableChannel (3, 1)
+        
+      elseif (AMPSETTINGS[3]:sub(1,1) == 'I' and AMPSETTINGS[4]:sub(1,1) == 'I') then
+        --Debug("Mono config for Channel 3/4")
+        
+        -- Light the Mono LED and update others
+        Controls['Mono'][2].Boolean       = true
+        EnableChannel (3, 1)
+        EnableChannel (4, 1)
+      end
+    end
+  
+    -- Evaluate the second 4 channels
+    if ( string.sub(AMPSETTINGS[5], 1, 1) == 'Q') then
+      --Debug("Quad 2 config received")
+      
+      -- Light the Quad LED and update others
+      Controls['Quad Mode'][2].Boolean  = true
+      EnableChannel (5, 1)
+      
+      if (string.sub(AMPSETTINGS[5], 2, 2) == 'L') then
+        Controls['I-Share'][3].Boolean  = true
+        Controls['I-Share'][4].Boolean  = true
+      elseif (string.sub(AMPSETTINGS[5], 2, 2) == '7') then
+        Controls['I-Share'][3].Boolean  = true
+        Controls['I-Share'][4].Boolean  = true
+      elseif (string.sub(AMPSETTINGS[5], 2, 2) == '1') then
+        Controls['I-Share'][3].Boolean  = true
+        Controls['I-Share'][4].Boolean  = true
+      end
+      
+    else
+    
+      -- Update the first channel pair (5-6)
+      if( string.sub(AMPSETTINGS[5], 1, 1) == 'B') then
+        --Debug("Bridged config for Channel 5/6")
+
+        -- Light the Bridge LED and update others
+        Controls['V-Bridge'][3].Boolean  = true
+        EnableChannel (5, 1)
+                
+      elseif( string.sub(AMPSETTINGS[5], 1, 1) == 'P') then
+        --Debug("Bridged config for Channel 5/6")
+        
+        -- Light the Bridge LED and update others
+        Controls['I-Share'][3].Boolean  = true
+        EnableChannel (5, 1)
+        
+      elseif (AMPSETTINGS[5]:sub(1,1) == 'I' and AMPSETTINGS[6]:sub(1,1) == 'I') then
+        --Debug("Mono config for Channel 5/6")
+        
+        -- Light the Mono LED and update others
+        Controls['Mono'][3].Boolean       = true
+        EnableChannel (5, 1)
+        EnableChannel (6, 1)
+      end
+
+      -- Update the second channel pair (7-8)
+      if( string.sub(AMPSETTINGS[7], 1, 1) == 'B') then
+        --Debug("Bridged config for Channel 7/8")
+        
+        -- Light the Bridge LED and update others
+        Controls['V-Bridge'][4].Boolean  = true
+        EnableChannel (7, 1)
+        
+      elseif( string.sub(AMPSETTINGS[7], 1, 1) == 'P') then
+        --Debug("Bridged config for Channel 7/8")
+        
+        -- Light the Bridge LED and update others
+        Controls['I-Share'][4].Boolean  = true
+        EnableChannel (7, 1)
+        
+      elseif (AMPSETTINGS[7]:sub(1,1) == 'I' and AMPSETTINGS[8]:sub(1,1) == 'I') then
+        --Debug("Mono config for Channel 7/8")
+        
+        -- Light the Mono LED and update others
+        Controls['Mono'][4].Boolean       = true
+        EnableChannel (7, 1)
+        EnableChannel (8, 1)
+      end
+    end
+  end
+
+
+
+--   ^^^^   Classes/Object-ish Definitions   ^^^^   --
+------------------------------------------------------
+
+
+
+------------------------------------------------------
+--   vvvv   Controls/Button Event Handlers   vvvv   --
+
+
+  -- Change of IP address
+  Controls['IP Address'].EventHandler = function(ctl)
+    DeviceConnect()                       -- Handles reconnect based on current port state
+    waitForResponse = WATCHDOGTHRESHOLD   -- Force watchdog to reset port
+  end
+
+
+
+  --Power Button Handler
+  -- Ignore button handler (Basic Version)
+  --[[
+  Controls['Toggle Standby'].EventHandler = function(ctl)
+    local sendstring = "SY "..tostring(Controls['Power'].Boolean and 'S' or 'N')
+    Debug(sendstring)
+    DeviceTx(sendstring)
+  end
+
+  -- Mute Button Handler
+  for i = 1, #Controls['Output Mute'] do
+    Controls['Output Mute'][i].EventHandler = OnMute
+  end
+  
+  --Fault Clear button handler
+  Controls['Fault Clear'].EventHandler = function(ctl)
+    Log.Error(MYNAME .. 'User has cleared all faults')
+    DeviceTx('CF')
+  end
+  ]]--
+
+
+--   ^^^^   Controls/Button Event Handlers   ^^^^   --
+------------------------------------------------------
+
+ 
+------------------------------------
+--   vvvv   Main Program   vvvv   --
+
+  Status('Initializing')  -- Update status indicator
+  
+  -- Initialize controls (disable until connection)
+  DisableControls(1)
+    
+  -- Setup Watchdog to poll device and track responses
+  TimerWatchdog = Timer.New()
+  TimerWatchdog.EventHandler = Watchdog         -- Resets serial and creates Zones (start timer on error)
+  TimerWatchdog:Start(POLLWATCHDOG)
+  
+  -- Setup polling timers.  Start them in the connection event.
+  --(Basic Version) TimerPollButtons = Timer.New()
+  --(Basic Version) TimerPollButtons.EventHandler = PollButtons
+  
+  TimerPollSettings = Timer.New()
+  TimerPollSettings.EventHandler = function () DeviceTx('GC') end
+  --TimerPollSettings.EventHandler = PollSettings
+
+  TimerPollMeters = Timer.New()
+  TimerPollMeters.EventHandler = PollMeters
+
+  waitForResponse = WATCHDOGTHRESHOLD         -- Force watchdog
+  
+  Debug("Script Started...")
+
+
+--   ^^^^   Main Program   ^^^^   --
+------------------------------------
+
+
+  ----------------------------------------------------------------------------------------------------
+  ----------------------------------------------------------------------------------------------------
+elseif Properties["Model"].Value == "PM4500N" and Properties["Mode"].Value == "Basic" then
+  --print("4 Basic")
+
+
+---------------------------------------------------------
+--   vvvv   'Constant' (variable) Definitions   vvvv   --
+
+
+  -- Serial port settings
+  ETHERNET = {
+    socket    = TcpSocket.New(),
+    ip        = Controls["IP Address"],
+    port      = 10055
+  }
+  
+  -- External Variables
+  MYNAME = Controls["Name"].String .. ": " -- Used for logging to Q-Sys log
+  MaxChannels = 4                         -- 8 Channel amplifier
+  
+  -- Message Syntax
+  EOM                 = "\r"  -- End of MessageGL
+  
+  -- Timer settings for Production
+  WATCHDOGTHRESHOLD   = 25           -- How many polls to wait for a response before noting an error
+  POLLWATCHDOG        = 5            -- Check this often if the timtout has been exceeded
+  POLLTIMEBUTTONS     = .5           -- Polls while cycling through buttons table at this interval
+  POLLTIMEMETERS      = .12          -- Polling for meters, etc.
+  POLLTIMESETTINGS    = 10           -- Polls while cycling through settings table at this interva
+  
+  --  Timer Settings for Debug
+  --[[
+  WATCHDOGTHRESHOLD   = 25           -- How many polls to wait for a response before noting an error
+  POLLWATCHDOG        = 1            -- Check this often if the timtout has been exceeded
+  POLLTIMEBUTTONS     = .5           -- Polls while cycling through buttons table at this interval
+  POLLTIMEMETERS      = 5         -- Polling for meters, etc.
+  POLLTIMESETTINGS    = 122            -- Polls while cycling through settings table at this interval
+  ]]--
+  
+  -- Debugging Enable/Disable
+  DEBUGENABLE         = 0             -- Enable General Debugging
+  DEBUGLOG            = 0             -- Enable debug messages to be written to log on core
+
+
+
+--[[
+ The polling of the amplifier button states is performed in a round robbin format.
+ Each time the poll period occurs, the next parameter in the list below is requested 
+ from the device.  So, if a poll rate of 1 second is set and there are 6 parameters
+ to poll in total, each will only be updated every 6 seconds.  This takes place
+ independant of setting and meter polling.
+]]--
+
+  AMPBUTTONS = {
+    {index = 6,  name = 'Power',  subindex = 1, parameter = '',     state = 99, enabled = 0},
+    {index = 47, name = 'Mute',   subindex = 1, parameter = '2,1',  state = 99, enabled = 0},  
+    {index = 48, name = 'Mute',   subindex = 2, parameter = '2,2',  state = 99, enabled = 0},
+    {index = 49, name = 'Mute',   subindex = 3, parameter = '2,3',  state = 99, enabled = 0},
+    {index = 50, name = 'Mute',   subindex = 4, parameter = '2,4',  state = 99, enabled = 0}
+  }
+
+
+--[[
+ The polling of the amplifier settings is performed in a round robbin format.
+ Each time the poll period occurs, the next parameter in the list below is requested 
+ from the device.  So, if a poll rate of 1 second is set and there are 6 parameters
+ to poll in total, each will only be updated every 6 seconds.  This takes place
+ independant of button and meter polling.
+]]--
+
+  -- TODO: Update the settings table (and this description)
+  AMPSETTINGS = {
+    --"xx", "xx", "xx", "xx", "xx", "xx", "xx", "xx"
+  }
+  
+  
+  
+  --[[
+ The polling of the amplifier meters is performed in a round robbin format.
+ Each time the poll period occurs, the next parameter in the list below is requested 
+ from the device.  So, if a poll rate of 1 second is set and there are 6 parameters
+ to poll in total, each will only be updated every 6 seconds.  This takes place
+ independant of button and setting polling.
+]]--
+
+  -- TODO: Update the meter polling
+  AMPMETERS = {
+    {index = 4,  name = 'Level',  subindex = 1, parameter = '1',    state = 99},  --inputs
+    {index = 20, name = 'Level',  subindex = 1, parameter = '2',    state = 99}   --outputs
+  }
+  
+
+  
+--   ^^^^   'Constant' (variable) Definitions   ^^^^   --
+---------------------------------------------------------
+
+
+
+---------------------------------------------------------
+--   vvvv      Global Variable Definitions      vvvv   --
+
+
+  waitForResponse     = 0
+  lastPolledButton    = 0
+  lastPolledSetting   = 0
+  lastPolledMeter     = 0
+
+
+--   ^^^^      Global Variable Definitions      ^^^^   --
+---------------------------------------------------------
+
+
+
+---------------------------------------------------
+--   vvvv   Function/Method Definitions   vvvv   --
+
+
+  
+  function Debug (incoming)
+  -- Send a string out to Debug (date/time stamp)
+    if (DEBUGENABLE == 1) then
+      print( os.date() .. " - " .. incoming)
+      
+      if (DEBUGLOG == 1) then
+        Log.Message(incoming)
+      end
+    end
+  end
+
+
+
+  -- Load initial values and reset the serial port
+  function Status(state)
+  
+    --Debug('Entered Status')
+    
+    --  0 = OK – Green,           1 = Compromised – Orange,     2 = Fault – Red,
+    --  3 = Not Present – Gray,   4 = Missing – Red,            5 = Initializing – Blue
+    
+    -- Update status indicator
+    if      state == 'OK'           then Controls["Status"].Value = 0
+      elseif  state == 'Compromised'  then Controls["Status"].Value = 1
+      elseif  state == 'Fault'        then Controls["Status"].Value = 2
+      elseif  state == 'Not Present'  then Controls["Status"].Value = 3
+      elseif  state == 'Missing'      then Controls["Status"].Value = 4
+      elseif  state == 'Initializing' then Controls["Status"].Value = 5
+      else Log.Error(MYNAME .. '(Status) State not recognized')
+    end
+  
+  end
+  
+  
+  
+  -- Load initial values and reset the serial port
+  function Watchdog()
+    
+    -- If no responese reset port
+    --Debug("WaitForResponse: " .. waitForResponse)
+    if (waitForResponse >= WATCHDOGTHRESHOLD) then
+      
+      waitForResponse = 0     -- Stop re-trigger
+      Status('Initializing')  -- Update status indicator
+      
+      -- Instantiate the device communications
+      Debug('(Watchdog) Resetting port')
+      Log.Error(MYNAME .. '(Watchdog) Resetting port')
+      DeviceConnect()
+    end
+  
+  end
+
+
+
+  -- Poll Buttons from Device
+  -- Necessary to allow user feedback to update (slow)
+  function PollButtons()
+    
+    -- Loop through defined parameters
+    lastPolledButton = lastPolledButton + 1
+    if (lastPolledButton > #AMPBUTTONS) then lastPolledButton = 1 end
+    
+    -- Form the proper query
+    if (AMPBUTTONS[lastPolledButton].name == 'Mute') then
+      --Debug("TX: GM " .. AMPBUTTONS[lastPolledButton].parameter)
+      DeviceTx("GM " .. AMPBUTTONS[lastPolledButton].parameter)
+    elseif (AMPBUTTONS[lastPolledButton].name == 'Power') then
+      --Debug("TX: GY")
+      DeviceTx("GY")
+    end
+  end
+
+
+
+  -- Poll meter state from Device
+  function PollMeters()
+     
+    -- Loop through defined parameters
+    lastPolledMeter = lastPolledMeter + 1
+    if (lastPolledMeter > #AMPMETERS) then lastPolledMeter = 1 end
+
+    -- Send the query
+    DeviceTx("GL " .. AMPMETERS[lastPolledMeter].parameter)
+  end
+
+
+
+  -- Validate IP address and flag to start connection
+  function ValidIp(ip)
+    
+    local ipChunks = {ip:match("(%d+)%.(%d+)%.(%d+)%.(%d+)")}
+    if (#ipChunks == 4) then
+      for _,v in pairs(ipChunks) do
+        if (tonumber(v) < 0 or tonumber(v) > 255) then
+          return 0
+        end
+      end
+     
+      return 1
+    else
+      return 0
+    end
+  end
+
+
+
+  -- transmit a message to the device
+  function DeviceTx(incoming)
+  
+    --Debug("TX: "..incoming)
+    error = ETHERNET.socket:Write(incoming .. EOM)
+   
+    if error then
+      Debug('ERROR (DeviceTx): ' .. error)
+      Log.Error(MYNAME .. '(DeviceTx Error): ' .. error)      
+      DeviceDisconnect()
+    else
+      waitForResponse = waitForResponse + 1         -- Count toward watchdog
+    end
+  end
+  
+  
+  
+  -- Change the color of an LED indicator
+  function LedColor (value)
+    local myColor
+    
+    if value <= -60 then
+      myColor = 'LightGray'     -- No signal
+    elseif value < -20 then
+      myColor = 'Green'         -- Normal
+    elseif value < -6 then
+      myColor = 'Yellow'        -- Medium
+    elseif value < -2 then
+      myColor = 'Orange'        -- High
+    else
+      myColor = 'Red'           -- Clipping?
+    end
+    
+    return myColor
+  end
+  
+  
+  
+  -- Change enabled state of buttons
+  function EnableChannel (myChannel, myState)
+  
+    -- Find the button properties in question
+    for i = 1, #AMPBUTTONS do
+      -- Found a match
+      if (AMPBUTTONS[i].name == 'Mute') and (AMPBUTTONS[i].subindex == myChannel) then
+        AMPBUTTONS[i].enabled = myState
+        
+        if myState == 1 then
+          Controls['Input Signal'][myChannel].IsDisabled  = false
+         
+          Controls['Fault'][myChannel].IsDisabled         = false
+          Controls['Output Meter'][myChannel].IsDisabled  = false
+          --(Basic Version) Controls['Output Mute'][myChannel].IsDisabled   = false
+        else
+          Controls['Input Signal'][myChannel].IsDisabled  = true
+
+          Controls['Fault'][myChannel].IsDisabled         = true
+          Controls['Output Meter'][myChannel].IsDisabled  = true
+          ---(Basic Version) Controls['Output Mute'][myChannel].IsDisabled   = true
+          
+          --Clear fault indicators
+          Controls['Fault'][myChannel].Boolean            = false
+        end
+      end
+    end
+  end
+
+
+
+  function DisableControls (state)
+
+    if state == 1 then
+      myDisabled  = true
+      myColor     = 'LightGray'
+      myBoolean   = false
+      
+      -- Clear amp setting table
+      AMPSETTINGS = {  }
+      
+    else
+      myDisabled  = false
+      myColor     = 'Green'
+      myBoolean   = false
+    end
+    
+    -- Ignor Controls (Basic Version)
+    --[[
+    -- Initialize controls (disable until connection)
+    Controls['Toggle Standby'].Boolean      = myBoolean
+    Controls['Toggle Standby'].IsDisabled   = myDisabled
+    Controls['Standby'].Boolean             = myBoolean
+    Controls['Standby'].IsDisabled          = myDisabled
+    Controls['Power'].Boolean               = myBoolean
+    Controls['Power'].IsDisabled            = myDisabled
+    ]]--
+    
+    for i = 1, MaxChannels do
+      EnableChannel(i, 0)
+
+      
+      if (i % 2) == 0 then
+        Controls['Mono'][i/2].Boolean           = myBoolean
+        Controls['Mono'][i/2].IsDisabled        = myDisabled
+        Controls['Mono'][i/2].Color             = myColor
+        
+        Controls['V-Bridge'][i/2].Boolean       = myBoolean
+        Controls['V-Bridge'][i/2].IsDisabled    = myDisabled
+        Controls['V-Bridge'][i/2].Color         = myColor
+        
+        Controls['I-Share'][i/2].Boolean        = myBoolean
+        Controls['I-Share'][i/2].IsDisabled     = myDisabled
+        Controls['I-Share'][i/2].Color          = myColor
+      
+      end
+
+      if (i % 4) == 0 then
+        Controls['Quad Mode'].Boolean      = myBoolean 
+        Controls['Quad Mode'].IsDisabled   = myDisabled  
+        Controls['Quad Mode'].Color        = myColor
+      end
+    end
+  
+  end
+  
+  
+
+  -- Clear all fault indicators
+  function ClearFaults()
+    
+    Debug("Clearing all fault indicators")
+    for i, myControl in ipairs( Controls['Fault']) do
+      myControl.Boolean = false
+    end
+  end
+  
+  
+  
+--   ^^^^   Function/Method Definitions   ^^^^   --
+---------------------------------------------------
+
+
+
+
+
+
+------------------------------------------------------
+--   vvvv   Classes/Object-ish Definitions   vvvv   --
+
+
+
+ --v   Serial Object/Handlers   v--
+
+-- Sockeet Event Handler (state changes, data, errors, etc)
+  ETHERNET.socket.EventHandler = function(mySocket, myEvent, myError)
+    
+    if myEvent == TcpSocket.Events.Connected then
+      
+      Debug ('Socket Connected: ' .. ETHERNET.ip.String)
+      
+      -- Send initial setup parameters to amplifier (channel fault setup)
+      Log.Error(MYNAME .. '(Socket) Init connection has cleared all faults')
+      DeviceTx('CF')        -- Clear Alarm/Faults
+      DeviceTx('SR O')      -- Set Alarm Reporting On
+      DeviceTx('SF O')      -- Set Fault Reporting On
+      DeviceTx('GC')        -- Grab Channel Configuration
+      
+      -- Preset watch dog (a few of the above sends don't respond anything)
+      waitForResponse = waitForResponse - 2
+      
+      -- Turn on Polling
+      TimerPollSettings:Start(POLLTIMESETTINGS)
+      --(Basic Version) TimerPollButtons:Start(POLLTIMEBUTTONS)
+      TimerPollMeters:Start(POLLTIMEMETERS)
+      
+      -- Enable Controls
+      Status('OK')           -- Update status indicator
+      DisableControls(0)
+      
+    elseif myEvent == TcpSocket.Events.Reconnect then
+      Debug ('Socket Reconnecting ' )
+      Status('Initializing') -- Update status indicator
+      DisableControls(1)
+      
+    elseif myEvent == TcpSocket.Events.Data then
+      
+      -- ControlSpace protocol dictates each command terminated with 0x0D (CR)
+      local incoming = mySocket:ReadLine( TcpSocket.EOL.Any )
+      
+      --Test responses
+      if string.match(incoming, string.char(06)) then     --Ack (to CF command)
+        waitForResponse = waitForResponse - 1   -- ACK the Message
+        Status('OK')          -- Update status indicator
+        ClearFaults()
+        
+      elseif (#incoming > 2) then                         -- All other response
+        waitForResponse = waitForResponse - 1   -- ACK the Message
+        Status('OK')          -- Update status indicator
+        
+        --Debug('RX: ' .. incoming)
+        ParseRx(incoming)
+      end 
+      
+    elseif myEvent == TcpSocket.Events.Closed then
+      Debug ('Socket Closed by remote')
+      Status('Missing')                     -- Update status indicator
+      DisableControls(1)
+      
+    elseif myEvent == TcpSocket.Events.Error then
+      
+      Debug ('ERROR (SocketRx): Closed due to error: '.. myEvent)
+      Log.Error(MYNAME .. '(SocketRx): ' .. myError)
+      Status('Missing')                     -- Update status indicator
+      DisableControls(1)
+      ETHERNET.socket:Disconnect()
+      
+      waitForResponse = WATCHDOGTHRESHOLD   -- Force Watchdog Reset
+      Status('Compromised')                 -- Update status indicator
+      
+    elseif myEvent == TcpSocket.Events.Timeout then
+      Debug ('Socket Closed due to timeout')
+      Status('Missing')                     -- Update status indicator
+      DisableControls(1)
+      
+    else
+      Debug ('Unknown Socket Event: '.. myEvent)
+      Status('Missing')                     -- Update status indicator
+      DisableControls(1)
+      
+    end
+  end
+
+
+
+  -- Instantiate the port and start listening
+  function DeviceConnect()
+    
+    -- Stop Polling (start again in socket connect)
+    --(Basic Version) TimerPollButtons:Stop()
+    TimerPollSettings:Stop()
+    TimerPollMeters:Stop()
+    DisableControls(1)
+    
+    Debug ('Closing Socket - Change of IP?')
+    ETHERNET.socket:Disconnect()
+ 
+    -- Check for Valid IP
+    if (1 == ValidIp(ETHERNET.ip.String)) then
+      
+      Debug ('Socket Connecting: ' .. ETHERNET.ip.String)
+      Log.Error(MYNAME .. '(Socket) Connecting: ' .. ETHERNET.ip.String)
+      
+      -- Start the connection
+      ETHERNET.socket:Connect(ETHERNET.ip.String, ETHERNET.port)
+       
+    else
+      
+      Debug ('Socket Closed - Invalid IP')
+      Log.Error(MYNAME .. '(Socket) Closed - Invalid IP')
+    end
+
+  end
+
+
+
+  -- Closes the port and stops listening
+  function DeviceDisconnect()
+    Socket:Disconnect()
+    
+    Debug ('Socket Disconnect command sent')
+    Log.Error(MYNAME .. '(Socket) Disconnect command sent')
+  end
+
+  
+  
+  -- Parse responses from the socket handler
+  function ParseRx(incoming)
+  
+    --trim white space from start of message
+    while (incoming:sub(1,1) == "") do
+      incoming = incoming:sub(2)
+    end
+    
+    -- Response from Meters Query
+    if incoming:sub(1, 2) == "GL" then
+
+      --Parse Response: Signal Level "GL 1 [4a,4a,4a,4a,4a,4a,4a,4a]"
+      local slot, channel1, channel2, channel3, channel4 = string.match(incoming,'GL (%d) %[(%x+),(%x+),(%x+),(%x+)%]' )
+
+      if slot == '1' then
+      
+        --Used if indicator is an LED
+        Controls['Input Signal'][1].Color =  LedColor( (tonumber(channel1, 16) / 2) - 60)
+        Controls['Input Signal'][2].Color =  LedColor( (tonumber(channel2, 16) / 2) - 60)
+        Controls['Input Signal'][3].Color =  LedColor( (tonumber(channel3, 16) / 2) - 60)
+        Controls['Input Signal'][4].Color =  LedColor( (tonumber(channel4, 16) / 2) - 60)
+        
+        
+        --Used if indicator is a meter
+        --[[
+        Controls['Input Signal'][1].Value = (tonumber(channel1, 16) / 2) - 60 
+        Controls['Input Signal'][2].Value = (tonumber(channel2, 16) / 2) - 60 
+        Controls['Input Signal'][3].Value = (tonumber(channel3, 16) / 2) - 60 
+        Controls['Input Signal'][4].Value = (tonumber(channel4, 16) / 2) - 60
+        ]]--
+        
+      elseif slot == '2' then
+        
+        --Used if indicator is an LED
+        Controls['Output Meter'][1].Color =  LedColor( (tonumber(channel1, 16) / 2) - 60)
+        Controls['Output Meter'][2].Color =  LedColor( (tonumber(channel2, 16) / 2) - 60)
+        Controls['Output Meter'][3].Color =  LedColor( (tonumber(channel3, 16) / 2) - 60)
+        Controls['Output Meter'][4].Color =  LedColor( (tonumber(channel4, 16) / 2) - 60)
+        
+        --Used if indicator is a meter
+        --[[
+        Controls['Output Meter'][1].Value = (tonumber(channel1, 16) / 2) - 60
+        Controls['Output Meter'][2].Value = (tonumber(channel2, 16) / 2) - 60
+        Controls['Output Meter'][3].Value = (tonumber(channel3, 16) / 2) - 60
+        Controls['Output Meter'][4].Value = (tonumber(channel4, 16) / 2) - 60
+        ]]--
+      end
+      
+      
+    -- Response from Power Query
+    --if string.find(incoming, "GY") then  --(Drop the find for lighter method)
+    elseif incoming:sub(1, 2) == "GY" then
+      --Debug("RX Power: " ..incoming)
+
+      -- Ignore Power (Basic Version)
+      --[[
+      
+      -- Parse Response: Power Status "GY N"
+      local state = string.match(incoming,"GY (%a)")
+      
+      -- Update controls
+      if (state == 'N') and (Controls['Power'].Boolean == false) then
+        Controls['Standby'].Boolean = false
+        Controls['Power'].Boolean   = true
+        --Debug('Power Status: On')
+      
+      elseif (state == 'S') and (Controls['Power'].Boolean == true) then
+        Controls['Standby'].Boolean = true
+        Controls['Power'].Boolean = false
+        --Debug('Power Status: Standby')
+      end
+      ]]--
+    
+    -- Response from Fault (unsolicited)
+    elseif incoming:sub(1, 2) == "GF" then   
+      local state = string.match(incoming,"GF (%a)")
+      
+      if (state == 'F') and (Controls['Fault'][5].Boolean == false) then
+        Controls['Fault'][5].Boolean = true
+        Log.Error(MYNAME .. '(Fault Status) In Fault (New)')
+        Debug('Fault Status: In Fault!')
+        
+      elseif (state == 'F') and (Controls['Fault'][5].Boolean == true) then
+        Log.Error(MYNAME .. '(Fault Status) In Fault (Repeat)')
+        Debug('Fault Status: In Fault! (repeat)')
+      
+      elseif (state == 'C') and (Controls['Fault'][5].Boolean == true) then
+        Controls['Fault'][5].Boolean = false
+        Log.Error(MYNAME .. '(Fault Status) Cleared')
+        Debug('Fault Status: Cleared')
+
+      elseif (state == 'C') and (Controls['Fault'][5].Boolean == false) then
+        Debug('Fault Status: Cleared (repeat)')
+        
+      end
+   
+
+    -- Response from Mute Button Query
+    elseif incoming:sub(1, 2) == "GM" then
+    
+    --Ignore button responses (Basic Version)
+    --[[
+      -- Parse Response: Mute Status "GM 2,1,U"
+      local slot, channel, state = string.match(incoming,"GM (%d),(%d),(%a)")
+      
+      if tonumber(slot) > 2 then
+        channel = channel + 4
+      end
+      
+      -- Only update button if it's out of state (amp initiated change)
+      if (state == 'U') and (Controls['Output Mute'][tonumber(channel)].Boolean == true) then
+        AMPBUTTONS[channel + 1].state = 0                      -- store state
+        Controls['Output Mute'][tonumber(channel)].Boolean = false   -- update button
+        Debug('Mute Status: '.. channel ..' Status: Unmuted')
+            
+      elseif (state == 'M') and (Controls['Output Mute'][tonumber(channel)].Boolean == false) then
+        AMPBUTTONS[channel + 1].state = 1                      -- store state
+        Controls['Output Mute'][tonumber(channel)].Boolean = true    -- update button
+        Debug('Mute Status: '.. channel ..' Status: Muted')
+      end
+    ]]--
+    
+    -- Response from Reporting Status (unsolicited)
+    elseif incoming:sub(1, 2) == "GR" then
+    
+      -- Parse Response: Alarm Reporting/Status "GR c,s,t,x"
+      local statusChannel, statusSeverity, statusType, statusCondition = string.match(incoming,'GR (%d+),(%a+),(%a+),(%a+)' )
+      
+      --Debug (incoming)
+      --Debug("statusChannel ".. statusChannel)
+      
+      --Debug("statusSeverity ".. statusSeverity)
+      --Debug("statusType ".. statusType)
+      --Debug("statusCondition ".. statusCondition)
+      
+      -- Form log message
+      local myMessage = "(Alarm Reporting) "
+
+      -- Handle severity
+      if (statusSeverity == 'W') then
+        myMessage = myMessage .. "WARNING "
+      elseif (statusSeverity == 'F') then
+        myMessage = myMessage .. "FAULT "
+      elseif (statusSeverity == 'S') then
+        myMessage = myMessage .. "SYSTEM message  "
+      end
+      
+      -- Handle condition
+      if (statusCondition == 'S') then
+        myMessage = myMessage .. "activated "
+        Controls['Fault'][tonumber(statusChannel)].Boolean = true
+      elseif (statusCondition == 'C') then
+        myMessage = myMessage .. "cleared "
+        Controls['Fault'][tonumber(statusChannel)].Boolean = false
+      end
+      
+      myMessage = myMessage .. "on channel " .. statusChannel .. ": "
+
+      -- Handle Type
+      if (statusType == 'N') then
+        myMessage = myMessage .. "No alarm "
+      elseif (statusType == 'O') then
+        myMessage = myMessage .. "Open circuit "
+      elseif (statusType == 'S') then
+        myMessage = myMessage .. "Short circuit "
+      elseif (statusType == 'A') then
+        myMessage = myMessage .. "AC Loss "
+      elseif (statusType == 'D') then
+        myMessage = myMessage .. "Digital audio loss "
+      elseif (statusType == 'I') then
+        myMessage = myMessage .. "I-Share jumper missing "
+      elseif (statusType == 'L') then
+        myMessage = myMessage .. "Limiting "
+      elseif (statusType == 'C') then
+        myMessage = myMessage .. "Clip "
+      elseif (statusType == 'P') then
+        myMessage = myMessage .. "Protection "
+      elseif (statusType == 'Z') then
+        myMessage = myMessage .. "Something unknown (other) "
+      end
+
+     
+      -- Write to Log
+      Log.Message(MYNAME .. myMessage)
+      Debug(MYNAME .. myMessage)
+    
+    
+    -- Response from channel configuration (only on connection)
+    elseif incoming:sub(1, 2) == "GC" then
+      --Debug("Configuration Raw: ".. incoming)
+      OnConfig(incoming)
+      
+    -- Response of unknown type
+    else
+      Debug('Unhandled Response: ' .. incoming)
+    end
+
+  end
+  
+  
+
+  -- Mute button handler
+  -- Ignore button handler (Basic Version)
+  --[[
+  function OnMute (ctl)
+    TimerPollButtons:Stop()
+
+    --find parameter to send
+    for i = 1, #AMPBUTTONS do
+      if AMPBUTTONS[i].index == ctl.Index then
+    
+        if (ctl.Boolean == true) and (AMPBUTTONS[i].state ~= 1) then
+          --Debug('TX: SM '.. AMPBUTTONS[i].parameter ..',M')
+          AMPBUTTONS[i].state = 1
+          DeviceTx('SM '.. AMPBUTTONS[i].parameter ..',M')
+        elseif (ctl.Boolean == false) and (AMPBUTTONS[i].state ~= 0) then
+          --Debug('TX: SM '.. AMPBUTTONS[i].parameter ..',U')
+          AMPBUTTONS[i].state = 0
+          DeviceTx('SM '.. AMPBUTTONS[i].parameter ..',U')
+        end
+      end
+    end
+    
+    TimerPollButtons:Start(1)    -- Delay the next poll
+  end
+  ]]--
+  
+  
+  
+  -- Process the channel configurations
+  function OnConfig (myConfig)
+      
+    -- Parse Response: Alarm Reporting/Status "GC IN,IN,BL,BL,Q7,Q7,Q7,Q7"
+
+    -- Extract each number or letter pair (after GC) and build and array of responses
+    local myMatch = "%w%w"
+     for line, _ in myConfig:gmatch(myMatch) do
+        if line ~= "GC" then
+          table.insert(AMPSETTINGS, line)
+        end
+     end
+    
+    --[[
+    Debug("Parsing original String : " .. myConfig)
+    Debug("Entered Config parsing 1: " .. AMPSETTINGS[1])
+    Debug("Entered Config parsing 2: " .. AMPSETTINGS[2])
+    Debug("Entered Config parsing 3: " .. AMPSETTINGS[3])
+    Debug("Entered Config parsing 4: " .. AMPSETTINGS[4])
+    ]]--
+    
+    -- Evaluate the first 4 channels
+    if ( string.sub(AMPSETTINGS[1], 1, 1) == 'Q') then
+      --Debug("Quad 1 config received")
+      
+      -- Light the Quad LED and update others
+      Controls['Quad Mode'][1].Boolean  = true
+      EnableChannel (1, 1)
+      
+      if (string.sub(AMPSETTINGS[1], 2, 2) == 'L') then
+        Controls['I-Share'][1].Boolean  = true
+        Controls['I-Share'][2].Boolean  = true
+      elseif (string.sub(AMPSETTINGS[1], 2, 2) == '7') then
+        Controls['I-Share'][1].Boolean  = true
+        Controls['I-Share'][2].Boolean  = true
+      elseif (string.sub(AMPSETTINGS[1], 2, 2) == '1') then
+        Controls['I-Share'][1].Boolean  = true
+        Controls['I-Share'][2].Boolean  = true
+      end
+      
+    else
+    
+      -- Update the first channel pair (1-2)
+      if( string.sub(AMPSETTINGS[1], 1, 1) == 'B') then
+        --Debug("Bridged config for Channel 1/2")
+
+        -- Light the Bridge LED and update others
+        Controls['V-Bridge'][1].Boolean  = true
+        EnableChannel (1, 1)
+        
+      elseif( string.sub(AMPSETTINGS[1], 1, 1) == 'P') then
+        --Debug("Bridged config for Channel 1/2")
+        
+        -- Light the Bridge LED and update others
+        Controls['I-Share'][1].Boolean  = true
+        EnableChannel (1, 1)
+        
+      elseif (AMPSETTINGS[1]:sub(1,1) == 'I' and AMPSETTINGS[2]:sub(1,1) == 'I') then
+        --Debug("Mono config for Channel 1/2")
+        
+        -- Light the Mono LED and update others
+        Controls['Mono'][1].Boolean       = true
+        EnableChannel (1, 1)
+        EnableChannel (2, 1)
+      end
+
+      -- Update the second channel pair (3-4)
+      if( string.sub(AMPSETTINGS[3], 1, 1) == 'B') then
+        --Debug("Bridged config for Channel 3/4")
+
+        -- Light the Bridge LED and update others
+        Controls['V-Bridge'][2].Boolean  = true
+        EnableChannel (3, 1)
+                
+      elseif( string.sub(AMPSETTINGS[3], 1, 1) == 'P') then
+        --Debug("Bridged config for Channel 3/4")
+        
+        -- Light the Bridge LED and update others
+        Controls['I-Share'][2].Boolean  = true
+        EnableChannel (3, 1)
+        
+      elseif (AMPSETTINGS[3]:sub(1,1) == 'I' and AMPSETTINGS[4]:sub(1,1) == 'I') then
+        --Debug("Mono config for Channel 3/4")
+        
+        -- Light the Mono LED and update others
+        Controls['Mono'][2].Boolean       = true
+        EnableChannel (3, 1)
+        EnableChannel (4, 1)
+      end
+    end
+  
+  end
+
+
+
+--   ^^^^   Classes/Object-ish Definitions   ^^^^   --
+------------------------------------------------------
+
+
+
+------------------------------------------------------
+--   vvvv   Controls/Button Event Handlers   vvvv   --
+
+
+  -- Change of IP address
+  Controls['IP Address'].EventHandler = function(ctl)
+    DeviceConnect()                       -- Handles reconnect based on current port state
+    waitForResponse = WATCHDOGTHRESHOLD   -- Force watchdog to reset port
+  end
+
+
+
+  --Power Button Handler
+  -- Ignore button handler (Basic Version)
+  --[[
+  Controls['Toggle Standby'].EventHandler = function(ctl)
+    local sendstring = "SY "..tostring(Controls['Power'].Boolean and 'S' or 'N')
+    Debug(sendstring)
+    DeviceTx(sendstring)
+  end
+
+  -- Mute Button Handler
+  for i = 1, #Controls['Output Mute'] do
+    Controls['Output Mute'][i].EventHandler = OnMute
+  end
+  
+  --Fault Clear button handler
+  Controls['Fault Clear'].EventHandler = function(ctl)
+    Log.Error(MYNAME .. 'User has cleared all faults')
+    DeviceTx('CF')
+  end
+  ]]--
+
+
+--   ^^^^   Controls/Button Event Handlers   ^^^^   --
+------------------------------------------------------
+
+ 
+------------------------------------
+--   vvvv   Main Program   vvvv   --
+
+  Status('Initializing')  -- Update status indicator
+  
+  -- Initialize controls (disable until connection)
+  DisableControls(1)
+    
+  -- Setup Watchdog to poll device and track responses
+  TimerWatchdog = Timer.New()
+  TimerWatchdog.EventHandler = Watchdog         -- Resets serial and creates Zones (start timer on error)
+  TimerWatchdog:Start(POLLWATCHDOG)
+  
+  -- Setup polling timers.  Start them in the connection event.
+  --(Basic Version) TimerPollButtons = Timer.New()
+  --(Basic Version) TimerPollButtons.EventHandler = PollButtons
+  
+  TimerPollSettings = Timer.New()
+  TimerPollSettings.EventHandler = function () DeviceTx('GC') end
+  --TimerPollSettings.EventHandler = PollSettings
+
+  TimerPollMeters = Timer.New()
+  TimerPollMeters.EventHandler = PollMeters
+
+  waitForResponse = WATCHDOGTHRESHOLD         -- Force watchdog
+  
+  Debug("Script Started...")
+
+
+--   ^^^^   Main Program   ^^^^   --
+------------------------------------
+
+
+  ----------------------------------------------------------------------------------------------------
+end
+end
