@@ -1,0 +1,964 @@
+-- Shure QLX-D
+-- by Indiana University - Joshua Foster
+-- June 2021
+
+-- Information block for the plugin
+PluginInfo = {
+  Name = "Shure~Shure QLX-D",
+  Version = "1.0",
+  BuildVersion = "1.0.0.0",
+  Id = "0e12a6f7-ff49-4aed-925c-67b59af51e45",
+  Author = "Indiana_University",
+  Description = "Plugin to Control and Get Feedback from Shure QLX-D Wireless Mic Recievers"  
+}
+
+-- Define the color of the plugin object in the design
+function GetColor(props)
+  return { 102, 102, 102 }
+end
+
+-- The name that will initially display when dragged into a design
+function GetPrettyName(props)
+  return "Shure QLX-D Plugin Version " .. PluginInfo.Version
+end
+
+-- Optional function used if plugin has multiple pages
+PageNames = { "Control","Battery", "Setup" }  --List the pages within the plugin
+function GetPages(props)
+  local pages = {}
+  for ix,name in ipairs(PageNames) do
+    table.insert(pages, {name = PageNames[ix]})
+  end
+  return pages
+end
+
+-- Optional function to define model if plugin supports more than one model
+function GetModel(props)
+  local model = {}
+  if props.Model ~= nil and props.Model.Value ~= "" then
+    table.insert(model, { props.Model.Value } )
+  else
+    table.insert(model, { "Base Model" } )
+  end
+ return model
+end
+
+-- Define User configurable Properties of the plugin
+function GetProperties()
+  local props = {}
+  table.insert(props, {
+    Name = "Debug Print",
+    Type = "enum",
+    Choices = {"None", "Tx/Rx", "Tx", "Rx", "Function Calls", "All"},
+    Value = "None"
+  })
+  return props
+end
+
+-- Optional function to define pins on the plugin that are not connected to a Control
+function GetPins(props)
+  local pins = {}
+  return pins
+end
+
+-- Optional function to update available properties when properties are altered by the user
+function RectifyProperties(props)
+  if props.plugin_show_debug.Value == false then 
+    props["Debug Print"].IsHidden = true 
+  end
+  return props
+end
+
+-- Optional function to define components used within the plugin
+function GetComponents(props)
+  local components = {}
+  return components
+end
+
+-- Optional function to define wiring of components used within the plugin
+function GetWiring(props)
+  local wiring = {}
+  return wiring
+end
+
+-- Defines the Controls used within the plugin
+function GetControls(props)
+  local ctrls = {}
+  table.insert(ctrls, {
+    Name = "IPAddress",
+    ControlType = "Text",
+    Count = 1,
+    UserPin = true,
+    PinStyle = "Both",
+  })
+  table.insert(ctrls, {
+    Name = "Status",
+    ControlType = "Indicator",
+    IndicatorType = "Status",
+    Count = 1,
+    UserPin = true,
+    PinStyle = "Output",
+  })
+  table.insert(ctrls, {
+    Name = "UnitFirmware",
+    ControlType = "Text",
+    Count = 1,
+    UserPin = true,
+    PinStyle = "Output",
+  })
+  table.insert(ctrls, {
+    Name = "ChannelName",
+    ControlType = "Text",
+    Count = 1,
+    UserPin = true,
+    PinStyle = "Both",
+  })
+  table.insert(ctrls, {
+    Name = "DeviceID",
+    ControlType = "Text",
+    Count = 1,
+    UserPin = true,
+    PinStyle = "Output",
+  })
+  table.insert(ctrls, {
+    Name = "AudioGain",
+    ControlType = "Text",
+    Count = 1,
+    UserPin = true,
+    PinStyle = "Both",
+  })
+  table.insert(ctrls, {
+    Name = "Group-Channel",
+    ControlType = "Text",
+    Count = 1,
+    UserPin = true,
+    PinStyle = "Both",
+  })
+  table.insert(ctrls, {
+    Name = "Frequency",
+    ControlType = "Text",
+    Count = 1,
+    UserPin = true,
+    PinStyle = "Output",
+  })
+  table.insert(ctrls, {
+    Name = "BatteryType",
+    ControlType = "Text",
+    Count = 1,
+    UserPin = true,
+    PinStyle = "Output",
+  })
+  table.insert(ctrls, {
+    Name = "BatteryLevel",
+    ControlType = "Knob",
+    ControlUnit = "Integer",
+    Min = 0,
+    Max = 5,
+    Count = 1,
+    UserPin = true,
+    PinStyle = "Output",
+  })
+  table.insert(ctrls, {
+    Name = "TransmitterType",
+    ControlType = "Text",
+    Count = 1,
+    UserPin = true,
+    PinStyle = "Output",
+  })
+  table.insert(ctrls, {
+    Name = "RFPower",
+    ControlType = "Text",
+    Count = 1,
+    UserPin = true,
+    PinStyle = "Output",
+  })
+  table.insert(ctrls, {
+    Name = "TransmitterPowerLock",
+    ControlType = "Text",
+    Count = 1,
+    UserPin = true,
+    PinStyle = "Output",
+  })
+  table.insert(ctrls, {
+    Name = "TransmitterMenuLock",
+    ControlType = "Text",
+    Count = 1,
+    UserPin = true,
+    PinStyle = "Output",
+  })
+  table.insert(ctrls, {
+    Name = "Encryption",
+    ControlType = "Text",
+    Count = 1,
+    UserPin = true,
+    PinStyle = "Output",
+  })
+  table.insert(ctrls, {
+    Name = "TransmitterMute",
+    ControlType = "Text",
+    Count = 1,
+    UserPin = true,
+    PinStyle = "Output",
+  })
+  table.insert(ctrls, {
+    Name = "UnitMacAddress",
+    ControlType = "Text",
+    Count = 1,
+    UserPin = true,
+    PinStyle = "Output",
+  })
+  table.insert(ctrls, {
+    Name = "BatteryCycle",
+    ControlType = "Text",
+    Count = 1,
+    UserPin = true,
+    PinStyle = "Output",
+  })
+  table.insert(ctrls, {
+    Name = "BatteryRunTime",
+    ControlType = "Text",
+    Count = 1,
+    UserPin = true,
+    PinStyle = "Output",
+  })
+  table.insert(ctrls, {
+    Name = "BatteryTemp",
+    ControlType = "Text",
+    Count = 1,
+    UserPin = true,
+    PinStyle = "Output",
+  })
+  table.insert(ctrls, {
+    Name = "BatteryCharge",
+    ControlType = "Text",
+    Count = 1,
+    UserPin = true,
+    PinStyle = "Output",
+  })
+  table.insert(ctrls, {
+    Name = "BatteryHealth",
+    ControlType = "Text",
+    Count = 1,
+    UserPin = true,
+    PinStyle = "Output",
+  })
+  table.insert(ctrls, {
+    Name = "RFLevel",
+    ControlType = "Knob",
+    ControlUnit = "Integer",
+    Min = 0,
+    Max = 115,
+    Count = 1,
+    UserPin = true,
+    PinStyle = "Output",
+  })
+  table.insert(ctrls, {
+    Name = "AudioLevel",
+    ControlType = "Knob",
+    ControlUnit = "Integer",
+    Min = 0,
+    Max = 50,
+    Count = 1,
+    UserPin = true,
+    PinStyle = "Output",
+  })
+  table.insert(ctrls, {
+    Name = "AntennaA",
+    ControlType = "Indicator",
+    IndicatorType = "Led",
+    Count = 1,
+    UserPin = true,
+    PinStyle = "Output",
+  })
+  table.insert(ctrls, {
+    Name = "AntennaB",
+    ControlType = "Indicator",
+    IndicatorType = "Led",
+    Count = 1,
+    UserPin = true,
+    PinStyle = "Output",
+  })
+  table.insert(ctrls, {
+    Name = "EncryptionModeToggle",
+    ControlType = "Button",
+    ButtonType = "Trigger",
+    Count = 1,
+    UserPin = true,
+    PinStyle = "Both",
+  })
+  return ctrls
+end
+
+--Layout of controls and graphics for the plugin UI to display
+function GetControlLayout(props)
+  local layout = {}
+  local graphics = {}
+  local CurrentPage = PageNames[props["page_index"].Value]
+  local gaColor = {
+      Black = {0,0,0}, --Black
+      White = {255,255,255}, --White
+      Green = {178,255,51}, --Shure Green
+      LtGray = {204,204,204} --Light Gray
+  }
+  local gsCat1 = "Unit Information~"
+  local gsCat2 = "Battery Information~"
+  if CurrentPage == "Control" then
+    table.insert(graphics,{
+      Type = "GroupBox",
+      Fill = gaColor.Black,
+      CornerRadius = 5,
+      StrokeWidth = 1,
+      Position = {5,5},
+      Size = {550,370}
+    })
+    Logo = "PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB3aWR0aD0iOTg1IiBoZWlnaHQ9IjM2MCIgdmlld0JveD0iMCAwIDk4NSAzNjAiPg0KICA8aW1hZ2UgeD0iMTIwIiB5PSIxMjAiIHdpZHRoPSI3NDUiIGhlaWdodD0iMTM4IiB4bGluazpocmVmPSJkYXRhOmltZy9wbmc7YmFzZTY0LGlWQk9SdzBLR2dvQUFBQU5TVWhFVWdBQUF1a0FBQUNLQ0FZQUFBQVhPOVRXQUFBZ0FFbEVRVlI0bk8zZGU3eGRSWFVIOE4rWThFcEU1U0dTQUgyb1ZFSEU2bGkxK0tqYUtsaDB4QWNpbGtwRkJLejZVYkVxYUVGUVFXeHJVYkFxaW9nRzhZRVBIRkVVNUNWU1JCaDhVQVZFUVNBUUlEd01BUUpKeVBRellTN2VYTTY5ZDgrZU9mdTFmdC9QNS95WGN6SjczWDMyV1h2Mm1qVUtIV085WGgvQTArUHJLUUFlRDJBYkFJOEJNSzlyNDZWMWZNRW90MCtka0ZpdlR3YXdwNEJ3SG02VU95ejNRNnpYZXdGWVZHWkluWGF0VWU0dk11SzBCNEN2Q29nVENzVHFTQUFIbHgxU3ArMXJsUHQ4M1FGYXJ5OEY4RlFab2VxOTFRQ1dBYmdkd0c4QS9CTEF4UURPTXNxdDZPckJXYTh0Z0pkMVlDalVqcVZ6dXhCNDYvWG1BRjRGNE9VQW5nOWdvdzRNaTlMOUlTTm10Wk9MbnJtdTBIQ2x4Q3ZubkFyK3ZOQTQraUEzVmxMT3FRblhacjVmV3J6NkxPUTZtOFhYdGpIWENGWllyOCtJRXg3Zk1jcXQ3dGd4L2xrSHhrRHQrVU5yU2JyMU9zeml2eERBVytLZFlpZHVHQ2dMay9UWjVTWlNFM2hUVTQya1JDcjMzSktXRU5TT2wvWDY0UUEyS1RzY2FzRkdNV0VQcjJ1dDE4Y0MrQitqM0wwZCtXUHdSbEMyUHp5c2pjTzNYdThHSUR3cS9CR0FWekJCSDR4YU0xT3h4R21Ca0JpVlN0S2x6QkJ6ZHJnNjN0QlU1elBqeGVScGVNSTE5YjhBWEc2OTNyM3RvN05lUHdyQUl3Y1laNnJ1MmthVFkrdDFxRFAvQklDZCtFY2FwTHFQajZYTTRLMEJjSDJoejJLU1hvMmsyZUdjbWVGd283eXc3SEE2N1NhajNNcU1BVEpKSDY3d3QvMjY5Zm8wQVBzWTVaYTJkS1NTU3ZWb3RHc2JtVW0zWHMrelhoOEQ0Q0ltNklOMVA0REZOUTlPeWcvZUVxUGNxdHdQaWFWaVVpN2dyQnV1THVlR0ppek83MXdqZ1RIaVdnZWF6VXNCL01wNi9jS1dJc1Z6ak1aZjdtSzkxbkVsOWRzQXRGSmVRNDFZbkxIb2h2WG9hVUpwMFBwTkRicGx0WlAwdUNCOS9sQUNVVUhPRFkyMGhJQkpPbFd4SllBZldLLy9wWVZvOFdrTmpUZEp0MTZIZG53WHhEYUtOR3c1OVoxU1NoSktKZWxTNHNXNjRlcDhaaWtWTzd1a1lRSWx4M3FodmJEMStxQ0dqNWpuR0YwM2xpUTlQSTYzWG9jRkdLRUg3UWJpd3l3RE83dk1MamN4bUNBbFhqZG0xZzFMcWtmUGpSV1Q5RFJNb09UNWlQWDZ3QWFQbXUwWFpidkRLSGRuOFNUZGVqMEh3QmNCdkV0NmhJVmhrajQ3SnVscDJLMmtPaTZ3VGNONFVSMGZhN0QwaFRlQ3NxMjlSaFZOMG1PQy9pVUEveXc5dWdLeEhuWjI3SkdlaHUwWHErTU5UWnFjVGpnYnhoMndTYWJqck5mUGFPREltYVRMVmo1SkIvQXBBSytUSGxtaDZ2WklEMjFBdHhJU010YWtwK0hpdnVwNFE1TW1aMUtCeVpOc1lkSCtONjNYbTQwckN0YnIrWEYzVkpKcjdjUkxzU1E5THFyWWp5ZVVXSFdUaEswQnpCRVN0Tnpaemdrc0Q2cUdTWG9GOFFubzFrME90bVZMalhJck1vYkFKSjNDOStXWU1VYUIzWU9vM0V5NjlYcFhBRWVLRDZsY09WMDRwUHpnM1Z4d3Eya202ZFd3SnIyYXJRVGRLSU5QYUtpUTE4WGQwOGVCTjRKVUprbTNYb2ROTUJZSjJ3aUQxclVrbzdNRTY5RVRXSzhmRFdDanBnYmRzcHpaWVdsYmFyTlZaWFY4UWtPbGZOeDZQWTRPZGt6U2FlMTFLaXRKanpzZm5naGdFL0hobEkyTFJtZFhxaDZkSlJ6VnNGdEpkVXpTMHpDQm9nbmhldnpXTVVTRDNZTW9QMGtIc0MrQXRyYk1wZTVnZ2pBN3RsOU1jMHRtZVpDa1JDcTNsSW8zTkdtWXBOTmtCMXV2NXhXT0NNOHgyWlliNVc1SFRwSWVIeWNmSVQyU3RCYVQ5Tm1WU3RLbHpLUnp0ck02SnAxcDJDT2RTdHBzREcybm1hVEw5dUExS21jbS9UQUFqNVllU1ZvcnB4Nlc3UVRUc0R5b0drbGxRZXlSbnFaMnZLelhvZjNld3BiR1RkMzE5c0lqWTVJdTI0UFhxRnBKdXZWNlhIVlkxRSsxRWlycjljT1lwQ2ZqUmtiVnNIYS9PbWtMSVhQWE9yQkpBazIxbmZWYWw0aEtYSWpLemJKa3k1NUovemRoTGJ0b1puVi85TUtNMUhwQ1lzc2U2V2s0TzF4ZFRoY2NKYXg4NHc2ajNKMFo3MmRuRjVyTzdvVWl3M09NNmlmcDF1dk5BYnhSZkFocHNycEpncFNMMFcxR3Vic0tmUmFmUEZRaktVblBxZDlmRUhkUWxJTHRGMmxjWGxib2MxbnFRZzllcCtyTXBPOG5xRTh6elc1cFJtY0oxbGNuRU5iN08yZDJlSjZ3TGJXNXhYMTFYSkJNNDdLOTlYclRBcC9ORzBIS1N0SkxyMkttZm1Obmw5bXgvV0k2SnA3VjVYd0hXWStlaGtrNnplUnZDMFNIU1RyVkszZXhYajhOd0JQRmg0OG1ZNUkrTzdaZlRCUHFocGRudkY5U0lwVmJTc1VrUFEzYkw5Sk10aXNRSGQ0SXlyYkNLSGZMUkFSU1o5SmZLejE2OUJBNUNTanJxOU93UEtnYXRsK3NqdTBYMHpDQm9wazh0a0IwZUk3SnRrNU9sWnFrYzNkUm1vcGxDYk5qKzhVMFhOeFhIY3MzMHVTc2RaZ0xZT3VXeGszOXNLREFLUG0wUnJaMWZ2L21WZzFGWEJEeHRKNkdiazA0QkFESEFQaDVCOFl6SlBka0hBdVR6alNNVnpWc3YxZ2R5MTJxdXgvQTVrMFBlTUErQ09CdEF6dThyS1lhMXV2UWtuaXJjc1Bwdk5DSTVCUkJ4MXZGeXNuL3BuS1NEdUM1UGQ3RUlUd3gyQzIrTG96SitqZU5jcXM2TURhUnJOZGJBdGhBeUxHWFN0SlpIbFFORjloV0p5bEp2OHNvZDN2ZE54dmxQSUEvbGgyU1hOYnJMUVo0OEJ0bXZuK2J6SjNnKytaeW94eS9Vek5JT1JtZTB2am94aU9zdnY1S1NBU3MxNGRZcjdtelZ6dWtKSnpMQ2w2RVdCNVVqYVRFczNhU0hwTWtTZTEwUzkwc1V4bER2SjZ0eUh3L3k4OW9IU2xKK2w4TkxIUUw0K08yNjYzWGk2elh6K2pBbUNSaHdwbkFldjF3UWIyL2F5L3VpMXRxYjFsMk9KM0c3a3JWTVNIb2xpR2VmM2Rrdmw5U1BmcHFBRXM2TUk1T1MwblNTN1FXNnFKUUE3WVhnSXVzMXorMVh1OWx2WmEwQTE5YnVMMTlHaTZHcklZMTF0VkpXNkRHbWZTT3NGNkhzcEFoUHNXK05mUDlrbTZjcnpmSzNkK0JjWFJhU3BJdTRjZnZtUUFXeGRuMXc2M1hKVlpxMDJpY1NVOGpKZmxjbmxNM0xPeEhibmxtS1JWM0c2VzJEUFhjNDNxYTZ2aGtxNEtVSlAzaHJZMnllYUZXODlCd1ViZGVuMnk5M2tuUXNUZUZpeURUc0xOTE5aSm1oNWtRcEdGUzBCMUQvWjVlbmZsK1BqR2xkVlJLMG1OYklDbWRPQ1lMeDcwbmdBdXMxODU2dlhlc2VhVjhURHJUTUY3VmNDYXFPcFlHVVZ1RytqMzlaZWI3dVJFYnJhUHFUUHA4aG0xdGovZ1RZeW5NRWRacmJtcVJoMGxuR2o1NXFJWkplblhTa25RbUJkMHh4TzlwNk9SMVRkMDNXNi9ueEJhTVV2Q211UUpKL1RoTGVUU0E5OFVXamwrM1hqOTNHSWZWSE92MVpvSnUvRmp1a29hSlozWGM0cjY2KzR4eU4vVmxzQUlNOGR6N1NlYjd0MHJjdTZidm1LUlhVUFdFeU5sVmNxakNYZS91NFdXOURvKzRqZ1Z3c2xFdXQwK3FCRklTcWJ1TmNybXIvU2V3RzA0MXJPbXNJTzRndlhHVGcyMFpFNEp1R2VMMzlOek05N1BiRWoxRXBabDBvOXhLSnVvekNoczlIUTlnc2ZYNktPdTF0QzliS2lhY0NRYmNybXlVbk1SVDJwYmFiTDlZSFpQMGJobGlrdjY5elBkTGVySzFKdVJMSFJoSDU2V1V1OXdvTkVZcHd1elVlOE1LYit2MXQ2M1hMK2pQMEJ2RjBvMDA3RmhTamJRdHRYTm1vcVIxZG1FOWVrZkVmVWdXRHV5d3JqVEtYWjc1R1pLK2t6Y1k1VloxWUJ5ZGwvS0Q5bnVoTWFvamxNTHNCdUJzNi9WbDF1djlyTmZ6K25jWVk4TkZrR21rWEx6dk5jcmRrdkYrU1Rjeks0eHlTelBlei9hTDFKYndQVlVEaS83SkJUNkRwWHIwRUNtTEZLNEFzRE5EbUd3SEFNY0IrS2oxK2dRQW44eFpBVDRRVWhLRTlhelh6eS93T2Y5UTREUDZnTzBYcStNQzJ6Ulo4YkplUHd2QWhpMk1lNGorZW1ESDVHUG50MXlTdnBPckMvMDJEc2xkUnJsTHBoNVBTcEwrTStrUnpQUW9BQWNDZUtmMStydHhvZWxaUmpuZjY2T3FSMG95dFc5OFVUVnN2MWdkay9RMHVUZUFad1BZcU9sQlV5K2NacFFyVVU0bDZmcjFndmlpUHprZndQT214aU9sM09VQ0JyT0k4SmpQQURnVHdQOVpydzhRV0FvakxVR2dhcGg0VnNmMmkybHFKK25XNnkyWW9OTU0vak0zT05acnhkOUY4VWIrL2xWTzBvMXk0U0ozcGZRb0ZyWTlnRS9IcmpEL0lhRXJqUFg2RWZHcEF0RlV1Yk9kck9tc1RsS1N2aXF6OFFHVEo1ck9lVWE1OHd0RUozVHZXcDlSRmkwdlNZK3M5Q2lPeVNZQTNoMjd3bnhqNEJza1NadkJvK3BZazE1ZFRxdktqZU0xUjRycmpISnJNbzZWU1RwTjUrQkNrZUh2SW8xOE9wcWFwSjhrUG96akZickN2QXJBajYzWGwxcXY5NDd0cW9hRUZ5T2FUazdpeVMyMXE1T1dkTEkwaU1iaGEwYTVDd3Q5THM4eHlwOUpOOHI5Q3NERjRrUFpqS2ZHRmVQWFc2OFB0MTRQWlRNYnprclJkSElTendYQ3R0VE9TVHpaZmpFTkV5aWFham1BZHhXTUNzOHhLbEx1RWh3dFBwVE5Db3VXRG8zSitpTHJ0ZTc1OFRCSnAxRkMzZkJOR1pHUjlDTVhkb0Jla3ZGK0p1bHB1SU0wVGZVdW85d05CYVBDYzR5S2xMc0VwM0JqbzFhRUxjLzNBbkNKOWZvQzYvVnJyTmQ5bkRua2pBR05rbHMzTE9tOHVqYXpkYXUwaElCckhhaWswSEx4YzRVL2srZVliRXVNY2l0SFJTQTVTVGZLclFad2tQU0l0bXluVUE4SDRCcnI5VUhXNjgxNk5IWmVqR2dVdGwrc2prbG5Hc2FMU2dubjB0NWppQ2JQTWRtbS9mMnJNNU1lZkJQQU9kS2oyZ0ZiQS9oSUxJVTV6bnI5eEI2TW1ZLzFhQlMyWDZ5T1NXZWFuQVhKb1F2T3hpMk5tN3BsUldqc1lKUzdmUXlqWWhtb2JHV1Q5UGlvZGY5NDBsTDd3a1liK3dHNDNIcDl1dlg2UlhGemhFNkptelk5bXVjTGpjREVzem8rZGFndWxGQXR6bmcva3lkQ1BJOWVhNVJ6cGFOaHZkNGNnTFFORFdsZDB6WUNxRHVUSGhMMXF3QzhnNEh1bkYwQW5BSGdWOWJyZmF6WEczWm9nSHlrUjlOaEI0N3FjbWFHTjR5TDBhVzRJWlpvMXNWckZnWDdHK1hHdFU4TXp6RXFYdTZ5bGxIdXN3QVdpUTl2TiswQTRQUGhEczE2L1lGNHQ5NDJ6a3JSZERnN1hCM2JMMWJIbXovSzlhOUd1ZVBIR0VXZVl6U2VKRDNhTjJ5K0l6N0UzUlhLU3c2TGRldWZzbDQvcnNXUk1rbW42ZFJPUEszWFd3cmJVanNuOFdTU25vWnJhT1FLVDJCZWI1VDc5Smdqd0hPTXhwZWt4N1l4QmtEeFdpMHFLanptZmpPQXE2elhwMWl2bjlGQ2VEbGpRS1BjbjFrM0xPbThDb2xEVG45bTdqYWFodGNzbVpZQjJOVW8xMFNsQU04eEtsK1RQcGxSTHB6UWZ3L2daK0pEM1gxaFFlbXJBVnhrdmY2QjlmcFpEWTZZRnlNYVpUSHJoaXU3M2loM2Y4YjdwU1hwTEhlaFZGY0NlSlpSN295R0lzZHpUTGFsUnJsN3BvdEFrU1FkZjByVVh3amdPOUlqM2lNN0E3alFldjB0Ni9Wakd4ZzJ5MTFvRkxaZnJJNHp3Mm00MW9GU25BaEFHK1d1YURCcVBNZGttL0VhVlN4Snh3T0ordDBBWGduZ3d3Qnlkc1NqWnIwaXRtOE1DMHpYRytQL3pJc1JqY0lrdlRyT0RLZXBmVzVacng4T1lOT1d4azNOdWpIOERocmwzaER6bUNieGQxRzJHYTlSUlpOMFBKQ29yekhLSFFMZ0grS0pULzJ3Zmx4Z2VvbjEra21sUjJ5OTNnREFBcDRMTkFJVHorcTRFRElOTytIUVRFSkNmaVNBSnhqbFRtMDZVdGJyUndGNEpQOUNvaldicEU4d3lwME5ZSHNBbithc2VxL3NHTllXV0svM0tqeG96aGJRZEppa1Y1Y3pNeHh1eEJlMk1PYTJMREhLM1pmeGZ6TkpINjU3QVh3Q3dPT01jdTgzeXQzVjBwSHlIS1BteWwybUNuWHFScmwvQmZCTUFHZUwvMVAwUjlqOWJGRW9meWs0WXJhWm91bmsxbGxMT3JkeVNvUCtMQzRjbCtLYXpPUGt4TUx3M0FiZ0NBQi9hWlI3aDFIdTVwYVBrTCtMMUY2U1BzRW9kN0ZSTG5SL2VUR0Ewem16M2h1SFdhK1BLalJZemhqUWRISjIwSndQWUw2Z3lPWThkWkNXZFA0NjgvMU0wb2ZqVWdEN0FkakdLUGZ2UnJtYk9uSmsvRjJrR1NlcDVqWVpIcVBjbVFET3RGNy9aZGhtRjhBK2NiTWQ2cTczV3Evdk5Nb2RtVGxDWG94b0ZKODVrNzZsb0tpdUNTMFlNOTR2TGVtOExQUDl2R2IxMngwQXZnYmdlS05jVi9keDRUbEc3YytrVDJXVXU4WW9kMUM0cXdYd1R3QitJdjdQMUcxSFdLOU41Z2g1TWFKUmxzUU4wZXJhUWxCVVE2eFdaYnhmMm5md0Y1bnY1eldyZjhKQzBLL0VEUllmWTVSN2M0Y1RkUEJwalhoM0dPWHVuQ2tJamM2a1R4VVg5WndjWHRickp3TTRBTUEvQTlpNHpYSFJTQ2VFdjVGUmJrbk44TEQyamtiSmJiKzR1YUNvY29GdGRmY1gyQVdiMTZ4K0NFbk85K01lTGQ4eHlxM28wZGlacE1zMjYxUGtWbWJTUnpIS1hXYVVld3VBcmVMMjliL3N5dGhvcmMwQWZDd2pGSnlWb2xGeUU4OTVncUxLalhtcSs4Vk11L2pOeG5xOVlaaUo3ZFloMFRUQ1Jvcm5BZmhXenhKMDhIZFJ2Rm12NloxSjBpY1k1WlliNVQ1amxQdHJBTThHY0JLQW5EWmFWTTZlMXV1bnAzNWEzQ0JwSy80ZGFBUW02ZFZ4MDZmcXpzOThQNU9uL3RnbXRucituZlg2amRiclZpc0Vxb3FiWlczV256RFRHUFF2U1ovTUtQZS9ScmxRL3JJMWdQY0F1TG83b3hQcmZUVU9mT3V1bjJ2VW10ejJpNUkyQXNucGtUNDNmZytsT0N2ek9KbWs5MDlJMW84SGNJWDErbDk2a0t5em5JcG12YWIzSW5FeXl0MXFsUHRQQU5zQzJDWFducTNwd05Ba010YnIxSTRhckx1ajZlVE9wRXVTRTZ1UW9NOFJFcXZWQU03Ti9Bd21VUDMxT0FCZkFQQWI2L1ZycmRkZHpYTjRJMGl6SnVtOWVDdzB3U2dYRXZNZmhwZjFPdHcxdnltK0pMVmhhMXY0b2Q4ajd0WldGUzlHTkIwbTZkWGx4RXBTMG5sZWdSMGtlYzNxdjIxanA1ZERyZGNmRE8wWWpYSmQycU5GMGprV2RuZzlyZ1BqNkpwTFp4dFByNUwweVl4eTE4Y3YzNGNBN0JZWG03NmdPeU1jdEg5a2trNkZNRW12THFjMFNOSjMwQmI0REY2emhtTzdtS3lIUFQ4T2p4MWd1cENzUzNyQ2ZIWFk0YlVENCtpZDN0Y0poNzdCUnJsVGpISXZqRi9Ha0R6K3NRTkRHN0tkRWg4aDh0RXhqYkxVS0hkdlptU2s3RjU4YzJhc0pDV2RweGI0REpib0RVOW9Sdkh0TUh0cHZkNjFBMGNuNlJ6TFhmUXUxcUFXOHhubHJvaDNhNkdUeUJzTDlNbWwwY0txOUNjbXhJYXpValJLaVZuMFpVSWl5L2FMMWZ6VUtKZTdHQmxNMGdjdEpPdW5XYTkvYXIzZXBjVURsZlM3eUNlbU5RMnk0MGJvajJ1VU84RW9GOW9GL2sxY1JOSzMvcWxkdDIzQytKaWsweWdsTHR5NXRjZDl3U1M5bWkvbmZvRDFlbjBBQ3hzYUw3WG5tUUJPdDE1ZllMMStmZ3VqWUpKT3N4cDhXenlqM0NWR3VYM2lSZmVkQUs3c3dMQ0dvRklKU3l5TDJVWjZzR2lrRW85QTd4WVMydHpaWVFrSndhcXdPTERBNTRScm15cndPZFFQT3dFNHgzcDlibFBKdXNETnNsanVVcE9ZM3RWR3VUOGE1VDRlNjliL0hzQTNZcXN1cW1lTGl1OWEyT2NGeW9tV0ZYcEpxYk11Y2VHK3VjQm45RUh0bWFoNG95eGhYY2lwUnJtbEJUNkhhMmhrK3J1WXJQL0FldjJzTVVkQTJqbkdKTDBtS2NuVGcrS3E3clBEeTNxOUFNQytBUFlUdHRGSENSdFgvQXdwai9SdU04cHRYdUtEck5kM0pzUzN6MG84QXIxUlFKeVFHYXZRb25hOWdtUHBxdU1Mall2bGViTHRIRjdXNjlEdStmMUd1WEdzYlpOMmpySGNwU2JSdTBBYTVaWVk1VDRVdnpDdkFIQ0dvRm5NcGtpNUdKVllyQllTOUUyRkpPZ29kT0ZlS21SanM1eFlTZmdPL2hiQWp3cDlGcE4wUWt6V0w3RmVuMnE5Zm1yaGlFZzZ4KzR6eXQzVWdYSDBFcmRxZnlCWnY5OG9GeDZWN2h3WFJQNVhtQm50d05DNnJPcFRHQ21QOVVyTkZFaDZESnA5WXhPK3U2VnVrRHFPUGRKbjl2RzQyVjBKUTFwa0d6YVF1YWNENCtpemw4ZTJqZCt3WG05ZjZEZ2tkUS9pTEhvR0p1bFRHT1YrYjVSN2QyemorSG9BRjNacWdOMnh2T0pJcE13WWxMb1FTWW5YSFVhNU93dDkxdEFYZzkrV3VZUG0wQk9DTUtIeXhZS2ZONlI0dlRlMnkvMUdCOGJTZDY4QzhIL1c2NjhXU05iWkk1MHFFVmVUWHBWUjdqNEFpOExMZWgzNnFoNEE0SjlpajNCaWtqNFZrL1EwSldkWHJvcVBwb2ZxMW5nTnFxdjBvL3F1T1NhMDNTMDRwcUY4QjVjWjVTWVdzKzl1dlg0UmdHTUJQS0VEWSt1cjBQVm5Ed0N2dGw2ZkJPRERScm5mMVRnV1NlVXVUTkl6TUVtdndDajNpNUNrVzYvZkEyQXZBRzhHc0VQbkJ6NWVUTkxYVmFya1Fzb01TOGtTbFY4Vi9Ld3VDa25WendkK2pIV0ZCUFNZVWg5bXZaNDdvQ1lDNjl3SUcrWE90Rjd2Q09CQUFJY0FtTmZlMEhwdkRvQzlRejRRay9VUEdPVlNrbEgyU0tkS1dPNlNJRHllTjhwOXlpajNaQURQQS9BVkFDdDdjd0JsVlUyeVdKT2VSa3FTWHZMQ3paMkY1VG82dE5jdGVQUUxZd0kyQkEvNWpobmxWaHJsam1JSlRERVR5ZnBWMXV2UFdLOW4vYjJ6WG9kT1N3djZjNGpabUtSbllKSmVrMUh1ZktQYzYrSkdQUWNEdUthWEIxTGZySS80ck5laDlkc0dIVDZHa2xqdWtxYmtoZnN5d1RmTGt0MEM0R09GajM5STM3OXBKMUtNY3RjYjVYWUg4R0p1OEZkRVNMejNENytMMXV0alkzdm42V3dqTFBkaXVVc0dKdW1aakhLM3hKbUp4d1BZRmNCcEFsckMrU3BKdXFDRTg4NkNzM2xTWWxic3dtMlVDenROWGx6cTg2ZzNQcGk1b0hhVUlYMy9acjBSRGlVd0FIYU1FMDNzQXBNdkpPdHZCWEMxOWZyajB5VHIwbHA4TWtuUHNFNU5lbndNOC82K0hVVEhoRWZ2dHdKNHpZQnIvcTZPQzJ0bnc0UXpnZlU2TEVyZXBLbEJ0NnowaFR2MHlINTI3NkpBZGYwbXRoY3NUVlNTamxnQ0ErQW82L1dYUS9sUTdHSkNlY0syLzI4SDhLWXdzeDdhT2h2bGJvMmZLS216UzdDZjlWckNYaFlwamd2NzlGVDU5MU1Yam9iSE1COW9kZWpVQjFYYlVySWVQUTBYRTlWM0xxOWRvcnpOS0xkNkRBYzhwR3RXMG8xd0tJR0pYVXQyaVYxZ0hqKytvWWt4TDdiQmZLdjErcFBoWmtoZ2tuNUlCOGJRTlordE9wNnA1UzZTTmxLaCtuNWM4WjJzcjA0akpWN0xqWEszRi83TUN3Q1VYRUJJM2ZWVm85elpZeHJka0w2RHRaNVdHZVYrRUx1WC9UdUFGZVdISmRMOG1Lei9JYlp5SnJuQ2s2dEtzK2dZa2FSek8yU3E0dnlLLzQ3dEY5T3cvV0pOc1M3OXRLWU9nRm9UYnU3ZU9jYi9mQ2pYckxzbmxWY2tDK1dNUnJrakFHd0g0TnZ0SGNiZ1BKSlBLTVFMaTdaOTFTQXdTYWRVMXhubHJxajRIcllUVE1ONDVmbFdVd2RBclRuUUtIZlRPUDV6NjdVYTBOUGtJdCt4MFB2YktQZEtBQytwMkN5QWlHYVc5TjJjbXFSTHE1V2lkRjlKZUFlVHpqUXNEOHJ6L1RqVFNzTjBtbEd1NVBiL1V5MkkzVG1Hb09qQ2JKYkFFQlhESkozRzZwUXFIMjY5M2p6VzRVbkFKRDNOV0ZweXhZNURYeDdqdUtrOW9TZjZQbVArMzhYWG84K0VKVEJFUlNSOU4xbnVRaWwrYjVTcnVydWpsSE5wUlU3dDV4UlNGbTZQczIvdTU4YjQyZFNldlkxeVM4Zjh2NHRydjFnSFMyQ0lzdFJMMHEzWGMySUxScUxwcFBRbFp2dkZCTmJyMEZmM01VME51bVhqVENEQzdxTm45U1VRVk1sSFlybkZ1QTNwbWpYMnJkaFpBa05VUysxeWx3VWorcVlUVFFpNzBaMlFFQTNXVjZkaGovUnlTbThWVCswNXE4RSt5MFA2RGhidm9EUUtTMkNJa3RWTzBsbnFRak01M2loM1cwS0VXRitkUmtxOHdvLzZMV1ArUDhJTTM4L0gvSC9RK0lVZnM5Y2E1ZTV2S05Zc2Q2bUpKVEJFbFlScjJZMHBvV0tTVGxYY0MrQ2ppWkZpa3A2RzVVR0Z4QjYwNzJ2cWdHZ3M3Z1R3MG9MclBhb1l5alhydm5HMXFad05TMkNJWnJRNGRhZmt5VWs2Tzd2UWRJNDF5aVhkL1RIcFRNYnlvSUppc25CZVV3ZEZSWVdOcWZZd3l2MjY0YkN5UjNvQlUwcGd2dHZtV0lnNkp2bTd5U1NkWmhOS0U0Nm9FU1VtbldrWXIvTGVIaDh2VXIrOHNhR0ZvZyt5WG04QllLT0JuQ2VOMUtQUEpwYkFtUEJFQk1EVlhSZ1RVY3VTbjd5ejNJVm04MjZqM0xLVUtGbXZIeFczUDVhZ1ZMbUxsSnZreGhJSW85d3ZBUnpUMVA5SFJZUWRSUmUxRUVyV280K0pVZTU3QUo0RTRBT3hkSkpJS2licFZOVDNqWEpmcXZHQlVoTE9sUUJLMVg1eWQ5YnhPQlRBTlEzL24xVFB3VWE1bzF1SzNaQytmNTFLMHZGQW9uNnZVZTZEQUxabkNRd0psbFh1SXFXR21Lb0puVnplVkROV1VoTE9hK01peFN6VzYvVUJMR3ozVUJyVGROZUp1OEpHT0FEV3RIdllOSXVRb0IvVllwQ0dkTTBhNTJaaFdZeHkxN0FFaGdTcmw2UmJyN2NFc0FIUEhKcGs3eHFMUlNld3ZqcE51RUZXVFEyNlpZMG5FRWE1OHdFYzJiVkEwSVBlMVhLQ2pvRmRzenFicEU5Z0NRd0psVnp1T1RHVHpsSVhtdXp3ZUJHdGkrMFgwMGg1aWhXNmRpeHA2ZjgrRE1DWkxmM2ZORnA0dXZFR285eC9keUErckVsdkdFdGdTQmpQSkoxS09Ea2s2Wm1mSXlYcDVFWkdhYTR6eXJWU2RoSTN4Tm1UajlnN0k1UWh2Y3dvZDJKSEJqU1VhOWFxMU0xUzJzWVNHQkxpUnFQY3l0UkRuVWpTV1k5T2lGdHd2NkZBblRYTFhkSXdYZzJJTytidUFxREpEWExvb2NKczBuT01jdC92VUd5RzhoMWMzTmFOY0M2V3dOREExWnJVNDB3NlRUZ25YQ2ZyM09tTndLUXpEZHN2TnNRb2R4V0FYZU9PbHRTOG53QjRabXlQMlFuVzYwMEJiRHlRYzZFWHBTN1RZUWtNRFJpVGRLcnR0TGdGOXoyNUliUmV6d2V3bVpBL1JhbWtrKzBYRzJTVSt4bUFGek5SYjF5b1BYOUJXMXZXejREMTZCM0RFaGdhb0ZyZnpZa2tuYnVOeW5VY2dGZVVTTkFqS2VmU2FnQTNGUG9zUG5sb21GSHVvcGlvSjIzVVJiWGNIcTh4b1l2TDZnNkdjRWpsbnAzdjdKSmlTZ25NZmYwWk9kRkRNRW1uSktHczVTMUd1UU1LLzNCS1NUaXZqNHNSczFpdjV3TFl1dDFEYVV5bkVvaVlxRDg3L0MwN01KeWgraUdBSnh2bFR1M3c4Ykg5WW9kTktvRUp5WHFYMWpFUXBhajE1UDFoMXV2TkFjeG5xRVg1SFlDZGpIS2ZHc05Ccy8xaW1yQ0owWnltQnQyeXppVVFScmxmQS9oYkFEL3J3SENHWkRtQU53TjRTY1orQzAxaHVVc1BHT1YrYjVRTDYwbGVQdVRqcE1HcVBaUE9lblE1d3FyL1R3QjRpbEhPamVtbzJYNHhqWlR2WDNqcXNMZ0Q0M2dJbzF3b1czcGVMUDJpZkdIV2ZEdWozR2RLN01qYmdDRTlTUjU4OG1xVXMzRmg2WWRZQWtNOVV1dTdPWmZ0RjhYNFh3QnZOY3I5Zk13SHpQcnFORkxpdGJpajljaHJHZVhDai8wQjF1dHpBWVFuVEp0MFlGaDk4MXNBNyt4WWE4VXFocEtrcitucWpYQnBScmtWQUE2MVhuOFJ3REVBL25GWVIwZ0RjM01vMjZwelNKeEpINzVmQU5qTktQZnNCaEowTUVsUEp1VW11ZlgyaTFVWTViNGFhcWhqTFRWVkUvclBId2hnaHg0bTZCalFOZXVHTHQ4SWp3TkxZS2duYXYvK01Va2ZKaCszUUErekMwOHp5bjJud2FNVXMzdG1vYy9oVFUzSGhQSVhvMXpZOUdpUHZ1M2UyTEJsY1hmaXh4bmxqamJLcmVyYkFWaXZIekdncHlaaWsxU1d3RkRIMWY1dXptVm5sMEc1RWtDWUNmeVNVYTd4M3JMVzZ3MEFQR2JZSVg0UXkxM1M5QzZCTU1wOTNYcDlPb0IzeDVsaUxyQi9RSmc1LzJSNEdlWDZ2bnZya0o1a2laNUpaZ2tNZFJpVGRLSCtDT0JDQUQ4Q2NMcFI3dktXd3lEbFhGcFRzRzJmbEpqMXNqV2NVVzU1L09FUGRlb0hBZGdmd0lZZEdGb2Jyb29Mejc5UWNGK0Z0ZzNwSnJrWEpXWGpGa3Bnd3E3QzFtc1R6MWRXQzFEYmF2Lyt6ZVVKM0drK3pscUZ6VUJ1am5kajRYVlpmUDNXS0xlbVF3Y2c1Vnk2b2NTamZldTFZamVjZm9pN1pMN0RldjFoQUcrUDdRVWw3S3diYXB5L0hUdmZuTjJUYmkwcDJINXhvRUlKalBVNmxIMGVET0E5QURhUUhoTnFEWlAwZ2JtN2ovV2RBTTRSMGhVamV4T2pTYVNVQnkzdndCaXl4ZktPUTJLeXZudWNXWDlPenc5cmxOQU42c3NBVGpIS0xlM2U4SW81SHNCSkF6bVd1enN3aHFucm84a0FBQUlaU1VSQlZFN3BTQW5NMStOMWd1UzZxKzZSSzU0MFJFVDFXYThmQytBMUFQWUVzR05QUXhrbUJjNERjRnFZT1RmS3NYU0NCcWVsRXBpUEdPWGV4N09KNm1DU1RrUlVpUFU2L1BpL0pNN1loUTJTSHRIaDJJYmRWcytPcjNPTWNzczZNQ2Fpc2JKZWJ3VGcvWEZCK1BvTlJIdC9vOXhuK1ZlbE9waWtFeEdOZ2ZWNlRweFpmeTZBcHdONGF0aUpFOENjRnVJZFdrbGVDdUJpQUdHMzRZc0cwSm1GcURicjliWUFqZ1d3ODVpanVMTlI3Z3orcGFnT0p1bEVSQTJ4WG9mT01FOEE4SGdBSVVrSXBUSmJBOWdTd01LNHBxUE83TjVkTVJGZkhGK2grOUR2QUlTT1QxZHdscHhvTk92MUt3RWNQY1pGL0U4MHlsM0o4Rk1kVE5LSmlEb2tKdktQQkxCUm5IWGZlSnJScllpZG4rNlF0dE1rVVVuVzYzbXhCT2JmeGxBQ3MxSGRMZUdKbUtRVEVSR1JlR01vZ2JuWktMZWw5TGhTZlE5ajdJaUlpRWc2bzl4VlJybGRBTHlxME9aUTdGMVBXWmlrRXhFUkVVVkd1Vy9GUmQ1SEFsaVpFUmNtNlpTRlNUb1JFUkhSSkVhNWU0eHlvVTU5QndBL3JCa2I3amRBV1ppa0V4RVJFWTJRV1FMRG1YVEt3aVNkaUlpSWFBWTFTMkNZcEZNV0p1bEVSRVJFczZoUkFzTWtuYkt3QlNNUkVSRlJvZ29iSVcxc2xMdUxjYVc2T0pOT1JFUkVsR2hTQ2N4SEFheWE4dTdibUtCVExpYnBSRVJFUkRYRUVwaURBT3dJNEVlVFBvR2xMcFNOU1RvUkVSRlJCcVBjRlVhNUZ3RjREWURGQUs1bFBJbUlpSWlJT3NKNlBkOTYvUnorUFNnTGdQOEhKTUZRdnRLeTA5UUFBQUFBU1VWT1JLNUNZSUk9Ii8+DQo8L3N2Zz4NCg=="
+    table.insert(graphics,{
+      Type = "Svg",
+      Image = Logo,
+      Position = {40,5},
+      Size = {300,64},
+      ZOrder = 1000
+    })
+    table.insert(graphics,{
+      Type = "Text",
+      Text = "QLX-D",
+      Position = {340, 5},
+      Color = gaColor.Green,
+      Size = {150,64},
+      FontSize = 40,
+      Font = "Open Sans",
+      FontStyle = "Extrabold",
+      HTextAlign = "Left"
+    })
+    table.insert(graphics,{
+      Type = "Text",
+      Text = "©",
+      Position = {475, 20},
+      Color = gaColor.Green,
+      Size = {20,20},
+      FontSize = 16,
+      Font = "Open Sans",
+      FontStyle = "Extrabold",
+      HTextAlign = "Left"
+    })
+    table.insert(graphics,{
+      Type = "Header",
+      Text = "Information",
+      Position = {15,70},
+      Size = {530,11},
+      Color = gaColor.Green,
+      FontSize = 16,
+      Font = "Roboto",
+      FontStyle = "Bold",
+      HTextAlign = "Center",
+    })
+    local gaLabels = {
+      Pos = {X={20,20,20,20,20,20,20,20,20,20,20,20,20,400,380},Y={90,110,130,150,170,190,210,230,250,270,290,310,330,354,330}},
+      Text = {"Unit Firmware Version:","Unit Mac Address:","Channel Name:","Audio Gain:","Group, Channel:","Device ID:","Frequency:","Transmitter Type:",
+              "RF Power:","Transmitter Power Lock:","Transmitter Menu Lock:","Transmitter Mute:","Encryption:","Version "..PluginInfo.Version, "Encryption Toggle"}
+    }
+  
+    local gaMeterLabels = {
+      Pos = {X={380,470,380,470},Y={90,90,260,260}},
+      Text = {"Audio Level","RF Level", "Antenna A", "Antenna B"} 
+    }
+  
+    local gaLayouts = {
+      Pos = {X={175,175,175,175,175,175,175,175,175,175,175,175,175},Y={90,110,130,150,170,190,210,230,250,270,290,310,330}},
+      Text = {"UnitFirmware","UnitMacAddress","ChannelName","AudioGain","Group-Channel","DeviceID","Frequency","TransmitterType","RFPower","TransmitterPowerLock",
+              "TransmitterMenuLock","TransmitterMute","Encryption","AudioLevel","RFLevel"},
+      PrettyName = {gsCat1.."Firmware Version",gsCat1.."Mac Address",gsCat1.."Channel Name",gsCat1.."Audio Gain",gsCat1.."Group, Channel",gsCat1.."Device ID",gsCat1.."Frequency",
+                    gsCat1.."Transmitter Type",gsCat1.."RF Power",gsCat1.."Transmitter Power Lock",gsCat1.."Transmitter Menu Lock",gsCat1.."Transmitter Mute",gsCat1.."Encyption"}, 
+      FB = {true,true,false,false,false,true,true,true,true,true,true,true,true,},
+      FillColor = {gaColor.LtGray,gaColor.LtGray,gaColor.White,gaColor.White,gaColor.White,gaColor.LtGray,gaColor.LtGray,gaColor.LtGray,gaColor.LtGray,gaColor.LtGray,gaColor.LtGray,gaColor.LtGray,gaColor.LtGray}
+    }
+  
+    --Basic Labels
+    for i=1,#gaLabels.Pos.X do
+      table.insert(graphics,{
+        Type = "Text",
+        Text = gaLabels.Text[i],
+        Position = { gaLabels.Pos.X[i], gaLabels.Pos.Y[i]},
+        Color = gaColor.White,
+        Size = {150,16},
+        FontSize = 12,
+        HTextAlign = "Right"
+      })
+    end
+  
+    --Meter Labels
+    for i=1,#gaMeterLabels.Pos.X do
+      table.insert(graphics,{
+        Type = "Text",
+        Text = gaMeterLabels.Text[i],
+        Position = { gaMeterLabels.Pos.X[i], gaMeterLabels.Pos.Y[i]},
+        Color = gaColor.White,
+        Size = {70,16},
+        FontSize = 12,
+        HTextAlign = "Center"
+      })
+    end
+  
+    --Named Components Layouts
+    for i=1,#gaLayouts.Pos.X do
+      layout[gaLayouts.Text[i]] = {
+        PrettyName = gaLayouts.PrettyName[i],
+        Style = "Indicator",
+        Position = { gaLayouts.Pos.X[i], gaLayouts.Pos.Y[i]},
+        Size = {180,16},
+        Color = gaLayouts.FillColor[i],
+        FontSize = 14,
+        HTextAlign = "Center",
+        IsReadOnly = gaLayouts.FB[i]
+      }
+    end
+    layout["AudioLevel"] = {
+      PrettyName = gsCat1.."Audio Level",
+      Style = "Meter",
+      MeterStyle = "Level",
+      ShowTextBox = true,
+      Position = {400,110},
+      Size = {36,128},
+      Color = gaColor.Green,
+    }
+    layout["RFLevel"] = {
+      PrettyName = gsCat1.."RF Level",
+      Style = "Meter",
+      MeterStyle = "Level",
+      ShowTextBox = true,
+      Position = {490,110},
+      Size = {36,128},
+      Color = {223,0,36},
+    }
+    layout["AntennaA"] = {
+      PrettyName = gsCat1.."Antenna A Status",
+      Style = "Led",
+      Position = {410,280},
+      Size = {16,16},
+      Color = {255,0,0},
+      UnlinkOffColor = false,
+      Margin = 3,
+      IsReadOnly = true,
+    }
+    layout["AntennaB"] = {
+      PrettyName = gsCat1.."Antenna B Status",
+      Style = "Led",
+      Position = {500,280},
+      Size = {16,16},
+      Color = {255,0,0},
+      UnlinkOffColor = false,
+      Margin = 3,
+      IsReadOnly = true,
+    }
+    layout["EncryptionModeToggle"] = {
+      PrettyName = gsCat1.."Encryption Mode Toggle",
+      Style = "Button",
+      ButtonStyle = "Trigger",
+      ButtonVisualStyle = "Flat",
+      CornerRadius = 2,
+      Margin = 1,
+      Position = {380,330},
+      Size = {36,16},
+      Color = gaColor.Green,
+      UnlinkOffColor = false,
+      OffColor = gaColor.Green
+    }
+  elseif CurrentPage == "Battery" then
+      table.insert(graphics,{
+        Type = "GroupBox",
+        Fill = gaColor.Black,
+        CornerRadius = 5,
+        StrokeWidth = 1,
+        Position = {5,5},
+        Size = {550,370}
+      })
+      Logo = "PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB3aWR0aD0iOTg1IiBoZWlnaHQ9IjM2MCIgdmlld0JveD0iMCAwIDk4NSAzNjAiPg0KICA8aW1hZ2UgeD0iMTIwIiB5PSIxMjAiIHdpZHRoPSI3NDUiIGhlaWdodD0iMTM4IiB4bGluazpocmVmPSJkYXRhOmltZy9wbmc7YmFzZTY0LGlWQk9SdzBLR2dvQUFBQU5TVWhFVWdBQUF1a0FBQUNLQ0FZQUFBQVhPOVRXQUFBZ0FFbEVRVlI0bk8zZGU3eGRSWFVIOE4rWThFcEU1U0dTQUgyb1ZFSEU2bGkxK0tqYUtsaDB4QWNpbGtwRkJLejZVYkVxYUVGUVFXeHJVYkFxaW9nRzhZRVBIRkVVNUNWU1JCaDhVQVZFUVNBUUlEd01BUUpKeVBRellTN2VYTTY5ZDgrZU9mdTFmdC9QNS95WGN6SjczWDMyV1h2Mm1qVUtIV085WGgvQTArUHJLUUFlRDJBYkFJOEJNSzlyNDZWMWZNRW90MCtka0ZpdlR3YXdwNEJ3SG02VU95ejNRNnpYZXdGWVZHWkluWGF0VWU0dk11SzBCNEN2Q29nVENzVHFTQUFIbHgxU3ArMXJsUHQ4M1FGYXJ5OEY4RlFab2VxOTFRQ1dBYmdkd0c4QS9CTEF4UURPTXNxdDZPckJXYTh0Z0pkMVlDalVqcVZ6dXhCNDYvWG1BRjRGNE9VQW5nOWdvdzRNaTlMOUlTTm10Wk9MbnJtdTBIQ2x4Q3ZubkFyK3ZOQTQraUEzVmxMT3FRblhacjVmV3J6NkxPUTZtOFhYdGpIWENGWllyOCtJRXg3Zk1jcXQ3dGd4L2xrSHhrRHQrVU5yU2JyMU9zeml2eERBVytLZFlpZHVHQ2dMay9UWjVTWlNFM2hUVTQya1JDcjMzSktXRU5TT2wvWDY0UUEyS1RzY2FzRkdNV0VQcjJ1dDE4Y0MrQitqM0wwZCtXUHdSbEMyUHp5c2pjTzNYdThHSUR3cS9CR0FWekJCSDR4YU0xT3h4R21Ca0JpVlN0S2x6QkJ6ZHJnNjN0QlU1elBqeGVScGVNSTE5YjhBWEc2OTNyM3RvN05lUHdyQUl3Y1laNnJ1MmthVFkrdDFxRFAvQklDZCtFY2FwTHFQajZYTTRLMEJjSDJoejJLU1hvMmsyZUdjbWVGd283eXc3SEE2N1NhajNNcU1BVEpKSDY3d3QvMjY5Zm8wQVBzWTVaYTJkS1NTU3ZWb3RHc2JtVW0zWHMrelhoOEQ0Q0ltNklOMVA0REZOUTlPeWcvZUVxUGNxdHdQaWFWaVVpN2dyQnV1THVlR0ppek83MXdqZ1RIaVdnZWF6VXNCL01wNi9jS1dJc1Z6ak1aZjdtSzkxbkVsOWRzQXRGSmVRNDFZbkxIb2h2WG9hVUpwMFBwTkRicGx0WlAwdUNCOS9sQUNVVUhPRFkyMGhJQkpPbFd4SllBZldLLy9wWVZvOFdrTmpUZEp0MTZIZG53WHhEYUtOR3c1OVoxU1NoSktKZWxTNHNXNjRlcDhaaWtWTzd1a1lRSWx4M3FodmJEMStxQ0dqNWpuR0YwM2xpUTlQSTYzWG9jRkdLRUg3UWJpd3l3RE83dk1MamN4bUNBbFhqZG0xZzFMcWtmUGpSV1Q5RFJNb09UNWlQWDZ3QWFQbXUwWFpidkRLSGRuOFNUZGVqMEh3QmNCdkV0NmhJVmhrajQ3SnVscDJLMmtPaTZ3VGNONFVSMGZhN0QwaFRlQ3NxMjlSaFZOMG1PQy9pVUEveXc5dWdLeEhuWjI3SkdlaHUwWHErTU5UWnFjVGpnYnhoMndTYWJqck5mUGFPREltYVRMVmo1SkIvQXBBSytUSGxtaDZ2WklEMjFBdHhJU010YWtwK0hpdnVwNFE1TW1aMUtCeVpOc1lkSCtONjNYbTQwckN0YnIrWEYzVkpKcjdjUkxzU1E5THFyWWp5ZVVXSFdUaEswQnpCRVN0Tnpaemdrc0Q2cUdTWG9GOFFubzFrME90bVZMalhJck1vYkFKSjNDOStXWU1VYUIzWU9vM0V5NjlYcFhBRWVLRDZsY09WMDRwUHpnM1Z4d3Eya202ZFd3SnIyYXJRVGRLSU5QYUtpUTE4WGQwOGVCTjRKVUprbTNYb2ROTUJZSjJ3aUQxclVrbzdNRTY5RVRXSzhmRFdDanBnYmRzcHpaWVdsYmFyTlZaWFY4UWtPbGZOeDZQWTRPZGt6U2FlMTFLaXRKanpzZm5naGdFL0hobEkyTFJtZFhxaDZkSlJ6VnNGdEpkVXpTMHpDQm9nbmhldnpXTVVTRDNZTW9QMGtIc0MrQXRyYk1wZTVnZ2pBN3RsOU1jMHRtZVpDa1JDcTNsSW8zTkdtWXBOTmtCMXV2NXhXT0NNOHgyWlliNVc1SFRwSWVIeWNmSVQyU3RCYVQ5Tm1WU3RLbHpLUnp0ck02SnAxcDJDT2RTdHBzREcybm1hVEw5dUExS21jbS9UQUFqNVllU1ZvcnB4Nlc3UVRUc0R5b0drbGxRZXlSbnFaMnZLelhvZjNld3BiR1RkMzE5c0lqWTVJdTI0UFhxRnBKdXZWNlhIVlkxRSsxRWlycjljT1lwQ2ZqUmtiVnNIYS9PbWtMSVhQWE9yQkpBazIxbmZWYWw0aEtYSWpLemJKa3k1NUovemRoTGJ0b1puVi85TUtNMUhwQ1lzc2U2V2s0TzF4ZFRoY2NKYXg4NHc2ajNKMFo3MmRuRjVyTzdvVWl3M09NNmlmcDF1dk5BYnhSZkFocHNycEpncFNMMFcxR3Vic0tmUmFmUEZRaktVblBxZDlmRUhkUWxJTHRGMmxjWGxib2MxbnFRZzllcCtyTXBPOG5xRTh6elc1cFJtY0oxbGNuRU5iN08yZDJlSjZ3TGJXNXhYMTFYSkJNNDdLOTlYclRBcC9ORzBIS1N0SkxyMkttZm1Obmw5bXgvV0k2SnA3VjVYd0hXWStlaGtrNnplUnZDMFNIU1RyVkszZXhYajhOd0JQRmg0OG1ZNUkrTzdaZlRCUHFocGRudkY5U0lwVmJTc1VrUFEzYkw5Sk10aXNRSGQ0SXlyYkNLSGZMUkFSU1o5SmZLejE2OUJBNUNTanJxOU93UEtnYXRsK3NqdTBYMHpDQm9wazh0a0IwZUk3SnRrNU9sWnFrYzNkUm1vcGxDYk5qKzhVMFhOeFhIY3MzMHVTc2RaZ0xZT3VXeGszOXNLREFLUG0wUnJaMWZ2L21WZzFGWEJEeHRKNkdiazA0QkFESEFQaDVCOFl6SlBka0hBdVR6alNNVnpWc3YxZ2R5MTJxdXgvQTVrMFBlTUErQ09CdEF6dThyS1lhMXV2UWtuaXJjc1Bwdk5DSTVCUkJ4MXZGeXNuL3BuS1NEdUM1UGQ3RUlUd3gyQzIrTG96SitqZU5jcXM2TURhUnJOZGJBdGhBeUxHWFN0SlpIbFFORjloV0p5bEp2OHNvZDN2ZE54dmxQSUEvbGgyU1hOYnJMUVo0OEJ0bXZuK2J6SjNnKytaeW94eS9Vek5JT1JtZTB2am94aU9zdnY1S1NBU3MxNGRZcjdtelZ6dWtKSnpMQ2w2RVdCNVVqYVRFczNhU0hwTWtTZTEwUzkwc1V4bER2SjZ0eUh3L3k4OW9IU2xKK2w4TkxIUUw0K08yNjYzWGk2elh6K2pBbUNSaHdwbkFldjF3UWIyL2F5L3VpMXRxYjFsMk9KM0c3a3JWTVNIb2xpR2VmM2Rrdmw5U1BmcHFBRXM2TUk1T1MwblNTN1FXNnFKUUE3WVhnSXVzMXorMVh1OWx2WmEwQTE5YnVMMTlHaTZHcklZMTF0VkpXNkRHbWZTT3NGNkhzcEFoUHNXK05mUDlrbTZjcnpmSzNkK0JjWFJhU3BJdTRjZnZtUUFXeGRuMXc2M1hKVlpxMDJpY1NVOGpKZmxjbmxNM0xPeEhibmxtS1JWM0c2VzJEUFhjNDNxYTZ2aGtxNEtVSlAzaHJZMnllYUZXODlCd1ViZGVuMnk5M2tuUXNUZUZpeURUc0xOTE5aSm1oNWtRcEdGUzBCMUQvWjVlbmZsK1BqR2xkVlJLMG1OYklDbWRPQ1lMeDcwbmdBdXMxODU2dlhlc2VhVjhURHJUTUY3VmNDYXFPcFlHVVZ1RytqMzlaZWI3dVJFYnJhUHFUUHA4aG0xdGovZ1RZeW5NRWRacmJtcVJoMGxuR2o1NXFJWkplblhTa25RbUJkMHh4TzlwNk9SMVRkMDNXNi9ueEJhTVV2Q211UUpKL1RoTGVUU0E5OFVXamwrM1hqOTNHSWZWSE92MVpvSnUvRmp1a29hSlozWGM0cjY2KzR4eU4vVmxzQUlNOGR6N1NlYjd0MHJjdTZidm1LUlhVUFdFeU5sVmNxakNYZS91NFdXOURvKzRqZ1Z3c2xFdXQwK3FCRklTcWJ1TmNybXIvU2V3RzA0MXJPbXNJTzRndlhHVGcyMFpFNEp1R2VMMzlOek05N1BiRWoxRXBabDBvOXhLSnVvekNoczlIUTlnc2ZYNktPdTF0QzliS2lhY0NRYmNybXlVbk1SVDJwYmFiTDlZSFpQMGJobGlrdjY5elBkTGVySzFKdVJMSFJoSDU2V1V1OXdvTkVZcHd1elVlOE1LYit2MXQ2M1hMK2pQMEJ2RjBvMDA3RmhTamJRdHRYTm1vcVIxZG1FOWVrZkVmVWdXRHV5d3JqVEtYWjc1R1pLK2t6Y1k1VloxWUJ5ZGwvS0Q5bnVoTWFvamxNTHNCdUJzNi9WbDF1djlyTmZ6K25jWVk4TkZrR21rWEx6dk5jcmRrdkYrU1Rjeks0eHlTelBlei9hTDFKYndQVlVEaS83SkJUNkRwWHIwRUNtTEZLNEFzRE5EbUd3SEFNY0IrS2oxK2dRQW44eFpBVDRRVWhLRTlhelh6eS93T2Y5UTREUDZnTzBYcStNQzJ6Ulo4YkplUHd2QWhpMk1lNGorZW1ESDVHUG50MXlTdnBPckMvMDJEc2xkUnJsTHBoNVBTcEwrTStrUnpQUW9BQWNDZUtmMStydHhvZWxaUmpuZjY2T3FSMG95dFc5OFVUVnN2MWdkay9RMHVUZUFad1BZcU9sQlV5K2NacFFyVVU0bDZmcjFndmlpUHprZndQT214aU9sM09VQ0JyT0k4SmpQQURnVHdQOVpydzhRV0FvakxVR2dhcGg0VnNmMmkybHFKK25XNnkyWW9OTU0vak0zT05acnhkOUY4VWIrL2xWTzBvMXk0U0ozcGZRb0ZyWTlnRS9IcmpEL0lhRXJqUFg2RWZHcEF0RlV1Yk9kck9tc1RsS1N2aXF6OFFHVEo1ck9lVWE1OHd0RUozVHZXcDlSRmkwdlNZK3M5Q2lPeVNZQTNoMjd3bnhqNEJza1NadkJvK3BZazE1ZFRxdktqZU0xUjRycmpISnJNbzZWU1RwTjUrQkNrZUh2SW8xOE9wcWFwSjhrUG96akZickN2QXJBajYzWGwxcXY5NDd0cW9hRUZ5T2FUazdpeVMyMXE1T1dkTEkwaU1iaGEwYTVDd3Q5THM4eHlwOUpOOHI5Q3NERjRrUFpqS2ZHRmVQWFc2OFB0MTRQWlRNYnprclJkSElTendYQ3R0VE9TVHpaZmpFTkV5aWFham1BZHhXTUNzOHhLbEx1RWh3dFBwVE5Db3VXRG8zSitpTHJ0ZTc1OFRCSnAxRkMzZkJOR1pHUjlDTVhkb0Jla3ZGK0p1bHB1SU0wVGZVdW85d05CYVBDYzR5S2xMc0VwM0JqbzFhRUxjLzNBbkNKOWZvQzYvVnJyTmQ5bkRua2pBR05rbHMzTE9tOHVqYXpkYXUwaElCckhhaWswSEx4YzRVL2srZVliRXVNY2l0SFJTQTVTVGZLclFad2tQU0l0bXluVUE4SDRCcnI5VUhXNjgxNk5IWmVqR2dVdGwrc2prbG5Hc2FMU2dubjB0NWppQ2JQTWRtbS9mMnJNNU1lZkJQQU9kS2oyZ0ZiQS9oSUxJVTV6bnI5eEI2TW1ZLzFhQlMyWDZ5T1NXZWFuQVhKb1F2T3hpMk5tN3BsUldqc1lKUzdmUXlqWWhtb2JHV1Q5UGlvZGY5NDBsTDd3a1liK3dHNDNIcDl1dlg2UlhGemhFNkptelk5bXVjTGpjREVzem8rZGFndWxGQXR6bmcva3lkQ1BJOWVhNVJ6cGFOaHZkNGNnTFFORFdsZDB6WUNxRHVUSGhMMXF3QzhnNEh1bkYwQW5BSGdWOWJyZmF6WEczWm9nSHlrUjlOaEI0N3FjbWFHTjR5TDBhVzRJWlpvMXNWckZnWDdHK1hHdFU4TXp6RXFYdTZ5bGxIdXN3QVdpUTl2TiswQTRQUGhEczE2L1lGNHQ5NDJ6a3JSZERnN1hCM2JMMWJIbXovSzlhOUd1ZVBIR0VXZVl6U2VKRDNhTjJ5K0l6N0UzUlhLU3c2TGRldWZzbDQvcnNXUk1rbW42ZFJPUEszWFd3cmJVanNuOFdTU25vWnJhT1FLVDJCZWI1VDc5Smdqd0hPTXhwZWt4N1l4QmtEeFdpMHFLanptZmpPQXE2elhwMWl2bjlGQ2VEbGpRS1BjbjFrM0xPbThDb2xEVG45bTdqYWFodGNzbVpZQjJOVW8xMFNsQU04eEtsK1RQcGxSTHB6UWZ3L2daK0pEM1gxaFFlbXJBVnhrdmY2QjlmcFpEWTZZRnlNYVpUSHJoaXU3M2loM2Y4YjdwU1hwTEhlaFZGY0NlSlpSN295R0lzZHpUTGFsUnJsN3BvdEFrU1FkZjByVVh3amdPOUlqM2lNN0E3alFldjB0Ni9Wakd4ZzJ5MTFvRkxaZnJJNHp3Mm00MW9GU25BaEFHK1d1YURCcVBNZGttL0VhVlN4Snh3T0ordDBBWGduZ3d3Qnlkc1NqWnIwaXRtOE1DMHpYRytQL3pJc1JqY0lrdlRyT0RLZXBmVzVacng4T1lOT1d4azNOdWpIOERocmwzaER6bUNieGQxRzJHYTlSUlpOMFBKQ29yekhLSFFMZ0grS0pULzJ3Zmx4Z2VvbjEra21sUjJ5OTNnREFBcDRMTkFJVHorcTRFRElOTytIUVRFSkNmaVNBSnhqbFRtMDZVdGJyUndGNEpQOUNvaldicEU4d3lwME5ZSHNBbithc2VxL3NHTllXV0svM0tqeG96aGJRZEppa1Y1Y3pNeHh1eEJlMk1PYTJMREhLM1pmeGZ6TkpINjU3QVh3Q3dPT01jdTgzeXQzVjBwSHlIS1BteWwybUNuWHFScmwvQmZCTUFHZUwvMVAwUjlqOWJGRW9meWs0WXJhWm91bmsxbGxMT3JkeVNvUCtMQzRjbCtLYXpPUGt4TUx3M0FiZ0NBQi9hWlI3aDFIdTVwYVBrTCtMMUY2U1BzRW9kN0ZSTG5SL2VUR0Ewem16M2h1SFdhK1BLalJZemhqUWRISjIwSndQWUw2Z3lPWThkWkNXZFA0NjgvMU0wb2ZqVWdEN0FkakdLUGZ2UnJtYk9uSmsvRjJrR1NlcDVqWVpIcVBjbVFET3RGNy9aZGhtRjhBK2NiTWQ2cTczV3Evdk5Nb2RtVGxDWG94b0ZKODVrNzZsb0tpdUNTMFlNOTR2TGVtOExQUDl2R2IxMngwQXZnYmdlS05jVi9keDRUbEc3YytrVDJXVXU4WW9kMUM0cXdYd1R3QitJdjdQMUcxSFdLOU41Z2g1TWFKUmxzUU4wZXJhUWxCVVE2eFdaYnhmMm5md0Y1bnY1eldyZjhKQzBLL0VEUllmWTVSN2M0Y1RkUEJwalhoM0dPWHVuQ2tJamM2a1R4VVg5WndjWHRickp3TTRBTUEvQTlpNHpYSFJTQ2VFdjVGUmJrbk44TEQyamtiSmJiKzR1YUNvY29GdGRmY1gyQVdiMTZ4K0NFbk85K01lTGQ4eHlxM28wZGlacE1zMjYxUGtWbWJTUnpIS1hXYVVld3VBcmVMMjliL3N5dGhvcmMwQWZDd2pGSnlWb2xGeUU4OTVncUxLalhtcSs4Vk11L2pOeG5xOVlaaUo3ZFloMFRUQ1Jvcm5BZmhXenhKMDhIZFJ2Rm12NloxSjBpY1k1WlliNVQ1amxQdHJBTThHY0JLQW5EWmFWTTZlMXV1bnAzNWEzQ0JwSy80ZGFBUW02ZFZ4MDZmcXpzOThQNU9uL3RnbXRucituZlg2amRiclZpc0Vxb3FiWlczV256RFRHUFF2U1ovTUtQZS9ScmxRL3JJMWdQY0F1TG83b3hQcmZUVU9mT3V1bjJ2VW10ejJpNUkyQXNucGtUNDNmZytsT0N2ek9KbWs5MDlJMW84SGNJWDErbDk2a0t5em5JcG12YWIzSW5FeXl0MXFsUHRQQU5zQzJDWFducTNwd05Ba010YnIxSTRhckx1ajZlVE9wRXVTRTZ1UW9NOFJFcXZWQU03Ti9Bd21VUDMxT0FCZkFQQWI2L1ZycmRkZHpYTjRJMGl6SnVtOWVDdzB3U2dYRXZNZmhwZjFPdHcxdnltK0pMVmhhMXY0b2Q4ajd0WldGUzlHTkIwbTZkWGx4RXBTMG5sZWdSMGtlYzNxdjIxanA1ZERyZGNmRE8wWWpYSmQycU5GMGprV2RuZzlyZ1BqNkpwTFp4dFByNUwweVl4eTE4Y3YzNGNBN0JZWG03NmdPeU1jdEg5a2trNkZNRW12THFjMFNOSjMwQmI0REY2emhtTzdtS3lIUFQ4T2p4MWd1cENzUzNyQ2ZIWFk0YlVENCtpZDN0Y0poNzdCUnJsVGpISXZqRi9Ha0R6K3NRTkRHN0tkRWg4aDh0RXhqYkxVS0hkdlptU2s3RjU4YzJhc0pDV2RweGI0REpib0RVOW9Sdkh0TUh0cHZkNjFBMGNuNlJ6TFhmUXUxcUFXOHhubHJvaDNhNkdUeUJzTDlNbWwwY0txOUNjbXhJYXpValJLaVZuMFpVSWl5L2FMMWZ6VUtKZTdHQmxNMGdjdEpPdW5XYTkvYXIzZXBjVURsZlM3eUNlbU5RMnk0MGJvajJ1VU84RW9GOW9GL2sxY1JOSzMvcWxkdDIzQytKaWsweWdsTHR5NXRjZDl3U1M5bWkvbmZvRDFlbjBBQ3hzYUw3WG5tUUJPdDE1ZllMMStmZ3VqWUpKT3N4cDhXenlqM0NWR3VYM2lSZmVkQUs3c3dMQ0dvRklKU3l5TDJVWjZzR2lrRW85QTd4WVMydHpaWVFrSndhcXdPTERBNTRScm15cndPZFFQT3dFNHgzcDlibFBKdXNETnNsanVVcE9ZM3RWR3VUOGE1VDRlNjliL0hzQTNZcXN1cW1lTGl1OWEyT2NGeW9tV0ZYcEpxYk11Y2VHK3VjQm45RUh0bWFoNG95eGhYY2lwUnJtbEJUNkhhMmhrK3J1WXJQL0FldjJzTVVkQTJqbkdKTDBtS2NuVGcrS3E3clBEeTNxOUFNQytBUFlUdHRGSENSdFgvQXdwai9SdU04cHRYdUtEck5kM0pzUzN6MG84QXIxUlFKeVFHYXZRb25hOWdtUHBxdU1Mall2bGViTHRIRjdXNjlEdStmMUd1WEdzYlpOMmpySGNwU2JSdTBBYTVaWVk1VDRVdnpDdkFIQ0dvRm5NcGtpNUdKVllyQllTOUUyRkpPZ29kT0ZlS21SanM1eFlTZmdPL2hiQWp3cDlGcE4wUWt6V0w3RmVuMnE5Zm1yaGlFZzZ4KzR6eXQzVWdYSDBFcmRxZnlCWnY5OG9GeDZWN2h3WFJQNVhtQm50d05DNnJPcFRHQ21QOVVyTkZFaDZESnA5WXhPK3U2VnVrRHFPUGRKbjl2RzQyVjBKUTFwa0d6YVF1YWNENCtpemw4ZTJqZCt3WG05ZjZEZ2tkUS9pTEhvR0p1bFRHT1YrYjVSN2QyemorSG9BRjNacWdOMnh2T0pJcE13WWxMb1FTWW5YSFVhNU93dDkxdEFYZzkrV3VZUG0wQk9DTUtIeXhZS2ZONlI0dlRlMnkvMUdCOGJTZDY4QzhIL1c2NjhXU05iWkk1MHFFVmVUWHBWUjdqNEFpOExMZWgzNnFoNEE0SjlpajNCaWtqNFZrL1EwSldkWHJvcVBwb2ZxMW5nTnFxdjBvL3F1T1NhMDNTMDRwcUY4QjVjWjVTWVdzKzl1dlg0UmdHTUJQS0VEWSt1cjBQVm5Ed0N2dGw2ZkJPRERScm5mMVRnV1NlVXVUTkl6TUVtdndDajNpNUNrVzYvZkEyQXZBRzhHc0VQbkJ6NWVUTkxYVmFya1Fzb01TOGtTbFY4Vi9Ld3VDa25WendkK2pIV0ZCUFNZVWg5bXZaNDdvQ1lDNjl3SUcrWE90Rjd2Q09CQUFJY0FtTmZlMEhwdkRvQzlRejRRay9VUEdPVlNrbEgyU0tkS1dPNlNJRHllTjhwOXlpajNaQURQQS9BVkFDdDdjd0JsVlUyeVdKT2VSa3FTWHZMQ3paMkY1VG82dE5jdGVQUUxZd0kyQkEvNWpobmxWaHJsam1JSlRERVR5ZnBWMXV2UFdLOW4vYjJ6WG9kT1N3djZjNGpabUtSbllKSmVrMUh1ZktQYzYrSkdQUWNEdUthWEIxTGZySS80ck5laDlkc0dIVDZHa2xqdWtxYmtoZnN5d1RmTGt0MEM0R09GajM5STM3OXBKMUtNY3RjYjVYWUg4R0p1OEZkRVNMejNENytMMXV0alkzdm42V3dqTFBkaXVVc0dKdW1aakhLM3hKbUp4d1BZRmNCcEFsckMrU3BKdXFDRTg4NkNzM2xTWWxic3dtMlVDenROWGx6cTg2ZzNQcGk1b0hhVUlYMy9acjBSRGlVd0FIYU1FMDNzQXBNdkpPdHZCWEMxOWZyajB5VHIwbHA4TWtuUHNFNU5lbndNOC82K0hVVEhoRWZ2dHdKNHpZQnIvcTZPQzJ0bnc0UXpnZlU2TEVyZXBLbEJ0NnowaFR2MHlINTI3NkpBZGYwbXRoY3NUVlNTamxnQ0ErQW82L1dYUS9sUTdHSkNlY0syLzI4SDhLWXdzeDdhT2h2bGJvMmZLS216UzdDZjlWckNYaFlwamd2NzlGVDU5MU1Yam9iSE1COW9kZWpVQjFYYlVySWVQUTBYRTlWM0xxOWRvcnpOS0xkNkRBYzhwR3RXMG8xd0tJR0pYVXQyaVYxZ0hqKytvWWt4TDdiQmZLdjErcFBoWmtoZ2tuNUlCOGJRTlordE9wNnA1UzZTTmxLaCtuNWM4WjJzcjA0akpWN0xqWEszRi83TUN3Q1VYRUJJM2ZWVm85elpZeHJka0w2RHRaNVdHZVYrRUx1WC9UdUFGZVdISmRMOG1Lei9JYlp5SnJuQ2s2dEtzK2dZa2FSek8yU3E0dnlLLzQ3dEY5T3cvV0pOc1M3OXRLWU9nRm9UYnU3ZU9jYi9mQ2pYckxzbmxWY2tDK1dNUnJrakFHd0g0TnZ0SGNiZ1BKSlBLTVFMaTdaOTFTQXdTYWRVMXhubHJxajRIcllUVE1ONDVmbFdVd2RBclRuUUtIZlRPUDV6NjdVYTBOUGtJdCt4MFB2YktQZEtBQytwMkN5QWlHYVc5TjJjbXFSTHE1V2lkRjlKZUFlVHpqUXNEOHJ6L1RqVFNzTjBtbEd1NVBiL1V5MkkzVG1Hb09qQ2JKYkFFQlhESkozRzZwUXFIMjY5M2p6VzRVbkFKRDNOV0ZweXhZNURYeDdqdUtrOW9TZjZQbVArMzhYWG84K0VKVEJFUlNSOU4xbnVRaWwrYjVTcnVydWpsSE5wUlU3dDV4UlNGbTZQczIvdTU4YjQyZFNldlkxeVM4Zjh2NHRydjFnSFMyQ0lzdFJMMHEzWGMySUxScUxwcFBRbFp2dkZCTmJyMEZmM01VME51bVhqVENEQzdxTm45U1VRVk1sSFlybkZ1QTNwbWpYMnJkaFpBa05VUysxeWx3VWorcVlUVFFpNzBaMlFFQTNXVjZkaGovUnlTbThWVCswNXE4RSt5MFA2RGhidm9EUUtTMkNJa3RWTzBsbnFRak01M2loM1cwS0VXRitkUmtxOHdvLzZMV1ArUDhJTTM4L0gvSC9RK0lVZnM5Y2E1ZTV2S05Zc2Q2bUpKVEJFbFlScjJZMHBvV0tTVGxYY0MrQ2ppWkZpa3A2RzVVR0Z4QjYwNzJ2cWdHZ3M3Z1R3MG9MclBhb1l5alhydm5HMXFad05TMkNJWnJRNGRhZmt5VWs2Tzd2UWRJNDF5aVhkL1RIcFRNYnlvSUppc25CZVV3ZEZSWVdOcWZZd3l2MjY0YkN5UjNvQlUwcGd2dHZtV0lnNkp2bTd5U1NkWmhOS0U0Nm9FU1VtbldrWXIvTGVIaDh2VXIrOHNhR0ZvZyt5WG04QllLT0JuQ2VOMUtQUEpwYkFtUEJFQk1EVlhSZ1RVY3VTbjd5ejNJVm04MjZqM0xLVUtGbXZIeFczUDVhZ1ZMbUxsSnZreGhJSW85d3ZBUnpUMVA5SFJZUWRSUmUxRUVyV280K0pVZTU3QUo0RTRBT3hkSkpJS2licFZOVDNqWEpmcXZHQlVoTE9sUUJLMVg1eWQ5YnhPQlRBTlEzL24xVFB3VWE1bzF1SzNaQytmNTFLMHZGQW9uNnZVZTZEQUxabkNRd0psbFh1SXFXR21Lb0puVnplVkROV1VoTE9hK01peFN6VzYvVUJMR3ozVUJyVGROZUp1OEpHT0FEV3RIdllOSXVRb0IvVllwQ0dkTTBhNTJaaFdZeHkxN0FFaGdTcmw2UmJyN2NFc0FIUEhKcGs3eHFMUlNld3ZqcE51RUZXVFEyNlpZMG5FRWE1OHdFYzJiVkEwSVBlMVhLQ2pvRmRzenFicEU5Z0NRd0psVnp1T1RHVHpsSVhtdXp3ZUJHdGkrMFgwMGg1aWhXNmRpeHA2ZjgrRE1DWkxmM2ZORnA0dXZFR285eC9keUErckVsdkdFdGdTQmpQSkoxS09Ea2s2Wm1mSXlYcDVFWkdhYTR6eXJWU2RoSTN4Tm1UajlnN0k1UWh2Y3dvZDJKSEJqU1VhOWFxMU0xUzJzWVNHQkxpUnFQY3l0UkRuVWpTV1k5T2lGdHd2NkZBblRYTFhkSXdYZzJJTytidUFxREpEWExvb2NKczBuT01jdC92VUd5RzhoMWMzTmFOY0M2V3dOREExWnJVNDB3NlRUZ25YQ2ZyM09tTndLUXpEZHN2TnNRb2R4V0FYZU9PbHRTOG53QjRabXlQMlFuVzYwMEJiRHlRYzZFWHBTN1RZUWtNRFJpVGRLcnR0TGdGOXoyNUliUmV6d2V3bVpBL1JhbWtrKzBYRzJTVSt4bUFGek5SYjF5b1BYOUJXMXZXejREMTZCM0RFaGdhb0ZyZnpZa2tuYnVOeW5VY2dGZVVTTkFqS2VmU2FnQTNGUG9zUG5sb21GSHVvcGlvSjIzVVJiWGNIcTh4b1l2TDZnNkdjRWpsbnAzdjdKSmlTZ25NZmYwWk9kRkRNRW1uSktHczVTMUd1UU1LLzNCS1NUaXZqNHNSczFpdjV3TFl1dDFEYVV5bkVvaVlxRDg3L0MwN01KeWgraUdBSnh2bFR1M3c4Ykg5WW9kTktvRUp5WHFYMWpFUXBhajE1UDFoMXV2TkFjeG5xRVg1SFlDZGpIS2ZHc05Ccy8xaW1yQ0owWnltQnQyeXppVVFScmxmQS9oYkFEL3J3SENHWkRtQU53TjRTY1orQzAxaHVVc1BHT1YrYjVRTDYwbGVQdVRqcE1HcVBaUE9lblE1d3FyL1R3QjRpbEhPamVtbzJYNHhqWlR2WDNqcXNMZ0Q0M2dJbzF3b1czcGVMUDJpZkdIV2ZEdWozR2RLN01qYmdDRTlTUjU4OG1xVXMzRmg2WWRZQWtNOVV1dTdPWmZ0RjhYNFh3QnZOY3I5Zk13SHpQcnFORkxpdGJpajljaHJHZVhDai8wQjF1dHpBWVFuVEp0MFlGaDk4MXNBNyt4WWE4VXFocEtrcitucWpYQnBScmtWQUE2MVhuOFJ3REVBL25GWVIwZ0RjM01vMjZwelNKeEpINzVmQU5qTktQZnNCaEowTUVsUEp1VW11ZlgyaTFVWTViNGFhcWhqTFRWVkUvclBId2hnaHg0bTZCalFOZXVHTHQ4SWp3TkxZS2duYXYvK01Va2ZKaCszUUErekMwOHp5bjJud2FNVXMzdG1vYy9oVFUzSGhQSVhvMXpZOUdpUHZ1M2UyTEJsY1hmaXh4bmxqamJLcmVyYkFWaXZIekdncHlaaWsxU1d3RkRIMWY1dXptVm5sMEc1RWtDWUNmeVNVYTd4M3JMVzZ3MEFQR2JZSVg0UXkxM1M5QzZCTU1wOTNYcDlPb0IzeDVsaUxyQi9RSmc1LzJSNEdlWDZ2bnZya0o1a2laNUpaZ2tNZFJpVGRLSCtDT0JDQUQ4Q2NMcFI3dktXd3lEbFhGcFRzRzJmbEpqMXNqV2NVVzU1L09FUGRlb0hBZGdmd0lZZEdGb2Jyb29Mejc5UWNGK0Z0ZzNwSnJrWEpXWGpGa3Bnd3E3QzFtc1R6MWRXQzFEYmF2Lyt6ZVVKM0drK3pscUZ6VUJ1am5kajRYVlpmUDNXS0xlbVF3Y2c1Vnk2b2NTamZldTFZamVjZm9pN1pMN0RldjFoQUcrUDdRVWw3S3diYXB5L0hUdmZuTjJUYmkwcDJINXhvRUlKalBVNmxIMGVET0E5QURhUUhoTnFEWlAwZ2JtN2ovV2RBTTRSMGhVamV4T2pTYVNVQnkzdndCaXl4ZktPUTJLeXZudWNXWDlPenc5cmxOQU42c3NBVGpIS0xlM2U4SW81SHNCSkF6bVd1enN3aHFucm84a0FBQUlaU1VSQlZFN3BTQW5NMStOMWd1UzZxKzZSSzU0MFJFVDFXYThmQytBMUFQWUVzR05QUXhrbUJjNERjRnFZT1RmS3NYU0NCcWVsRXBpUEdPWGV4N09KNm1DU1RrUlVpUFU2L1BpL0pNN1loUTJTSHRIaDJJYmRWcytPcjNPTWNzczZNQ2Fpc2JKZWJ3VGcvWEZCK1BvTlJIdC9vOXhuK1ZlbE9waWtFeEdOZ2ZWNlRweFpmeTZBcHdONGF0aUpFOENjRnVJZFdrbGVDdUJpQUdHMzRZc0cwSm1GcURicjliWUFqZ1d3ODVpanVMTlI3Z3orcGFnT0p1bEVSQTJ4WG9mT01FOEE4SGdBSVVrSXBUSmJBOWdTd01LNHBxUE83TjVkTVJGZkhGK2grOUR2QUlTT1QxZHdscHhvTk92MUt3RWNQY1pGL0U4MHlsM0o4Rk1kVE5LSmlEb2tKdktQQkxCUm5IWGZlSnJScllpZG4rNlF0dE1rVVVuVzYzbXhCT2JmeGxBQ3MxSGRMZUdKbUtRVEVSR1JlR01vZ2JuWktMZWw5TGhTZlE5ajdJaUlpRWc2bzl4VlJybGRBTHlxME9aUTdGMVBXWmlrRXhFUkVVVkd1Vy9GUmQ1SEFsaVpFUmNtNlpTRlNUb1JFUkhSSkVhNWU0eHlvVTU5QndBL3JCa2I3amRBV1ppa0V4RVJFWTJRV1FMRG1YVEt3aVNkaUlpSWFBWTFTMkNZcEZNV0p1bEVSRVJFczZoUkFzTWtuYkt3QlNNUkVSRlJvZ29iSVcxc2xMdUxjYVc2T0pOT1JFUkVsR2hTQ2N4SEFheWE4dTdibUtCVExpYnBSRVJFUkRYRUVwaURBT3dJNEVlVFBvR2xMcFNOU1RvUkVSRlJCcVBjRlVhNUZ3RjREWURGQUs1bFBJbUlpSWlJT3NKNlBkOTYvUnorUFNnTGdQOEhKTUZRdnRLeTA5UUFBQUFBU1VWT1JLNUNZSUk9Ii8+DQo8L3N2Zz4NCg=="
+      table.insert(graphics,{
+        Type = "Svg",
+        Image = Logo,
+        Position = {40,5},
+        Size = {300,64},
+        ZOrder = 1000
+      })
+      table.insert(graphics,{
+        Type = "Text",
+        Text = "QLX-D",
+        Position = {340, 5},
+        Color = gaColor.Green,
+        Size = {150,64},
+        FontSize = 40,
+        Font = "Open Sans",
+        FontStyle = "Extrabold",
+        HTextAlign = "Left"
+      })
+      table.insert(graphics,{
+        Type = "Text",
+        Text = "©",
+        Position = {475, 20},
+        Color = gaColor.Green,
+        Size = {20,20},
+        FontSize = 16,
+        Font = "Open Sans",
+        FontStyle = "Extrabold",
+        HTextAlign = "Left"
+      })
+      table.insert(graphics,{
+        Type = "Header",
+        Text = "Battery Info",
+        Position = {15,70},
+        Size = {530,11},
+        Color = gaColor.Green,
+        FontSize = 16,
+        Font = "Roboto",
+        FontStyle = "Bold",
+        HTextAlign = "Center",
+      })
+      local gaLabels = {
+        Pos = {X={20,20,20,20,20,20,400},Y={110,130,150,170,190,210,354}},
+        Text = {"Battery Type:", "Battery Cycles:", "Battery Run Time:", "Battery Temperature:", "Battery Charge:", "Battery Health:","Version "..PluginInfo.Version}
+      }
+      local gaMeterLabels = {
+        Pos = {X={380},Y={90}},
+        Text = {"Battery Level"} 
+      }
+      local gaLayouts = {
+        Pos = {X={175,175,175,175,175,175},Y={110,130,150,170,190,210}},
+        Text = {"BatteryType","BatteryCycle","BatteryRunTime","BatteryTemp","BatteryCharge","BatteryHealth"},
+        PrettyName = {gsCat2.."Type",gsCat2.."Cycles",gsCat2.."Run Time",gsCat2.."Temperature",gsCat2.."Charge",gsCat2.."Health"}, 
+      }
+      --Basic Labels
+      for i=1,#gaLabels.Pos.X do
+        table.insert(graphics,{
+          Type = "Text",
+          Text = gaLabels.Text[i],
+          Position = { gaLabels.Pos.X[i], gaLabels.Pos.Y[i]},
+          Color = gaColor.White,
+          Size = {150,16},
+          FontSize = 12,
+          HTextAlign = "Right"
+        })
+      end
+      --Meter Labels
+      for i=1,#gaMeterLabels.Pos.X do
+        table.insert(graphics,{
+          Type = "Text",
+          Text = gaMeterLabels.Text[i],
+          Position = { gaMeterLabels.Pos.X[i], gaMeterLabels.Pos.Y[i]},
+          Color = gaColor.White,
+          Size = {100,16},
+          FontSize = 12,
+          HTextAlign = "Center"
+        })
+      end
+      --Named Components Layouts
+      for i=1,#gaLayouts.Pos.X do
+        layout[gaLayouts.Text[i]] = {
+          PrettyName = gaLayouts.PrettyName[i],
+          Style = "Indicator",
+          Position = { gaLayouts.Pos.X[i], gaLayouts.Pos.Y[i]},
+          Size = {180,16},
+          Color = gaColor.LtGray,
+          FontSize = 14,
+          HTextAlign = "Center",
+          IsReadOnly = true
+        }
+      end
+      layout["BatteryLevel"] = {
+        PrettyName = gsCat2.."Level",
+        Style = "Meter",
+        MeterStyle = "Segmented",
+        ShowTextBox = true,
+        Position = {412,110},
+        Size = {36,128},
+        Color = gaColor.Green,
+      }
+  elseif CurrentPage == "Setup" then
+    table.insert(graphics,{
+      Type = "GroupBox",
+      Fill = gaColor.Black,
+      CornerRadius = 5,
+      StrokeWidth = 1,
+      Position = {5,5},
+      Size = {550,370}
+    })
+    Logo = "PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB3aWR0aD0iOTg1IiBoZWlnaHQ9IjM2MCIgdmlld0JveD0iMCAwIDk4NSAzNjAiPg0KICA8aW1hZ2UgeD0iMTIwIiB5PSIxMjAiIHdpZHRoPSI3NDUiIGhlaWdodD0iMTM4IiB4bGluazpocmVmPSJkYXRhOmltZy9wbmc7YmFzZTY0LGlWQk9SdzBLR2dvQUFBQU5TVWhFVWdBQUF1a0FBQUNLQ0FZQUFBQVhPOVRXQUFBZ0FFbEVRVlI0bk8zZGU3eGRSWFVIOE4rWThFcEU1U0dTQUgyb1ZFSEU2bGkxK0tqYUtsaDB4QWNpbGtwRkJLejZVYkVxYUVGUVFXeHJVYkFxaW9nRzhZRVBIRkVVNUNWU1JCaDhVQVZFUVNBUUlEd01BUUpKeVBRellTN2VYTTY5ZDgrZU9mdTFmdC9QNS95WGN6SjczWDMyV1h2Mm1qVUtIV085WGgvQTArUHJLUUFlRDJBYkFJOEJNSzlyNDZWMWZNRW90MCtka0ZpdlR3YXdwNEJ3SG02VU95ejNRNnpYZXdGWVZHWkluWGF0VWU0dk11SzBCNEN2Q29nVENzVHFTQUFIbHgxU3ArMXJsUHQ4M1FGYXJ5OEY4RlFab2VxOTFRQ1dBYmdkd0c4QS9CTEF4UURPTXNxdDZPckJXYTh0Z0pkMVlDalVqcVZ6dXhCNDYvWG1BRjRGNE9VQW5nOWdvdzRNaTlMOUlTTm10Wk9MbnJtdTBIQ2x4Q3ZubkFyK3ZOQTQraUEzVmxMT3FRblhacjVmV3J6NkxPUTZtOFhYdGpIWENGWllyOCtJRXg3Zk1jcXQ3dGd4L2xrSHhrRHQrVU5yU2JyMU9zeml2eERBVytLZFlpZHVHQ2dMay9UWjVTWlNFM2hUVTQya1JDcjMzSktXRU5TT2wvWDY0UUEyS1RzY2FzRkdNV0VQcjJ1dDE4Y0MrQitqM0wwZCtXUHdSbEMyUHp5c2pjTzNYdThHSUR3cS9CR0FWekJCSDR4YU0xT3h4R21Ca0JpVlN0S2x6QkJ6ZHJnNjN0QlU1elBqeGVScGVNSTE5YjhBWEc2OTNyM3RvN05lUHdyQUl3Y1laNnJ1MmthVFkrdDFxRFAvQklDZCtFY2FwTHFQajZYTTRLMEJjSDJoejJLU1hvMmsyZUdjbWVGd283eXc3SEE2N1NhajNNcU1BVEpKSDY3d3QvMjY5Zm8wQVBzWTVaYTJkS1NTU3ZWb3RHc2JtVW0zWHMrelhoOEQ0Q0ltNklOMVA0REZOUTlPeWcvZUVxUGNxdHdQaWFWaVVpN2dyQnV1THVlR0ppek83MXdqZ1RIaVdnZWF6VXNCL01wNi9jS1dJc1Z6ak1aZjdtSzkxbkVsOWRzQXRGSmVRNDFZbkxIb2h2WG9hVUpwMFBwTkRicGx0WlAwdUNCOS9sQUNVVUhPRFkyMGhJQkpPbFd4SllBZldLLy9wWVZvOFdrTmpUZEp0MTZIZG53WHhEYUtOR3c1OVoxU1NoSktKZWxTNHNXNjRlcDhaaWtWTzd1a1lRSWx4M3FodmJEMStxQ0dqNWpuR0YwM2xpUTlQSTYzWG9jRkdLRUg3UWJpd3l3RE83dk1MamN4bUNBbFhqZG0xZzFMcWtmUGpSV1Q5RFJNb09UNWlQWDZ3QWFQbXUwWFpidkRLSGRuOFNUZGVqMEh3QmNCdkV0NmhJVmhrajQ3SnVscDJLMmtPaTZ3VGNONFVSMGZhN0QwaFRlQ3NxMjlSaFZOMG1PQy9pVUEveXc5dWdLeEhuWjI3SkdlaHUwWHErTU5UWnFjVGpnYnhoMndTYWJqck5mUGFPREltYVRMVmo1SkIvQXBBSytUSGxtaDZ2WklEMjFBdHhJU010YWtwK0hpdnVwNFE1TW1aMUtCeVpOc1lkSCtONjNYbTQwckN0YnIrWEYzVkpKcjdjUkxzU1E5THFyWWp5ZVVXSFdUaEswQnpCRVN0Tnpaemdrc0Q2cUdTWG9GOFFubzFrME90bVZMalhJck1vYkFKSjNDOStXWU1VYUIzWU9vM0V5NjlYcFhBRWVLRDZsY09WMDRwUHpnM1Z4d3Eya202ZFd3SnIyYXJRVGRLSU5QYUtpUTE4WGQwOGVCTjRKVUprbTNYb2ROTUJZSjJ3aUQxclVrbzdNRTY5RVRXSzhmRFdDanBnYmRzcHpaWVdsYmFyTlZaWFY4UWtPbGZOeDZQWTRPZGt6U2FlMTFLaXRKanpzZm5naGdFL0hobEkyTFJtZFhxaDZkSlJ6VnNGdEpkVXpTMHpDQm9nbmhldnpXTVVTRDNZTW9QMGtIc0MrQXRyYk1wZTVnZ2pBN3RsOU1jMHRtZVpDa1JDcTNsSW8zTkdtWXBOTmtCMXV2NXhXT0NNOHgyWlliNVc1SFRwSWVIeWNmSVQyU3RCYVQ5Tm1WU3RLbHpLUnp0ck02SnAxcDJDT2RTdHBzREcybm1hVEw5dUExS21jbS9UQUFqNVllU1ZvcnB4Nlc3UVRUc0R5b0drbGxRZXlSbnFaMnZLelhvZjNld3BiR1RkMzE5c0lqWTVJdTI0UFhxRnBKdXZWNlhIVlkxRSsxRWlycjljT1lwQ2ZqUmtiVnNIYS9PbWtMSVhQWE9yQkpBazIxbmZWYWw0aEtYSWpLemJKa3k1NUovemRoTGJ0b1puVi85TUtNMUhwQ1lzc2U2V2s0TzF4ZFRoY2NKYXg4NHc2ajNKMFo3MmRuRjVyTzdvVWl3M09NNmlmcDF1dk5BYnhSZkFocHNycEpncFNMMFcxR3Vic0tmUmFmUEZRaktVblBxZDlmRUhkUWxJTHRGMmxjWGxib2MxbnFRZzllcCtyTXBPOG5xRTh6elc1cFJtY0oxbGNuRU5iN08yZDJlSjZ3TGJXNXhYMTFYSkJNNDdLOTlYclRBcC9ORzBIS1N0SkxyMkttZm1Obmw5bXgvV0k2SnA3VjVYd0hXWStlaGtrNnplUnZDMFNIU1RyVkszZXhYajhOd0JQRmg0OG1ZNUkrTzdaZlRCUHFocGRudkY5U0lwVmJTc1VrUFEzYkw5Sk10aXNRSGQ0SXlyYkNLSGZMUkFSU1o5SmZLejE2OUJBNUNTanJxOU93UEtnYXRsK3NqdTBYMHpDQm9wazh0a0IwZUk3SnRrNU9sWnFrYzNkUm1vcGxDYk5qKzhVMFhOeFhIY3MzMHVTc2RaZ0xZT3VXeGszOXNLREFLUG0wUnJaMWZ2L21WZzFGWEJEeHRKNkdiazA0QkFESEFQaDVCOFl6SlBka0hBdVR6alNNVnpWc3YxZ2R5MTJxdXgvQTVrMFBlTUErQ09CdEF6dThyS1lhMXV2UWtuaXJjc1Bwdk5DSTVCUkJ4MXZGeXNuL3BuS1NEdUM1UGQ3RUlUd3gyQzIrTG96SitqZU5jcXM2TURhUnJOZGJBdGhBeUxHWFN0SlpIbFFORjloV0p5bEp2OHNvZDN2ZE54dmxQSUEvbGgyU1hOYnJMUVo0OEJ0bXZuK2J6SjNnKytaeW94eS9Vek5JT1JtZTB2am94aU9zdnY1S1NBU3MxNGRZcjdtelZ6dWtKSnpMQ2w2RVdCNVVqYVRFczNhU0hwTWtTZTEwUzkwc1V4bER2SjZ0eUh3L3k4OW9IU2xKK2w4TkxIUUw0K08yNjYzWGk2elh6K2pBbUNSaHdwbkFldjF3UWIyL2F5L3VpMXRxYjFsMk9KM0c3a3JWTVNIb2xpR2VmM2Rrdmw5U1BmcHFBRXM2TUk1T1MwblNTN1FXNnFKUUE3WVhnSXVzMXorMVh1OWx2WmEwQTE5YnVMMTlHaTZHcklZMTF0VkpXNkRHbWZTT3NGNkhzcEFoUHNXK05mUDlrbTZjcnpmSzNkK0JjWFJhU3BJdTRjZnZtUUFXeGRuMXc2M1hKVlpxMDJpY1NVOGpKZmxjbmxNM0xPeEhibmxtS1JWM0c2VzJEUFhjNDNxYTZ2aGtxNEtVSlAzaHJZMnllYUZXODlCd1ViZGVuMnk5M2tuUXNUZUZpeURUc0xOTE5aSm1oNWtRcEdGUzBCMUQvWjVlbmZsK1BqR2xkVlJLMG1OYklDbWRPQ1lMeDcwbmdBdXMxODU2dlhlc2VhVjhURHJUTUY3VmNDYXFPcFlHVVZ1RytqMzlaZWI3dVJFYnJhUHFUUHA4aG0xdGovZ1RZeW5NRWRacmJtcVJoMGxuR2o1NXFJWkplblhTa25RbUJkMHh4TzlwNk9SMVRkMDNXNi9ueEJhTVV2Q211UUpKL1RoTGVUU0E5OFVXamwrM1hqOTNHSWZWSE92MVpvSnUvRmp1a29hSlozWGM0cjY2KzR4eU4vVmxzQUlNOGR6N1NlYjd0MHJjdTZidm1LUlhVUFdFeU5sVmNxakNYZS91NFdXOURvKzRqZ1Z3c2xFdXQwK3FCRklTcWJ1TmNybXIvU2V3RzA0MXJPbXNJTzRndlhHVGcyMFpFNEp1R2VMMzlOek05N1BiRWoxRXBabDBvOXhLSnVvekNoczlIUTlnc2ZYNktPdTF0QzliS2lhY0NRYmNybXlVbk1SVDJwYmFiTDlZSFpQMGJobGlrdjY5elBkTGVySzFKdVJMSFJoSDU2V1V1OXdvTkVZcHd1elVlOE1LYit2MXQ2M1hMK2pQMEJ2RjBvMDA3RmhTamJRdHRYTm1vcVIxZG1FOWVrZkVmVWdXRHV5d3JqVEtYWjc1R1pLK2t6Y1k1VloxWUJ5ZGwvS0Q5bnVoTWFvamxNTHNCdUJzNi9WbDF1djlyTmZ6K25jWVk4TkZrR21rWEx6dk5jcmRrdkYrU1Rjeks0eHlTelBlei9hTDFKYndQVlVEaS83SkJUNkRwWHIwRUNtTEZLNEFzRE5EbUd3SEFNY0IrS2oxK2dRQW44eFpBVDRRVWhLRTlhelh6eS93T2Y5UTREUDZnTzBYcStNQzJ6Ulo4YkplUHd2QWhpMk1lNGorZW1ESDVHUG50MXlTdnBPckMvMDJEc2xkUnJsTHBoNVBTcEwrTStrUnpQUW9BQWNDZUtmMStydHhvZWxaUmpuZjY2T3FSMG95dFc5OFVUVnN2MWdkay9RMHVUZUFad1BZcU9sQlV5K2NacFFyVVU0bDZmcjFndmlpUHprZndQT214aU9sM09VQ0JyT0k4SmpQQURnVHdQOVpydzhRV0FvakxVR2dhcGg0VnNmMmkybHFKK25XNnkyWW9OTU0vak0zT05acnhkOUY4VWIrL2xWTzBvMXk0U0ozcGZRb0ZyWTlnRS9IcmpEL0lhRXJqUFg2RWZHcEF0RlV1Yk9kck9tc1RsS1N2aXF6OFFHVEo1ck9lVWE1OHd0RUozVHZXcDlSRmkwdlNZK3M5Q2lPeVNZQTNoMjd3bnhqNEJza1NadkJvK3BZazE1ZFRxdktqZU0xUjRycmpISnJNbzZWU1RwTjUrQkNrZUh2SW8xOE9wcWFwSjhrUG96akZickN2QXJBajYzWGwxcXY5NDd0cW9hRUZ5T2FUazdpeVMyMXE1T1dkTEkwaU1iaGEwYTVDd3Q5THM4eHlwOUpOOHI5Q3NERjRrUFpqS2ZHRmVQWFc2OFB0MTRQWlRNYnprclJkSElTendYQ3R0VE9TVHpaZmpFTkV5aWFham1BZHhXTUNzOHhLbEx1RWh3dFBwVE5Db3VXRG8zSitpTHJ0ZTc1OFRCSnAxRkMzZkJOR1pHUjlDTVhkb0Jla3ZGK0p1bHB1SU0wVGZVdW85d05CYVBDYzR5S2xMc0VwM0JqbzFhRUxjLzNBbkNKOWZvQzYvVnJyTmQ5bkRua2pBR05rbHMzTE9tOHVqYXpkYXUwaElCckhhaWswSEx4YzRVL2srZVliRXVNY2l0SFJTQTVTVGZLclFad2tQU0l0bXluVUE4SDRCcnI5VUhXNjgxNk5IWmVqR2dVdGwrc2prbG5Hc2FMU2dubjB0NWppQ2JQTWRtbS9mMnJNNU1lZkJQQU9kS2oyZ0ZiQS9oSUxJVTV6bnI5eEI2TW1ZLzFhQlMyWDZ5T1NXZWFuQVhKb1F2T3hpMk5tN3BsUldqc1lKUzdmUXlqWWhtb2JHV1Q5UGlvZGY5NDBsTDd3a1liK3dHNDNIcDl1dlg2UlhGemhFNkptelk5bXVjTGpjREVzem8rZGFndWxGQXR6bmcva3lkQ1BJOWVhNVJ6cGFOaHZkNGNnTFFORFdsZDB6WUNxRHVUSGhMMXF3QzhnNEh1bkYwQW5BSGdWOWJyZmF6WEczWm9nSHlrUjlOaEI0N3FjbWFHTjR5TDBhVzRJWlpvMXNWckZnWDdHK1hHdFU4TXp6RXFYdTZ5bGxIdXN3QVdpUTl2TiswQTRQUGhEczE2L1lGNHQ5NDJ6a3JSZERnN1hCM2JMMWJIbXovSzlhOUd1ZVBIR0VXZVl6U2VKRDNhTjJ5K0l6N0UzUlhLU3c2TGRldWZzbDQvcnNXUk1rbW42ZFJPUEszWFd3cmJVanNuOFdTU25vWnJhT1FLVDJCZWI1VDc5Smdqd0hPTXhwZWt4N1l4QmtEeFdpMHFLanptZmpPQXE2elhwMWl2bjlGQ2VEbGpRS1BjbjFrM0xPbThDb2xEVG45bTdqYWFodGNzbVpZQjJOVW8xMFNsQU04eEtsK1RQcGxSTHB6UWZ3L2daK0pEM1gxaFFlbXJBVnhrdmY2QjlmcFpEWTZZRnlNYVpUSHJoaXU3M2loM2Y4YjdwU1hwTEhlaFZGY0NlSlpSN295R0lzZHpUTGFsUnJsN3BvdEFrU1FkZjByVVh3amdPOUlqM2lNN0E3alFldjB0Ni9Wakd4ZzJ5MTFvRkxaZnJJNHp3Mm00MW9GU25BaEFHK1d1YURCcVBNZGttL0VhVlN4Snh3T0ordDBBWGduZ3d3Qnlkc1NqWnIwaXRtOE1DMHpYRytQL3pJc1JqY0lrdlRyT0RLZXBmVzVacng4T1lOT1d4azNOdWpIOERocmwzaER6bUNieGQxRzJHYTlSUlpOMFBKQ29yekhLSFFMZ0grS0pULzJ3Zmx4Z2VvbjEra21sUjJ5OTNnREFBcDRMTkFJVHorcTRFRElOTytIUVRFSkNmaVNBSnhqbFRtMDZVdGJyUndGNEpQOUNvaldicEU4d3lwME5ZSHNBbithc2VxL3NHTllXV0svM0tqeG96aGJRZEppa1Y1Y3pNeHh1eEJlMk1PYTJMREhLM1pmeGZ6TkpINjU3QVh3Q3dPT01jdTgzeXQzVjBwSHlIS1BteWwybUNuWHFScmwvQmZCTUFHZUwvMVAwUjlqOWJGRW9meWs0WXJhWm91bmsxbGxMT3JkeVNvUCtMQzRjbCtLYXpPUGt4TUx3M0FiZ0NBQi9hWlI3aDFIdTVwYVBrTCtMMUY2U1BzRW9kN0ZSTG5SL2VUR0Ewem16M2h1SFdhK1BLalJZemhqUWRISjIwSndQWUw2Z3lPWThkWkNXZFA0NjgvMU0wb2ZqVWdEN0FkakdLUGZ2UnJtYk9uSmsvRjJrR1NlcDVqWVpIcVBjbVFET3RGNy9aZGhtRjhBK2NiTWQ2cTczV3Evdk5Nb2RtVGxDWG94b0ZKODVrNzZsb0tpdUNTMFlNOTR2TGVtOExQUDl2R2IxMngwQXZnYmdlS05jVi9keDRUbEc3YytrVDJXVXU4WW9kMUM0cXdYd1R3QitJdjdQMUcxSFdLOU41Z2g1TWFKUmxzUU4wZXJhUWxCVVE2eFdaYnhmMm5md0Y1bnY1eldyZjhKQzBLL0VEUllmWTVSN2M0Y1RkUEJwalhoM0dPWHVuQ2tJamM2a1R4VVg5WndjWHRickp3TTRBTUEvQTlpNHpYSFJTQ2VFdjVGUmJrbk44TEQyamtiSmJiKzR1YUNvY29GdGRmY1gyQVdiMTZ4K0NFbk85K01lTGQ4eHlxM28wZGlacE1zMjYxUGtWbWJTUnpIS1hXYVVld3VBcmVMMjliL3N5dGhvcmMwQWZDd2pGSnlWb2xGeUU4OTVncUxLalhtcSs4Vk11L2pOeG5xOVlaaUo3ZFloMFRUQ1Jvcm5BZmhXenhKMDhIZFJ2Rm12NloxSjBpY1k1WlliNVQ1amxQdHJBTThHY0JLQW5EWmFWTTZlMXV1bnAzNWEzQ0JwSy80ZGFBUW02ZFZ4MDZmcXpzOThQNU9uL3RnbXRucituZlg2amRiclZpc0Vxb3FiWlczV256RFRHUFF2U1ovTUtQZS9ScmxRL3JJMWdQY0F1TG83b3hQcmZUVU9mT3V1bjJ2VW10ejJpNUkyQXNucGtUNDNmZytsT0N2ek9KbWs5MDlJMW84SGNJWDErbDk2a0t5em5JcG12YWIzSW5FeXl0MXFsUHRQQU5zQzJDWFducTNwd05Ba010YnIxSTRhckx1ajZlVE9wRXVTRTZ1UW9NOFJFcXZWQU03Ti9Bd21VUDMxT0FCZkFQQWI2L1ZycmRkZHpYTjRJMGl6SnVtOWVDdzB3U2dYRXZNZmhwZjFPdHcxdnltK0pMVmhhMXY0b2Q4ajd0WldGUzlHTkIwbTZkWGx4RXBTMG5sZWdSMGtlYzNxdjIxanA1ZERyZGNmRE8wWWpYSmQycU5GMGprV2RuZzlyZ1BqNkpwTFp4dFByNUwweVl4eTE4Y3YzNGNBN0JZWG03NmdPeU1jdEg5a2trNkZNRW12THFjMFNOSjMwQmI0REY2emhtTzdtS3lIUFQ4T2p4MWd1cENzUzNyQ2ZIWFk0YlVENCtpZDN0Y0poNzdCUnJsVGpISXZqRi9Ha0R6K3NRTkRHN0tkRWg4aDh0RXhqYkxVS0hkdlptU2s3RjU4YzJhc0pDV2RweGI0REpib0RVOW9Sdkh0TUh0cHZkNjFBMGNuNlJ6TFhmUXUxcUFXOHhubHJvaDNhNkdUeUJzTDlNbWwwY0txOUNjbXhJYXpValJLaVZuMFpVSWl5L2FMMWZ6VUtKZTdHQmxNMGdjdEpPdW5XYTkvYXIzZXBjVURsZlM3eUNlbU5RMnk0MGJvajJ1VU84RW9GOW9GL2sxY1JOSzMvcWxkdDIzQytKaWsweWdsTHR5NXRjZDl3U1M5bWkvbmZvRDFlbjBBQ3hzYUw3WG5tUUJPdDE1ZllMMStmZ3VqWUpKT3N4cDhXenlqM0NWR3VYM2lSZmVkQUs3c3dMQ0dvRklKU3l5TDJVWjZzR2lrRW85QTd4WVMydHpaWVFrSndhcXdPTERBNTRScm15cndPZFFQT3dFNHgzcDlibFBKdXNETnNsanVVcE9ZM3RWR3VUOGE1VDRlNjliL0hzQTNZcXN1cW1lTGl1OWEyT2NGeW9tV0ZYcEpxYk11Y2VHK3VjQm45RUh0bWFoNG95eGhYY2lwUnJtbEJUNkhhMmhrK3J1WXJQL0FldjJzTVVkQTJqbkdKTDBtS2NuVGcrS3E3clBEeTNxOUFNQytBUFlUdHRGSENSdFgvQXdwai9SdU04cHRYdUtEck5kM0pzUzN6MG84QXIxUlFKeVFHYXZRb25hOWdtUHBxdU1Mall2bGViTHRIRjdXNjlEdStmMUd1WEdzYlpOMmpySGNwU2JSdTBBYTVaWVk1VDRVdnpDdkFIQ0dvRm5NcGtpNUdKVllyQllTOUUyRkpPZ29kT0ZlS21SanM1eFlTZmdPL2hiQWp3cDlGcE4wUWt6V0w3RmVuMnE5Zm1yaGlFZzZ4KzR6eXQzVWdYSDBFcmRxZnlCWnY5OG9GeDZWN2h3WFJQNVhtQm50d05DNnJPcFRHQ21QOVVyTkZFaDZESnA5WXhPK3U2VnVrRHFPUGRKbjl2RzQyVjBKUTFwa0d6YVF1YWNENCtpemw4ZTJqZCt3WG05ZjZEZ2tkUS9pTEhvR0p1bFRHT1YrYjVSN2QyemorSG9BRjNacWdOMnh2T0pJcE13WWxMb1FTWW5YSFVhNU93dDkxdEFYZzkrV3VZUG0wQk9DTUtIeXhZS2ZONlI0dlRlMnkvMUdCOGJTZDY4QzhIL1c2NjhXU05iWkk1MHFFVmVUWHBWUjdqNEFpOExMZWgzNnFoNEE0SjlpajNCaWtqNFZrL1EwSldkWHJvcVBwb2ZxMW5nTnFxdjBvL3F1T1NhMDNTMDRwcUY4QjVjWjVTWVdzKzl1dlg0UmdHTUJQS0VEWSt1cjBQVm5Ed0N2dGw2ZkJPRERScm5mMVRnV1NlVXVUTkl6TUVtdndDajNpNUNrVzYvZkEyQXZBRzhHc0VQbkJ6NWVUTkxYVmFya1Fzb01TOGtTbFY4Vi9Ld3VDa25WendkK2pIV0ZCUFNZVWg5bXZaNDdvQ1lDNjl3SUcrWE90Rjd2Q09CQUFJY0FtTmZlMEhwdkRvQzlRejRRay9VUEdPVlNrbEgyU0tkS1dPNlNJRHllTjhwOXlpajNaQURQQS9BVkFDdDdjd0JsVlUyeVdKT2VSa3FTWHZMQ3paMkY1VG82dE5jdGVQUUxZd0kyQkEvNWpobmxWaHJsam1JSlRERVR5ZnBWMXV2UFdLOW4vYjJ6WG9kT1N3djZjNGpabUtSbllKSmVrMUh1ZktQYzYrSkdQUWNEdUthWEIxTGZySS80ck5laDlkc0dIVDZHa2xqdWtxYmtoZnN5d1RmTGt0MEM0R09GajM5STM3OXBKMUtNY3RjYjVYWUg4R0p1OEZkRVNMejNENytMMXV0alkzdm42V3dqTFBkaXVVc0dKdW1aakhLM3hKbUp4d1BZRmNCcEFsckMrU3BKdXFDRTg4NkNzM2xTWWxic3dtMlVDenROWGx6cTg2ZzNQcGk1b0hhVUlYMy9acjBSRGlVd0FIYU1FMDNzQXBNdkpPdHZCWEMxOWZyajB5VHIwbHA4TWtuUHNFNU5lbndNOC82K0hVVEhoRWZ2dHdKNHpZQnIvcTZPQzJ0bnc0UXpnZlU2TEVyZXBLbEJ0NnowaFR2MHlINTI3NkpBZGYwbXRoY3NUVlNTamxnQ0ErQW82L1dYUS9sUTdHSkNlY0syLzI4SDhLWXdzeDdhT2h2bGJvMmZLS216UzdDZjlWckNYaFlwamd2NzlGVDU5MU1Yam9iSE1COW9kZWpVQjFYYlVySWVQUTBYRTlWM0xxOWRvcnpOS0xkNkRBYzhwR3RXMG8xd0tJR0pYVXQyaVYxZ0hqKytvWWt4TDdiQmZLdjErcFBoWmtoZ2tuNUlCOGJRTlordE9wNnA1UzZTTmxLaCtuNWM4WjJzcjA0akpWN0xqWEszRi83TUN3Q1VYRUJJM2ZWVm85elpZeHJka0w2RHRaNVdHZVYrRUx1WC9UdUFGZVdISmRMOG1Lei9JYlp5SnJuQ2s2dEtzK2dZa2FSek8yU3E0dnlLLzQ3dEY5T3cvV0pOc1M3OXRLWU9nRm9UYnU3ZU9jYi9mQ2pYckxzbmxWY2tDK1dNUnJrakFHd0g0TnZ0SGNiZ1BKSlBLTVFMaTdaOTFTQXdTYWRVMXhubHJxajRIcllUVE1ONDVmbFdVd2RBclRuUUtIZlRPUDV6NjdVYTBOUGtJdCt4MFB2YktQZEtBQytwMkN5QWlHYVc5TjJjbXFSTHE1V2lkRjlKZUFlVHpqUXNEOHJ6L1RqVFNzTjBtbEd1NVBiL1V5MkkzVG1Hb09qQ2JKYkFFQlhESkozRzZwUXFIMjY5M2p6VzRVbkFKRDNOV0ZweXhZNURYeDdqdUtrOW9TZjZQbVArMzhYWG84K0VKVEJFUlNSOU4xbnVRaWwrYjVTcnVydWpsSE5wUlU3dDV4UlNGbTZQczIvdTU4YjQyZFNldlkxeVM4Zjh2NHRydjFnSFMyQ0lzdFJMMHEzWGMySUxScUxwcFBRbFp2dkZCTmJyMEZmM01VME51bVhqVENEQzdxTm45U1VRVk1sSFlybkZ1QTNwbWpYMnJkaFpBa05VUysxeWx3VWorcVlUVFFpNzBaMlFFQTNXVjZkaGovUnlTbThWVCswNXE4RSt5MFA2RGhidm9EUUtTMkNJa3RWTzBsbnFRak01M2loM1cwS0VXRitkUmtxOHdvLzZMV1ArUDhJTTM4L0gvSC9RK0lVZnM5Y2E1ZTV2S05Zc2Q2bUpKVEJFbFlScjJZMHBvV0tTVGxYY0MrQ2ppWkZpa3A2RzVVR0Z4QjYwNzJ2cWdHZ3M3Z1R3MG9MclBhb1l5alhydm5HMXFad05TMkNJWnJRNGRhZmt5VWs2Tzd2UWRJNDF5aVhkL1RIcFRNYnlvSUppc25CZVV3ZEZSWVdOcWZZd3l2MjY0YkN5UjNvQlUwcGd2dHZtV0lnNkp2bTd5U1NkWmhOS0U0Nm9FU1VtbldrWXIvTGVIaDh2VXIrOHNhR0ZvZyt5WG04QllLT0JuQ2VOMUtQUEpwYkFtUEJFQk1EVlhSZ1RVY3VTbjd5ejNJVm04MjZqM0xLVUtGbXZIeFczUDVhZ1ZMbUxsSnZreGhJSW85d3ZBUnpUMVA5SFJZUWRSUmUxRUVyV280K0pVZTU3QUo0RTRBT3hkSkpJS2licFZOVDNqWEpmcXZHQlVoTE9sUUJLMVg1eWQ5YnhPQlRBTlEzL24xVFB3VWE1bzF1SzNaQytmNTFLMHZGQW9uNnZVZTZEQUxabkNRd0psbFh1SXFXR21Lb0puVnplVkROV1VoTE9hK01peFN6VzYvVUJMR3ozVUJyVGROZUp1OEpHT0FEV3RIdllOSXVRb0IvVllwQ0dkTTBhNTJaaFdZeHkxN0FFaGdTcmw2UmJyN2NFc0FIUEhKcGs3eHFMUlNld3ZqcE51RUZXVFEyNlpZMG5FRWE1OHdFYzJiVkEwSVBlMVhLQ2pvRmRzenFicEU5Z0NRd0psVnp1T1RHVHpsSVhtdXp3ZUJHdGkrMFgwMGg1aWhXNmRpeHA2ZjgrRE1DWkxmM2ZORnA0dXZFR285eC9keUErckVsdkdFdGdTQmpQSkoxS09Ea2s2Wm1mSXlYcDVFWkdhYTR6eXJWU2RoSTN4Tm1UajlnN0k1UWh2Y3dvZDJKSEJqU1VhOWFxMU0xUzJzWVNHQkxpUnFQY3l0UkRuVWpTV1k5T2lGdHd2NkZBblRYTFhkSXdYZzJJTytidUFxREpEWExvb2NKczBuT01jdC92VUd5RzhoMWMzTmFOY0M2V3dOREExWnJVNDB3NlRUZ25YQ2ZyM09tTndLUXpEZHN2TnNRb2R4V0FYZU9PbHRTOG53QjRabXlQMlFuVzYwMEJiRHlRYzZFWHBTN1RZUWtNRFJpVGRLcnR0TGdGOXoyNUliUmV6d2V3bVpBL1JhbWtrKzBYRzJTVSt4bUFGek5SYjF5b1BYOUJXMXZXejREMTZCM0RFaGdhb0ZyZnpZa2tuYnVOeW5VY2dGZVVTTkFqS2VmU2FnQTNGUG9zUG5sb21GSHVvcGlvSjIzVVJiWGNIcTh4b1l2TDZnNkdjRWpsbnAzdjdKSmlTZ25NZmYwWk9kRkRNRW1uSktHczVTMUd1UU1LLzNCS1NUaXZqNHNSczFpdjV3TFl1dDFEYVV5bkVvaVlxRDg3L0MwN01KeWgraUdBSnh2bFR1M3c4Ykg5WW9kTktvRUp5WHFYMWpFUXBhajE1UDFoMXV2TkFjeG5xRVg1SFlDZGpIS2ZHc05Ccy8xaW1yQ0owWnltQnQyeXppVVFScmxmQS9oYkFEL3J3SENHWkRtQU53TjRTY1orQzAxaHVVc1BHT1YrYjVRTDYwbGVQdVRqcE1HcVBaUE9lblE1d3FyL1R3QjRpbEhPamVtbzJYNHhqWlR2WDNqcXNMZ0Q0M2dJbzF3b1czcGVMUDJpZkdIV2ZEdWozR2RLN01qYmdDRTlTUjU4OG1xVXMzRmg2WWRZQWtNOVV1dTdPWmZ0RjhYNFh3QnZOY3I5Zk13SHpQcnFORkxpdGJpajljaHJHZVhDai8wQjF1dHpBWVFuVEp0MFlGaDk4MXNBNyt4WWE4VXFocEtrcitucWpYQnBScmtWQUE2MVhuOFJ3REVBL25GWVIwZ0RjM01vMjZwelNKeEpINzVmQU5qTktQZnNCaEowTUVsUEp1VW11ZlgyaTFVWTViNGFhcWhqTFRWVkUvclBId2hnaHg0bTZCalFOZXVHTHQ4SWp3TkxZS2duYXYvK01Va2ZKaCszUUErekMwOHp5bjJud2FNVXMzdG1vYy9oVFUzSGhQSVhvMXpZOUdpUHZ1M2UyTEJsY1hmaXh4bmxqamJLcmVyYkFWaXZIekdncHlaaWsxU1d3RkRIMWY1dXptVm5sMEc1RWtDWUNmeVNVYTd4M3JMVzZ3MEFQR2JZSVg0UXkxM1M5QzZCTU1wOTNYcDlPb0IzeDVsaUxyQi9RSmc1LzJSNEdlWDZ2bnZya0o1a2laNUpaZ2tNZFJpVGRLSCtDT0JDQUQ4Q2NMcFI3dktXd3lEbFhGcFRzRzJmbEpqMXNqV2NVVzU1L09FUGRlb0hBZGdmd0lZZEdGb2Jyb29Mejc5UWNGK0Z0ZzNwSnJrWEpXWGpGa3Bnd3E3QzFtc1R6MWRXQzFEYmF2Lyt6ZVVKM0drK3pscUZ6VUJ1am5kajRYVlpmUDNXS0xlbVF3Y2c1Vnk2b2NTamZldTFZamVjZm9pN1pMN0RldjFoQUcrUDdRVWw3S3diYXB5L0hUdmZuTjJUYmkwcDJINXhvRUlKalBVNmxIMGVET0E5QURhUUhoTnFEWlAwZ2JtN2ovV2RBTTRSMGhVamV4T2pTYVNVQnkzdndCaXl4ZktPUTJLeXZudWNXWDlPenc5cmxOQU42c3NBVGpIS0xlM2U4SW81SHNCSkF6bVd1enN3aHFucm84a0FBQUlaU1VSQlZFN3BTQW5NMStOMWd1UzZxKzZSSzU0MFJFVDFXYThmQytBMUFQWUVzR05QUXhrbUJjNERjRnFZT1RmS3NYU0NCcWVsRXBpUEdPWGV4N09KNm1DU1RrUlVpUFU2L1BpL0pNN1loUTJTSHRIaDJJYmRWcytPcjNPTWNzczZNQ2Fpc2JKZWJ3VGcvWEZCK1BvTlJIdC9vOXhuK1ZlbE9waWtFeEdOZ2ZWNlRweFpmeTZBcHdONGF0aUpFOENjRnVJZFdrbGVDdUJpQUdHMzRZc0cwSm1GcURicjliWUFqZ1d3ODVpanVMTlI3Z3orcGFnT0p1bEVSQTJ4WG9mT01FOEE4SGdBSVVrSXBUSmJBOWdTd01LNHBxUE83TjVkTVJGZkhGK2grOUR2QUlTT1QxZHdscHhvTk92MUt3RWNQY1pGL0U4MHlsM0o4Rk1kVE5LSmlEb2tKdktQQkxCUm5IWGZlSnJScllpZG4rNlF0dE1rVVVuVzYzbXhCT2JmeGxBQ3MxSGRMZUdKbUtRVEVSR1JlR01vZ2JuWktMZWw5TGhTZlE5ajdJaUlpRWc2bzl4VlJybGRBTHlxME9aUTdGMVBXWmlrRXhFUkVVVkd1Vy9GUmQ1SEFsaVpFUmNtNlpTRlNUb1JFUkhSSkVhNWU0eHlvVTU5QndBL3JCa2I3amRBV1ppa0V4RVJFWTJRV1FMRG1YVEt3aVNkaUlpSWFBWTFTMkNZcEZNV0p1bEVSRVJFczZoUkFzTWtuYkt3QlNNUkVSRlJvZ29iSVcxc2xMdUxjYVc2T0pOT1JFUkVsR2hTQ2N4SEFheWE4dTdibUtCVExpYnBSRVJFUkRYRUVwaURBT3dJNEVlVFBvR2xMcFNOU1RvUkVSRlJCcVBjRlVhNUZ3RjREWURGQUs1bFBJbUlpSWlJT3NKNlBkOTYvUnorUFNnTGdQOEhKTUZRdnRLeTA5UUFBQUFBU1VWT1JLNUNZSUk9Ii8+DQo8L3N2Zz4NCg=="
+    table.insert(graphics,{
+      Type = "Svg",
+      Image = Logo,
+      Position = {40,5},
+      Size = {300,64},
+      ZOrder = 1000
+    })
+    table.insert(graphics,{
+      Type = "Text",
+      Text = "QLX-D",
+      Position = {340, 5},
+      Color = gaColor.Green,
+      Size = {150,64},
+      FontSize = 40,
+      Font = "Open Sans",
+      FontStyle = "Extrabold",
+      HTextAlign = "Left"
+    })
+    table.insert(graphics,{
+      Type = "Text",
+      Text = "©",
+      Position = {475, 20},
+      Color = gaColor.Green,
+      Size = {20,20},
+      FontSize = 16,
+      Font = "Open Sans",
+      FontStyle = "Extrabold",
+      HTextAlign = "Left"
+    })
+    table.insert(graphics,{
+      Type = "Header",
+      Text = "Setup",
+      Position = {15,70},
+      Size = {530,11},
+      Color = gaColor.Green,
+      FontSize = 16,
+      Font = "Roboto",
+      FontStyle = "Bold",
+      HTextAlign = "Center",
+    })
+    local gaLabels = {
+      Pos = {X={30,30,400},Y={110,130,354}},
+      Text = {"IP Address:","Connection Status:","Version "..PluginInfo.Version,}
+    }
+    --Basic Labels
+    for i=1,#gaLabels.Pos.X do
+      table.insert(graphics,{
+        Type = "Text",
+        Text = gaLabels.Text[i],
+        Position = { gaLabels.Pos.X[i], gaLabels.Pos.Y[i]},
+        Color = gaColor.White,
+        Size = {150,16},
+        FontSize = 12,
+        HTextAlign = "Right"
+      })
+    end
+    layout["IPAddress"] = {
+      PrettyName = "Connection Info~Unit IP Address",
+      Style = "Indicator",
+      Position = {185,110},
+      Size = {250,16},
+      Color = gaColor.White,
+      FontSize = 14,
+      HTextAlign = "Center",
+      IsReadOnly = false
+    }
+    
+    layout["Status"] = {
+      PrettyName = "Connection Info~Connection Status",
+      Style = "Indicator",
+      Position = {185,130},
+      Size = {250,100},
+      Color = {255,255,255},
+      FontSize = 16,
+      HTextAlign = "Center",
+      IsReadOnly = true
+    }
+  end
+  return layout, graphics
+end
+
+--Start event based logic
+if Controls then
+  --TCP Socket Defined
+  ------------------------------------------------------------
+  gsIPAddress = Controls["IPAddress"].String
+  gsPort = 2202
+  
+  TCPClient = TcpSocket.New() --Define Socket
+  TCPClient.ReadTimeout = 0
+  TCPClient.WriteTimeout = 0
+  TCPClient.ReconnectTimeout = 5
+  
+  --Debug Function
+  ---------------------------------------------------------
+  function DebugFormat(string) -- Format strings containing non-printable characters so we can see what they are
+    local visual = ""
+    for i=1,#string do
+      local byte = string:sub(i,i)
+      if string.byte(byte) >= 32 and string.byte(byte) <= 126 then
+        visual = visual..byte
+      else
+        visual = visual..string.format("[%02xh]",string.byte(byte))
+      end
+    end
+    return visual
+  end
+  
+  DebugTx = false
+  DebugRx = false
+  DebugFunction = false
+  DebugPrint = Properties["Debug Print"].Value
+  
+  -- A function to determine common print statement scenarios for troubleshooting
+  function SetupDebugPrint()
+    if DebugPrint=="Tx/Rx" then
+      DebugTx,DebugRx=true,true
+    elseif DebugPrint=="Tx" then
+      DebugTx=true
+    elseif DebugPrint=="Rx" then
+      DebugRx=true
+    elseif DebugPrint=="Function Calls" then
+      DebugFunction=true
+    elseif DebugPrint=="All" then
+      DebugTx,DebugRx,DebugFunction=true,true,true
+    end
+  end
+  
+  SetupDebugPrint()
+  
+  --Value Constants
+  -----------------------------------------------------------
+  gsFWVersion = "FW_VER"
+  gsChanName = "CHAN_NAME"
+  gsDeviceID = "DEVICE_ID"
+  gsAudioGain = "AUDIO_GAIN"
+  gsGroupChannel = "GROUP_CHAN"
+  gsFreq = "FREQUENCY"
+  gsBattType = "BATT_TYPE"
+  gsBattBars = "BATT_BARS"
+  gsTXType = "TX_TYPE"
+  gsTXRFPWR = "TX_RF_PWR"
+  gsTXPWRLock = "TX_PWR_LOCK"
+  gsTXMenuLock = "TX_MENU_LOCK"
+  gsEncryption = "ENCRYPTION " 
+  gsTXMuteStatus = "TX_MUTE_STATUS"
+  gsMACAddress = "MAC_ADDR"
+  gsBattCyle = "BATT_CYCLE"
+  gsBattRunTime = "BATT_RUN_TIME"
+  gsBattTemp = "BATT_TEMP_F"
+  gsBattCharge = "BATT_CHARGE"
+  gsBattHealth = "BATT_HEALTH"
+  gsArray = {gsFWVersion,gsChanName,gsDeviceID,gsAudioGain,gsGroupChannel,gsFreq,gsBattType,gsBattBars,gsTXType,gsTXRFPWR,gsTXPWRLock,gsTXMenuLock,gsEncryption,gsTXMuteStatus,gsMACAddress,gsBattCyle,gsBattRunTime,gsBattTemp,gsBattCharge,gsBattHealth}
+  
+  gcFWVersion = Controls["UnitFirmware"]
+  gcChanName = Controls["ChannelName"]
+  gcDeviceID = Controls["DeviceID"]	
+  gcAudioGain = Controls["AudioGain"]	
+  gcGroupChannel = Controls["Group-Channel"]	
+  gcFreq = Controls["Frequency"]	
+  gcBattType = Controls["BatteryType"]
+  gcBattBars = Controls["BatteryLevel"]	
+  gcTXType = Controls["TransmitterType"]	
+  gcTXRFPWR = Controls["RFPower"]	
+  gcTXPWRLock = Controls["TransmitterPowerLock"]
+  gcTXMenuLock = Controls["TransmitterMenuLock"]
+  gcEncryption = Controls["Encryption"]
+  gcTXMuteStatus = Controls["TransmitterMute"]
+  gcMACAddress = Controls["UnitMacAddress"]
+  gcBattCyle = Controls["BatteryCycle"]
+  gcBattRunTime = Controls["BatteryRunTime"]
+  gcBattTemp = Controls["BatteryTemp"]
+  gcBattCharge = Controls["BatteryCharge"]
+  gcBattHealth = Controls["BatteryHealth"]
+  gcArray = {gcFWVersion,gcChanName,gcDeviceID,gcAudioGain,gcGroupChannel,gcFreq,gcBattType,gcBattBars,gcTXType,gcTXRFPWR,gcTXPWRLock,gcTXMenuLock,gcEncryption,gcTXMuteStatus,gcMACAddress,gcBattCyle,gcBattRunTime,gcBattTemp,gcBattCharge,gcBattHealth}
+  
+  --Parse Data
+  -----------------------------------------------------------
+  function dataNotSupportedCheck(lsReturnVal, gaArrayIndex)
+    if(gaArrayIndex == 16 )then  --For rechargable Battery cycles When using AA or unit is off
+        if(lsReturnVal == "65535")then
+          return("Off/Not Applicable")
+        else
+          return(lsReturnVal)
+        end
+    elseif(gaArrayIndex == 17 )then  --For rechargable Battery run time When using AA or unit is off
+        if(lsReturnVal == "65535")then
+          return("Off/Not Applicable")
+        elseif(lsReturnVal == "65533")then 
+          return("Charging")
+        elseif(lsReturnVal == "65534")then 
+          return("Calculating")
+        else
+          return(string.format("Time Left: %d:%02d", math.floor(lsReturnVal/60), math.fmod(lsReturnVal,60)))
+        end
+    elseif(gaArrayIndex == 18 )then  --For rechargable Battery temp When using AA or unit is off
+      if(lsReturnVal == "255")then
+        return("Off/Not Applicable")    
+      else
+        return(string.format((lsReturnVal - 40).." F"))
+      end
+    elseif(gaArrayIndex == 19 )then  --For rechargable Battery charge When using AA or unit is off
+      if(lsReturnVal == "255")then
+        return("Not Applicable")
+      else
+        return(string.format(lsReturnVal.."%"))
+      end
+    elseif(gaArrayIndex == 20 )then  --For rechargable Battery Health When using AA or unit is off
+      if(lsReturnVal == "255")then
+        return("Not Applicable")
+      else
+        return(string.format(lsReturnVal.."%"))
+      end
+    else
+      return(lsReturnVal)
+    end
+  end
+  
+  function rxDataParse(lsRXData)
+    if(DebugRx)then print(DebugFormat(lsRXData))end --Debug
+    
+    local lsCommandReturn = string.sub(lsRXData,3,5)
+    
+    if(lsCommandReturn == "REP")then  --Report Returned
+      for x,reports in pairs(gsArray)do       --Search through All Reported Values
+          if(string.find(lsRXData, gsArray[x]) ~= nil)then --If you find the value match and its at least one succesfully matach found
+              local lsStart, lsEnd = string.find(lsRXData,gsArray[x]) --Find start and end position of Match
+              local lsLen = string.len(lsRXData) -- Find total length of string
+              
+              if(x == 13)then --If Encryption Detected Filter Out Space
+                lsEnd = lsEnd + 1
+              else
+                lsEnd = lsEnd + 2
+              end
+              
+              local lsFilteredString = string.sub(lsRXData, lsEnd, (lsLen - 1)) --Pull out just raw value and send it to controls
+            
+            if(string.find(lsFilteredString, "{") or string.find(lsFilteredString, "}") ~= nil)then  --If you find brackets Cleanup
+                lsFilteredString = string.gsub(lsFilteredString, "{", "")
+                lsFilteredString = string.gsub(lsFilteredString, "}", "")              
+                gcArray[x].String = dataNotSupportedCheck(lsFilteredString, x)
+            else
+              gcArray[x].String = dataNotSupportedCheck(lsFilteredString, x)
+            end
+          end
+      end
+    elseif(lsCommandReturn == "SAM")then  --Sample Levels Returned
+      local lsAntennaInfo = string.sub(lsRXData, 16, 17)  --Antenna Infor
+      Controls["RFLevel"].String = string.sub(lsRXData, 19, 21)  --RF Level
+      Controls["AudioLevel"].String = string.sub(lsRXData, 23, 25)  --Audio Level
+      
+      if(lsAntennaInfo == "AX")then
+        Controls["AntennaA"].Boolean = true
+        Controls["AntennaB"].Boolean = false
+      elseif(lsAntennaInfo == "XB")then
+        Controls["AntennaA"].Boolean = false
+        Controls["AntennaB"].Boolean = true
+      elseif(lsAntennaInfo == "XX")then
+        Controls["AntennaA"].Boolean = false
+        Controls["AntennaB"].Boolean = false
+      end
+    end  
+  
+  end
+  
+  
+  --Timers
+  -----------------------------------------------------------
+  QueryTimer = Timer.New()
+  
+  QueryTimer.EventHandler = function()
+    TCPClient:Write("< GET 1 ALL >")            ---Get All Data
+      if(DebugTx)then print(DebugFormat("TX: ".."< GET 1 ALL >"))end
+    TCPClient:Write("< GET ENCRYPTION >")
+      if(DebugTx)then print(DebugFormat("TX: ".."< GET ENCRYPTION >"))end
+  end
+  
+  --TCP Socket Event Handlers
+  -----------------------------------------------------------
+  TCPClient.Connected = function(TCPClient)     --Is Connected
+    if(DebugFunction)then print("TCP socket is connected")end
+    Controls["Status"].Value = 0
+    Controls["Status"].String = '' 
+    
+    QueryTimer:Start(15)
+    TCPClient:Write("< SET 1 METER_RATE 300 >")            ---Get Sample Data
+      if(DebugTx)then print(DebugFormat("TX: ".."< SET 1 METER_RATE 300 >"))end
+    TCPClient:Write("< GET 1 ALL >")            ---Get All Data Initially
+      if(DebugTx)then print(DebugFormat("TX: ".."< GET 1 ALL >"))end
+    TCPClient:Write("< GET ENCRYPTION >")
+      if(DebugTx)then print(DebugFormat("TX: ".."< GET ENCRYPTION >"))end
+  
+  end
+  TCPClient.Reconnect = function(TCPClient)     --Reconnecting
+    if(DebugFunction)then print("TCP socket is reconnecting")end
+    Controls["Status"].Value = 5
+    Controls["Status"].String = 'Reconnecting'
+  end
+  TCPClient.Data = function(TCPClient)          --RX Data
+    if(DebugFunction)then print("TCP socket has data:")end
+    repeat
+      msg = TCPClient:ReadLine(TcpSocket.EOL.Custom,">")
+      if(msg ~= nil)then
+        rxDataParse(msg)
+        if(DebugRx)then print(DebugFormat("Raw Received Message: "..msg))end
+      else
+        break
+      end
+    until(TCPClient.BufferLength == 0)
+  end
+  TCPClient.Closed = function(TCPClient)        --Socket Closed
+    if(DebugFunction)then print("TCP socket was closed by the remote end")end
+    Controls["Status"].Value = 2 
+    Controls["Status"].String = 'Closed'
+    QueryTimer:Stop()
+  end
+  TCPClient.Error = function(TCPClient, Err)    --Error On Socket
+    if(DebugFunction)then print("TCP socket had an error:", Err)end
+    Controls["Status"].Value = 2
+    Controls["Status"].String = Err
+    QueryTimer:Stop()
+  end
+  TCPClient.Timeout = function(TCPClient, Err)   --Timeout Occured
+    if(DebugFunction)then print("TCP socket timed out", Err)end
+    Controls["Status"].Value = 2
+    Controls["Status"].String = 'TimeOut'
+    QueryTimer:Stop()
+  end
+   
+   
+  --Connect Events
+  ---------------------------------------------------------- 
+  if(gsIPAddress ~= "" and gsPort ~= "")then      --Connect on Startup
+    TCPClient:Connect(gsIPAddress, gsPort)
+  else
+    Controls["Status"].Value = 2 
+    Controls["Status"].String = 'Invalid IP Address'
+  end
+  
+  Controls["IPAddress"].EventHandler = function()
+      gsIPAddress = Controls["IPAddress"].String
+      TCPClient:Disconnect()
+      if(gsIPAddress ~= "" and gsPort ~= "")then 
+        TCPClient:Connect(gsIPAddress, gsPort)
+      else
+        Controls["Status"].Value = 2 
+        Controls["Status"].String = 'Invalid IP Address'
+      end  
+  end
+  
+  
+  --Set Events
+  ---------------------------------------------------------
+  Controls["ChannelName"].EventHandler = function()
+    if(string.len(Controls["ChannelName"].String) <= 8)then
+      TCPClient:Write("< SET 1 CHAN_NAME {"..Controls["ChannelName"].String.."} >")            --Write Channel Name 8 chr max
+      if(DebugTx)then print(DebugFormat("TX: ".."< SET 1 CHAN_NAME {"..Controls["ChannelName"].String.."} >"))end
+    else
+    end
+  end
+  
+  Controls["AudioGain"].EventHandler = function()
+      TCPClient:Write("< SET 1 AUDIO_GAIN "..Controls["AudioGain"].String.." >")            --Write Channel Gain 000-060 values
+      if(DebugTx)then print(DebugFormat("TX: ".."< SET 1 AUDIO_GAIN "..Controls["AudioGain"].String.." >"))end
+  end
+  
+  Controls["Group-Channel"].EventHandler = function()
+      TCPClient:Write("< SET 1 GROUP_CHAN "..Controls["Group-Channel"].String.." >")                                   --Write Group and Channel Need Commma Separate
+      if(DebugTx)then print(DebugFormat("TX: ".."< SET 1 GROUP_CHAN "..Controls["Group-Channel"].String.." >"))end
+  
+  end
+  
+  --[[Controls["EncryptionModeToggle"].EventHandler = function()
+    if(string.find(Controls["Encryption"].String, "ON") ~= nil)then
+      TCPClient:Write("< SET ENCRYPTION OFF >")                                   --Toggle Encryption Off
+    else
+      TCPClient:Write("< SET ENCRYPTION ON >")                                   --Toggle Encryption On
+    end
+  end]]--
+end

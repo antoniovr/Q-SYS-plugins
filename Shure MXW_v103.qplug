@@ -1,0 +1,1770 @@
+PluginInfo = {
+	Name = "Wireless~Shure MXW",
+	Version = "1.03",
+	Id = "3c60561a-ba44-4d0e-85ab-89e8c53aea80",
+	Description = "Shure MXW Wireless Controls",
+	ShowDebug = true
+}
+
+function GetPrettyName(props)
+	return "Shure MXW, v" .. PluginInfo.Version
+end
+
+function GetProperties()
+	local props
+
+	props = {
+		{
+			Name = "Microphones", -- poll time in seconds. No polling if set to zero
+			Type = "integer",
+			Min = 4,
+			Max = 8,
+			Value = 4
+		}
+	}
+	return props
+end
+
+function GetControls(props)
+	local ctrls
+	local i
+	local nMics = props["Microphones"].Value
+
+	ctrls = {
+		{
+			Name = "GetAvailable",
+			ControlType = "Button",
+			ButtonType = "Trigger",
+			Count = 1,
+			UserPin = true,
+			PinStyle = "Input"
+		},
+		{
+			Name = "GetType",
+			ControlType = "Button",
+			ButtonType = "Trigger",
+			Count = 1,
+			UserPin = true,
+			PinStyle = "Input"
+		},
+		{
+			Name = "Available",
+			ControlType = "Button",
+			ButtonType = "Momentary",
+			Count = nMics,
+			UserPin = true,
+			PinStyle = "Output"
+		},
+		{
+			Name = "AvailableSecondary",
+			ControlType = "Button",
+			ButtonType = "Momentary",
+			Count = nMics,
+			UserPin = true,
+			PinStyle = "Output"
+		},
+		{
+			Name = "Type",
+			ControlType = "Text",
+			Count = nMics,
+			PinStyle = "Output",
+			UserPin = true
+		},
+		{
+			Name = "IsMXW1",
+			ControlType = "Button",
+			ButtonType = "Momentary",
+			Count = nMics,
+			UserPin = true,
+			PinStyle = "Output"
+		},
+		{
+			Name = "IsMXW2",
+			ControlType = "Button",
+			ButtonType = "Momentary",
+			Count = nMics,
+			UserPin = true,
+			PinStyle = "Output"
+		},
+		{
+			Name = "IsMXW6",
+			ControlType = "Button",
+			ButtonType = "Momentary",
+			Count = nMics,
+			UserPin = true,
+			PinStyle = "Output"
+		},
+		{
+			Name = "IsMXW8",
+			ControlType = "Button",
+			ButtonType = "Momentary",
+			Count = nMics,
+			UserPin = true,
+			PinStyle = "Output"
+		},
+		{
+			Name = "Unknown",
+			ControlType = "Button",
+			ButtonType = "Trigger",
+			Count = nMics,
+			UserPin = true,
+			PinStyle = "Both"
+		},
+		{
+			Name = "Active",
+			ControlType = "Button",
+			ButtonType = "Trigger",
+			Count = nMics,
+			UserPin = true,
+			PinStyle = "Both"
+		},
+		{
+			Name = "Mute",
+			ControlType = "Button",
+			ButtonType = "Trigger",
+			Count = nMics,
+			UserPin = true,
+			PinStyle = "Both"
+		},
+		{
+			Name = "Standby",
+			ControlType = "Button",
+			ButtonType = "Trigger",
+			Count = nMics,
+			UserPin = true,
+			PinStyle = "Both"
+		},
+		{
+			Name = "IsUnknown",
+			ControlType = "Indicator",
+			IndicatorType = "LED",
+			Count = nMics,
+			UserPin = true,
+			PinStyle = "Both"
+		},
+		{
+			Name = "IsActive",
+			ControlType = "Indicator",
+			IndicatorType = "LED",
+			Count = nMics,
+			UserPin = true,
+			PinStyle = "Both"
+		},
+		{
+			Name = "IsMute",
+			ControlType = "Indicator",
+			IndicatorType = "LED",
+			Count = nMics,
+			UserPin = true,
+			PinStyle = "Both"
+		},
+		{
+			Name = "IsCharger",
+			ControlType = "Indicator",
+			IndicatorType = "LED",
+			Count = nMics,
+			UserPin = true,
+			PinStyle = "Output"
+		},
+		{
+			Name = "IsStandby",
+			ControlType = "Indicator",
+			IndicatorType = "LED",
+			Count = nMics,
+			UserPin = true,
+			PinStyle = "Both"
+		},
+		{
+			Name = "LED_Green_Off",
+			ControlType = "Button",
+			ButtonType = "Momentary",
+			Count = nMics,
+			UserPin = true,
+			PinStyle = "Input"
+		},
+		{
+			Name = "LED_Red_Off",
+			ControlType = "Button",
+			ButtonType = "Momentary",
+			Count = nMics,
+			UserPin = true,
+			PinStyle = "Input"
+		},
+		{
+			Name = "LED_Red_Green",
+			ControlType = "Button",
+			ButtonType = "Momentary",
+			Count = nMics,
+			UserPin = true,
+			PinStyle = "Input"
+		},
+		{
+			Name = "LED_Green_State",
+			ControlType = "Indicator",
+			IndicatorType = "LED",
+			Count = nMics,
+			UserPin = true,
+			PinStyle = "Output"
+		},
+		{
+			Name = "LED_Red_State",
+			ControlType = "Indicator",
+			IndicatorType = "LED",
+			Count = nMics,
+			UserPin = true,
+			PinStyle = "Output"
+		},
+		{
+			Name = "MicButtonState",
+			ControlType = "Button",
+			ButtonType = "Momentary",
+			Count = nMics,
+			UserPin = true,
+			PinStyle = "Output"
+		},
+		{
+			Name = "MicButtonToggle",
+			ControlType = "Button",
+			ButtonType = "Momentary",
+			Count = nMics,
+			UserPin = true,
+			PinStyle = "Output"
+		},
+		{
+			Name = "ipAddress",
+			ControlType = "Text",
+			Count = 1,
+			PinStyle = "Input",
+			UserPin = true
+		},
+		{
+			Name = "tcpPort",
+			ControlType = "Knob",
+			ControlUnit = "Integer",
+			Min = 21, -- On controls with ControlUnit, set a Min and Max value
+			Max = 65535,
+			Count = 1,
+			UserPin = true,
+			PinStyle = "Input"
+		},
+		{
+			Name = "Connected",
+			ControlType = "Indicator",
+			IndicatorType = "LED",
+			Count = 1,
+			UserPin = true,
+			PinStyle = "Output"
+		}
+	}
+	return ctrls
+end
+
+function GetControlLayout(props)
+	local layout = {}
+	local graphics = {}
+	local i
+	local nMics = props["Microphones"].Value
+
+	ypos = 10
+	table.insert(
+		graphics,
+		{
+			Type = "Header",
+			Text = "Available",
+			Font = "Roboto",
+			FontSize = 12,
+			FontStyle = "Regular",
+			HTextAlign = "Center",
+			Color = {0, 0, 0},
+			Fill = {0, 0, 0, 0},
+			Position = {50, ypos},
+			Size = {400, 18}
+		}
+	)
+	ypos = ypos + 26
+	for i = 1, nMics do
+		table.insert(
+			graphics,
+			{
+				Type = "Text",
+				Text = "Mic " .. i,
+				Font = "Roboto",
+				FontSize = 12,
+				FontStyle = "Regular",
+				HTextAlign = "Center",
+				Color = {0, 0, 0},
+				Fill = {0, 0, 0, 0},
+				Position = {140 + (i - 1) * 49, ypos},
+				Size = {36, 18}
+			}
+		)
+	end
+	ypos = ypos + 26
+	table.insert(
+		graphics,
+		{
+			Type = "Text",
+			Text = "Available Primary",
+			Font = "Roboto",
+			FontSize = 12,
+			FontStyle = "Regular",
+			HTextAlign = "Right",
+			Color = {0, 0, 0},
+			Fill = {0, 0, 0, 0},
+			Position = {11, ypos},
+			Size = {120, 18}
+		}
+	)
+	for i = 1, nMics do
+		layout["Available " .. i] = {
+			PrettyName = "Mic " .. i .. "~Available~Primary",
+			Style = "Button",
+			ButtonVisualStyle = btn_style,
+			Color = {255, 255, 255},
+			UnlinkOffColor = false,
+			Position = {140 + 49 * (i - 1), ypos},
+			Size = {36, 16}
+		}
+	end
+	ypos = ypos + 26
+	table.insert(
+		graphics,
+		{
+			Type = "Text",
+			Text = "Available Secondary",
+			Font = "Roboto",
+			FontSize = 12,
+			FontStyle = "Regular",
+			HTextAlign = "Right",
+			Color = {0, 0, 0},
+			Fill = {0, 0, 0, 0},
+			Position = {11, ypos},
+			Size = {120, 18}
+		}
+	)
+	for i = 1, nMics do
+		layout["AvailableSecondary " .. i] = {
+			PrettyName = "Mic " .. i .. "~Available~Secondary",
+			Style = "Button",
+			ButtonVisualStyle = btn_style,
+			Color = {255, 255, 255},
+			UnlinkOffColor = false,
+			Position = {140 + 49 * (i - 1), ypos},
+			Size = {36, 16}
+		}
+	end
+	ypos = ypos + 26
+	table.insert(
+		graphics,
+		{
+			Type = "Text",
+			Text = "Refresh",
+			Font = "Roboto",
+			FontSize = 12,
+			FontStyle = "Regular",
+			HTextAlign = "Right",
+			Color = {0, 0, 0},
+			Fill = {0, 0, 0, 0},
+			Position = {11, ypos},
+			Size = {120, 18}
+		}
+	)
+	layout["GetAvailable"] = {
+		PrettyName = "Refresh Available",
+		Style = "Button",
+		ButtonVisualStyle = btn_style,
+		Color = {255, 255, 255},
+		UnlinkOffColor = false,
+		Position = {140, ypos},
+		Size = {36, 16}
+	}
+	ypos = ypos + 38
+	table.insert(
+		graphics,
+		{
+			Type = "Header",
+			Text = "Device Type",
+			Font = "Roboto",
+			FontSize = 12,
+			FontStyle = "Regular",
+			HTextAlign = "Center",
+			Color = {0, 0, 0},
+			Fill = {0, 0, 0, 0},
+			Position = {50, ypos},
+			Size = {400, 18}
+		}
+	)
+	ypos = ypos + 26
+	table.insert(
+		graphics,
+		{
+			Type = "Text",
+			Text = "BodyPack",
+			Font = "Roboto",
+			FontSize = 12,
+			FontStyle = "Regular",
+			HTextAlign = "Center",
+			Color = {0, 0, 0},
+			Fill = {0, 0, 0, 0},
+			Position = {165, ypos},
+			Size = {80, 18}
+		}
+	)
+	table.insert(
+		graphics,
+		{
+			Type = "Text",
+			Text = "Handheld",
+			Font = "Roboto",
+			FontSize = 12,
+			FontStyle = "Regular",
+			HTextAlign = "Center",
+			Color = {0, 0, 0},
+			Fill = {0, 0, 0, 0},
+			Position = {235, ypos},
+			Size = {80, 18}
+		}
+	)
+	table.insert(
+		graphics,
+		{
+			Type = "Text",
+			Text = "Boundary",
+			Font = "Roboto",
+			FontSize = 12,
+			FontStyle = "Regular",
+			HTextAlign = "Center",
+			Color = {0, 0, 0},
+			Fill = {0, 0, 0, 0},
+			Position = {305, ypos},
+			Size = {80, 18}
+		}
+	)
+	table.insert(
+		graphics,
+		{
+			Type = "Text",
+			Text = "GooseNeck",
+			Font = "Roboto",
+			FontSize = 12,
+			FontStyle = "Regular",
+			HTextAlign = "Center",
+			Color = {0, 0, 0},
+			Fill = {0, 0, 0, 0},
+			Position = {375, ypos},
+			Size = {80, 18}
+		}
+	)
+	ypos = ypos + 26
+	for i = 1, nMics do
+		table.insert(
+			graphics,
+			{
+				Type = "Text",
+				Text = "Mic " .. i,
+				Font = "Roboto",
+				FontSize = 12,
+				FontStyle = "Regular",
+				HTextAlign = "Right",
+				Color = {0, 0, 0},
+				Fill = {0, 0, 0, 0},
+				Position = {11, ypos},
+				Size = {70, 18}
+			}
+		)
+		layout["Type " .. i] = {
+			PrettyName = "Mic " .. i .. "~Type~Name",
+			Style = "TextBox",
+			TextBoxStyle = "Normal",
+			IsReadOnly = true,
+			Color = {255, 255, 255},
+			Position = {90, ypos},
+			Size = {60, 16}
+		}
+		layout["IsMXW1 " .. i] = {
+			PrettyName = "Mic " .. i .. "~Type~Body Pack",
+			Style = "Button",
+			ButtonVisualStyle = btn_style,
+			Color = {255, 255, 255},
+			UnlinkOffColor = false,
+			Position = {187, ypos},
+			Size = {36, 16}
+		}
+		layout["IsMXW2 " .. i] = {
+			PrettyName = "Mic " .. i .. "~Type~Handheld",
+			Style = "Button",
+			ButtonVisualStyle = btn_style,
+			Color = {255, 255, 255},
+			UnlinkOffColor = false,
+			Position = {257, ypos},
+			Size = {36, 16}
+		}
+		layout["IsMXW6 " .. i] = {
+			PrettyName = "Mic " .. i .. "~Type~Boundary",
+			Style = "Button",
+			ButtonVisualStyle = btn_style,
+			Color = {255, 255, 255},
+			UnlinkOffColor = false,
+			Position = {327, ypos},
+			Size = {36, 16}
+		}
+		layout["IsMXW8 " .. i] = {
+			PrettyName = "Mic " .. i .. "~Type~Goose Neck",
+			Style = "Button",
+			ButtonVisualStyle = btn_style,
+			Color = {255, 255, 255},
+			UnlinkOffColor = false,
+			Position = {397, ypos},
+			Size = {36, 16}
+		}
+		ypos = ypos + 26
+	end
+	table.insert(
+		graphics,
+		{
+			Type = "Text",
+			Text = "Refresh",
+			Font = "Roboto",
+			FontSize = 12,
+			FontStyle = "Regular",
+			HTextAlign = "Right",
+			Color = {0, 0, 0},
+			Fill = {0, 0, 0, 0},
+			Position = {11, ypos},
+			Size = {70, 18}
+		}
+	)
+	layout["GetType"] = {
+		PrettyName = "Refresh Type",
+		Style = "Button",
+		ButtonVisualStyle = btn_style,
+		Color = {255, 255, 255},
+		UnlinkOffColor = false,
+		Position = {100, ypos},
+		Size = {36, 16}
+	}
+	ypos = ypos + 36
+	table.insert(
+		graphics,
+		{
+			Type = "Header",
+			Text = "Device Status",
+			Font = "Roboto",
+			FontSize = 12,
+			FontStyle = "Regular",
+			HTextAlign = "Center",
+			Color = {0, 0, 0},
+			Fill = {0, 0, 0, 0},
+			Position = {50, ypos},
+			Size = {400, 18}
+		}
+	)
+	ypos = ypos + 24
+	table.insert(
+		graphics,
+		{
+			Type = "Text",
+			Text = "Off",
+			Font = "Roboto",
+			FontSize = 12,
+			FontStyle = "Regular",
+			HTextAlign = "Center",
+			Color = {0, 0, 0},
+			Fill = {0, 0, 0, 0},
+			Position = {78, ypos},
+			Size = {60, 18}
+		}
+	)
+	table.insert(
+		graphics,
+		{
+			Type = "Text",
+			Text = "Active",
+			Font = "Roboto",
+			FontSize = 12,
+			FontStyle = "Regular",
+			HTextAlign = "Center",
+			Color = {0, 0, 0},
+			Fill = {0, 0, 0, 0},
+			Position = {150, ypos},
+			Size = {60, 18}
+		}
+	)
+	table.insert(
+		graphics,
+		{
+			Type = "Text",
+			Text = "Mute",
+			Font = "Roboto",
+			FontSize = 12,
+			FontStyle = "Regular",
+			HTextAlign = "Center",
+			Color = {0, 0, 0},
+			Fill = {0, 0, 0, 0},
+			Position = {220, ypos},
+			Size = {60, 18}
+		}
+	)
+	table.insert(
+		graphics,
+		{
+			Type = "Text",
+			Text = "Standby",
+			Font = "Roboto",
+			FontSize = 12,
+			FontStyle = "Regular",
+			HTextAlign = "Center",
+			Color = {0, 0, 0},
+			Fill = {0, 0, 0, 0},
+			Position = {290, ypos},
+			Size = {60, 18}
+		}
+	)
+	table.insert(
+		graphics,
+		{
+			Type = "Text",
+			Text = "Charger",
+			Font = "Roboto",
+			FontSize = 12,
+			FontStyle = "Regular",
+			HTextAlign = "Center",
+			Color = {0, 0, 0},
+			Fill = {0, 0, 0, 0},
+			Position = {360, ypos},
+			Size = {60, 18}
+		}
+	)
+	ypos = ypos + 22
+	for i = 1, nMics do
+		table.insert(
+			graphics,
+			{
+				Type = "Text",
+				Text = "Mic " .. i,
+				Font = "Roboto",
+				FontSize = 12,
+				FontStyle = "Regular",
+				HTextAlign = "Right",
+				Color = {0, 0, 0},
+				Fill = {0, 0, 0, 0},
+				Position = {11, ypos},
+				Size = {70, 18}
+			}
+		)
+		layout["Unknown " .. i] = {
+			PrettyName = "Mic " .. i .. "~Status~Set~Off",
+			Style = "Button",
+			ButtonVisualStyle = btn_style,
+			Color = {255, 255, 255},
+			UnlinkOffColor = false,
+			Position = {90, ypos},
+			Size = {36, 16}
+		}
+		layout["IsUnknown " .. i] = {
+			PrettyName = "Mic " .. i .. "~Status~Current~Off",
+			Style = "LED",
+			Color = {0, 255, 0},
+			UnlinkOffColor = false,
+			Position = {130, ypos},
+			Size = {16, 16}
+		}
+		layout["Active " .. i] = {
+			PrettyName = "Mic " .. i .. "~Status~Set~Active",
+			Style = "Button",
+			ButtonVisualStyle = btn_style,
+			Color = {255, 255, 255},
+			UnlinkOffColor = false,
+			Position = {160, ypos},
+			Size = {36, 16}
+		}
+		layout["IsActive " .. i] = {
+			PrettyName = "Mic " .. i .. "~Status~Current~Active",
+			Style = "LED",
+			Color = {0, 255, 0},
+			UnlinkOffColor = false,
+			Position = {200, ypos},
+			Size = {16, 16}
+		}
+		layout["Mute " .. i] = {
+			PrettyName = "Mic " .. i .. "~Status~Set~Mute",
+			Style = "Button",
+			ButtonVisualStyle = btn_style,
+			Color = {255, 255, 255},
+			UnlinkOffColor = false,
+			Position = {230, ypos},
+			Size = {36, 16}
+		}
+		layout["IsMute " .. i] = {
+			PrettyName = "Mic " .. i .. "~Status~Current~Muted",
+			Style = "LED",
+			Color = {0, 255, 0},
+			UnlinkOffColor = false,
+			Position = {270, ypos},
+			Size = {16, 16}
+		}
+		layout["Standby " .. i] = {
+			PrettyName = "Mic " .. i .. "~Status~Set~Standby",
+			Style = "Button",
+			ButtonVisualStyle = btn_style,
+			Color = {255, 255, 255},
+			UnlinkOffColor = false,
+			Position = {300, ypos},
+			Size = {36, 16}
+		}
+		layout["IsStandby " .. i] = {
+			PrettyName = "Mic " .. i .. "~Status~Current~Standby",
+			Style = "LED",
+			Color = {0, 255, 0},
+			UnlinkOffColor = false,
+			Position = {340, ypos},
+			Size = {16, 16}
+		}
+		layout["IsCharger " .. i] = {
+			PrettyName = "Mic " .. i .. "~Status~Current~On Charger",
+			Style = "LED",
+			Color = {0, 255, 0},
+			UnlinkOffColor = false,
+			Position = {382, ypos},
+			Size = {16, 16}
+		}
+		ypos = ypos + 26
+	end
+	ypos = ypos + 10
+	table.insert(
+		graphics,
+		{
+			Type = "Header",
+			Text = "Device LED",
+			Font = "Roboto",
+			FontSize = 12,
+			FontStyle = "Regular",
+			HTextAlign = "Center",
+			Color = {0, 0, 0},
+			Fill = {0, 0, 0, 0},
+			Position = {50, ypos},
+			Size = {400, 18}
+		}
+	)
+	ypos = ypos + 22
+	for i = 1, nMics do
+		table.insert(
+			graphics,
+			{
+				Type = "Text",
+				Text = "Mic " .. i,
+				Font = "Roboto",
+				FontSize = 12,
+				FontStyle = "Regular",
+				HTextAlign = "Center",
+				Color = {0, 0, 0},
+				Fill = {0, 0, 0, 0},
+				Position = {140 + (i - 1) * 49, ypos},
+				Size = {36, 18}
+			}
+		)
+	end
+	ypos = ypos + 26
+	table.insert(
+		graphics,
+		{
+			Type = "Text",
+			Text = "Green",
+			Font = "Roboto",
+			FontSize = 12,
+			FontStyle = "Regular",
+			HTextAlign = "Right",
+			Color = {0, 0, 0},
+			Fill = {0, 0, 0, 0},
+			Position = {11, ypos},
+			Size = {120, 18}
+		}
+	)
+	for i = 1, nMics do
+		layout["LED_Green_State " .. i] = {
+			PrettyName = "Mic " .. i .. "~LED~State~Green",
+			Style = "LED",
+			Color = {0, 255, 0},
+			UnlinkOffColor = false,
+			Position = {150 + 49 * (i - 1), ypos},
+			Size = {16, 16}
+		}
+	end
+	ypos = ypos + 26
+	table.insert(
+		graphics,
+		{
+			Type = "Text",
+			Text = "Red",
+			Font = "Roboto",
+			FontSize = 12,
+			FontStyle = "Regular",
+			HTextAlign = "Right",
+			Color = {0, 0, 0},
+			Fill = {0, 0, 0, 0},
+			Position = {11, ypos},
+			Size = {120, 18}
+		}
+	)
+	for i = 1, nMics do
+		layout["LED_Red_State " .. i] = {
+			PrettyName = "Mic " .. i .. "~LED~State~Red",
+			Style = "LED",
+			Color = {255, 0, 0},
+			UnlinkOffColor = false,
+			Position = {150 + 49 * (i - 1), ypos},
+			Size = {16, 16}
+		}
+	end
+	ypos = ypos + 26
+	table.insert(
+		graphics,
+		{
+			Type = "Text",
+			Text = "Green/Off",
+			Font = "Roboto",
+			FontSize = 12,
+			FontStyle = "Regular",
+			HTextAlign = "Right",
+			Color = {0, 0, 0},
+			Fill = {0, 0, 0, 0},
+			Position = {11, ypos},
+			Size = {120, 18}
+		}
+	)
+	for i = 1, nMics do
+		layout["LED_Green_Off " .. i] = {
+			PrettyName = "Mic " .. i .. "~LED~Set~Green/Off",
+			Style = "Button",
+			ButtonVisualStyle = btn_style,
+			Color = {0, 255, 0},
+			UnlinkOffColor = false,
+			Position = {140 + 49 * (i - 1), ypos},
+			Size = {36, 16}
+		}
+	end
+	ypos = ypos + 26
+	table.insert(
+		graphics,
+		{
+			Type = "Text",
+			Text = "Red/Off",
+			Font = "Roboto",
+			FontSize = 12,
+			FontStyle = "Regular",
+			HTextAlign = "Right",
+			Color = {0, 0, 0},
+			Fill = {0, 0, 0, 0},
+			Position = {11, ypos},
+			Size = {120, 18}
+		}
+	)
+	for i = 1, nMics do
+		layout["LED_Red_Off " .. i] = {
+			PrettyName = "Mic " .. i .. "~LED~Set~Red/Off",
+			Style = "Button",
+			ButtonVisualStyle = btn_style,
+			Color = {255, 0, 0},
+			UnlinkOffColor = false,
+			Position = {140 + 49 * (i - 1), ypos},
+			Size = {36, 16}
+		}
+	end
+	ypos = ypos + 26
+	table.insert(
+		graphics,
+		{
+			Type = "Text",
+			Text = "Red/Green",
+			Font = "Roboto",
+			FontSize = 12,
+			FontStyle = "Regular",
+			HTextAlign = "Right",
+			Color = {0, 0, 0},
+			Fill = {0, 0, 0, 0},
+			Position = {11, ypos},
+			Size = {120, 18}
+		}
+	)
+	for i = 1, nMics do
+		layout["LED_Red_Green " .. i] = {
+			PrettyName = "Mic " .. i .. "~LED~Set~Red/Green",
+			Style = "Button",
+			ButtonVisualStyle = btn_style,
+			Color = {255, 0, 0},
+			OffColor = {0, 255, 0},
+			UnlinkOffColor = true,
+			Position = {140 + 49 * (i - 1), ypos},
+			Size = {36, 16}
+		}
+	end
+	ypos = ypos + 36
+	table.insert(
+		graphics,
+		{
+			Type = "Header",
+			Text = "Mic Button",
+			Font = "Roboto",
+			FontSize = 12,
+			FontStyle = "Regular",
+			HTextAlign = "Center",
+			Color = {0, 0, 0},
+			Fill = {0, 0, 0, 0},
+			Position = {50, ypos},
+			Size = {400, 18}
+		}
+	)
+	ypos = ypos + 22
+	for i = 1, nMics do
+		table.insert(
+			graphics,
+			{
+				Type = "Text",
+				Text = "Mic " .. i,
+				Font = "Roboto",
+				FontSize = 12,
+				FontStyle = "Regular",
+				HTextAlign = "Center",
+				Color = {0, 0, 0},
+				Fill = {0, 0, 0, 0},
+				Position = {140 + (i - 1) * 49, ypos},
+				Size = {36, 18}
+			}
+		)
+	end
+	ypos = ypos + 26
+	table.insert(
+		graphics,
+		{
+			Type = "Text",
+			Text = "State",
+			Font = "Roboto",
+			FontSize = 12,
+			FontStyle = "Regular",
+			HTextAlign = "Right",
+			Color = {0, 0, 0},
+			Fill = {0, 0, 0, 0},
+			Position = {11, ypos},
+			Size = {120, 18}
+		}
+	)
+	for i = 1, nMics do
+		layout["MicButtonState " .. i] = {
+			PrettyName = "Mic " .. i .. "~Button~State",
+			Style = "Button",
+			ButtonVisualStyle = btn_style,
+			Color = {255, 255, 255},
+			UnlinkOffColor = false,
+			IsReadOnly = true,
+			Position = {140 + 49 * (i - 1), ypos},
+			Size = {36, 16}
+		}
+	end
+	ypos = ypos + 26
+	table.insert(
+		graphics,
+		{
+			Type = "Text",
+			Text = "Toggle",
+			Font = "Roboto",
+			FontSize = 12,
+			FontStyle = "Regular",
+			HTextAlign = "Right",
+			Color = {0, 0, 0},
+			Fill = {0, 0, 0, 0},
+			Position = {11, ypos},
+			Size = {120, 18}
+		}
+	)
+	for i = 1, nMics do
+		layout["MicButtonToggle " .. i] = {
+			PrettyName = "Mic " .. i .. "~Button~Toggle",
+			Style = "Button",
+			ButtonVisualStyle = btn_style,
+			Color = {255, 255, 255},
+			UnlinkOffColor = false,
+			IsReadOnly = true,
+			Position = {140 + 49 * (i - 1), ypos},
+			Size = {36, 16}
+		}
+	end
+	ypos = ypos + 36
+	table.insert(
+		graphics,
+		{
+			Type = "Header",
+			Text = "Connectivity",
+			Font = "Roboto",
+			FontSize = 12,
+			FontStyle = "Regular",
+			HTextAlign = "Center",
+			Color = {0, 0, 0},
+			Fill = {0, 0, 0, 0},
+			Position = {50, ypos},
+			Size = {400, 18}
+		}
+	)
+	ypos = ypos + 26
+	table.insert(
+		graphics,
+		{
+			Type = "Text",
+			Text = "IP Address",
+			Font = "Roboto",
+			FontSize = 12,
+			FontStyle = "Regular",
+			HTextAlign = "Right",
+			Color = {0, 0, 0},
+			Fill = {0, 0, 0, 0},
+			Position = {11, ypos},
+			Size = {120, 18}
+		}
+	)
+	table.insert(
+		graphics,
+		{
+			Type = "Text",
+			Text = "TCP Port",
+			Font = "Roboto",
+			FontSize = 12,
+			FontStyle = "Regular",
+			HTextAlign = "Right",
+			Color = {0, 0, 0},
+			Fill = {0, 0, 0, 0},
+			Position = {161, ypos},
+			Size = {120, 18}
+		}
+	)
+	table.insert(
+		graphics,
+		{
+			Type = "Text",
+			Text = "Connected",
+			Font = "Roboto",
+			FontSize = 12,
+			FontStyle = "Regular",
+			HTextAlign = "Right",
+			Color = {0, 0, 0},
+			Fill = {0, 0, 0, 0},
+			Position = {311, ypos},
+			Size = {120, 18}
+		}
+	)
+	layout["ipAddress"] = {
+		PrettyName = "IP Address",
+		Style = "TextBox",
+		Color = {110, 198, 241},
+		Position = {140, ypos},
+		Size = {80, 16}
+	}
+	layout["tcpPort"] = {
+		PrettyName = "TCP Port",
+		Style = "TextBox",
+		Color = {110, 198, 241},
+		Position = {290, ypos},
+		Size = {36, 16}
+	}
+	layout["Connected"] = {
+		PrettyName = "Connected",
+		Style = "LED",
+		Color = {0, 255, 0},
+		UnlinkOffColor = false,
+		Position = {440, ypos},
+		Size = {16, 16}
+	}
+	return layout, graphics
+end
+
+if Controls then
+	nMics = Properties["Microphones"].Value
+	sock = TcpSocket.New()
+	sock.ReadTimeout = 0
+	sock.WriteTimeout = 5
+	sock.ReconnectTimeout = 5
+	cmdTimer = Timer.New()
+	cmdTimerRunning = false
+	fifo = {}
+	lastSendAt = os.time()
+	cmdGap = 0.1
+	lastGap = 0.1
+	sockInBuf = ""
+	cmdTimeout = 0.5
+	primaryActive = {}
+	secondaryActive = {}
+	greenLED = {}
+	redLED = {}
+
+	sock.Connected = function(sock)
+		print("TCP socket to MXW is connected")
+		Controls.Connected.Boolean = true
+		for i = 1, nMics do
+			SendCmd("< GET " .. i .. " TX_AVAILABLE >", "< REP " .. i .. " TX_AVAILABLE", cmdGap)
+			SendCmd("< GET " .. i .. " TX_TYPE >", "< REP " .. i .. " TX_TYPE", cmdGap)
+			SendCmd("< GET " .. i .. " TX_STATUS >", "< REP " .. i .. " TX_STATUS", cmdGap)
+			SendCmd("< GET " .. i .. " LED_STATUS >", "< REP " .. i .. " LED_STATUS", cmdGap)
+			SendCmd("< GET SEC " .. i .. " TX_AVAILABLE >", "< REP SEC " .. i .. " TX_AVAILABLE", cmdGap)
+			SendCmd("< GET SEC " .. i .. " TX_TYPE >", "< REP SEC " .. i .. " TX_TYPE", cmdGap)
+			SendCmd("< GET SEC " .. i .. " TX_STATUS >", "< REP SEC " .. i .. " TX_STATUS", cmdGap)
+			SendCmd("< GET SEC " .. i .. " LED_STATUS >", "< REP SEC " .. i .. " LED_STATUS", cmdGap)
+		end
+	end
+
+	function SendCmdOut(cmd, tries)
+		print("Try ", tries, " Command = ", cmd)
+		if isSerial or IsConnected() then
+			sock:Write(cmd)
+			lastSendAt = os.time()
+		end
+	end
+
+	cmdTimer.EventHandler = function(tmr)
+		cmdTimer:Stop()
+		cmdTimerRunning = false
+		if #fifo == 0 then
+			-- nothing to do
+			print("FIFO is empty.")
+			return
+		end
+		if fifo[1].tries == 0 then
+			table.remove(fifo, 1)
+			if #fifo == 0 then
+				-- FIFO is empty
+				return
+			end
+		end
+		-- send command out
+		fifo[1].tries = fifo[1].tries - 1
+		lastGap = fifo[1].gap
+		SendCmdOut(fifo[1].cmd, fifo[1].tries + 1)
+		-- reset timer
+		cmdTimerRunning = true
+		cmdTimer:Start(cmdTimeout)
+	end
+
+	function ClearOutputs()
+		local i
+		for i = 1, nMics do
+			DeviceSetUnavailable(i)
+		end
+	end
+
+	function DeviceSetUnavailable(which)
+		Controls.Available[which].Boolean = false
+		Controls.AvailableSecondary[which].Boolean = false
+		Controls.IsMXW1[which].Boolean = false
+		Controls.IsMXW2[which].Boolean = false
+		Controls.IsMXW8[which].Boolean = false
+		Controls.IsMXW6[which].Boolean = false
+		Controls.IsUnknown[which].Boolean = false
+		Controls.IsActive[which].Boolean = false
+		Controls.IsMute[which].Boolean = false
+		Controls.IsStandby[which].Boolean = false
+		Controls.IsCharger[which].Boolean = false
+		Controls.LED_Green_State[which].Boolean = false
+		Controls.LED_Red_State[which].Boolean = false
+		primaryActive[which] = false
+		secondaryActive[which] = false
+		greenLED[which] = false
+		redLED[which] = false
+	end
+
+	sock.Reconnect = function(sock)
+		print("TCP socket to MXW is reconnecting")
+	end
+
+	sock.Closed = function(sock)
+		print("TCP socket to MXW is closed by the remote end")
+		Controls.Connected.Boolean = false
+		ClearOutputs()
+	end
+
+	sock.Error = function(sock, err)
+		print("TCP socket to MXW has an error: ", err)
+	end
+
+	sock.Timeout = function(sock, err)
+		print("TCP socket to MXW read/write timeout: ", err)
+	end
+
+	function IsConnected()
+		return sock.IsConnected
+	end
+
+	function SendCmd(cmd, chk, gap)
+		local now, delta
+
+		table.insert(fifo, {["cmd"] = cmd, ["tries"] = 3, ["gap"] = gap, ["check"] = chk})
+		if #fifo == 1 then
+			delta = os.time() - lastSendAt
+			if delta > lastGap then
+				fifo[1].tries = 2
+				lastGap = fifo[1].gap
+				SendCmdOut(cmd, 3)
+			else
+				cmdTimerRunning = true
+				cmdTimer:Start(lastGap - delta)
+			end
+		end
+		if not cmdTimerRunning then
+			cmdTimerRunning = true
+			cmdTimer:Start(lastGap)
+		end
+	end
+
+	function ParseInput(inStr)
+		local i
+		local str
+		if string.find(inStr, "TX_AVAILABLE YES") ~= nil then
+			for i = 1, nMics do
+				str = "REP SEC " .. i
+				if string.find(inStr, str) ~= nil then
+					Controls.AvailableSecondary[i].Boolean = true
+					SendCmd("< GET SEC " .. i .. " TX_STATUS >", "< REP SEC " .. i .. " TX_STATUS", cmdGap)
+					SendCmd("< GET SEC " .. i .. " TX_TYPE >", "< REP SEC " .. i .. " TX_TYPE", cmdGap)
+					SendCmd("< GET SEC " .. i .. " LED_STATUS >", "< REP SEC " .. i .. " LED_STATUS", cmdGap)
+				else
+					str = "REP " .. i
+					if string.find(inStr, str) ~= nil then
+						Controls.Available[i].Boolean = true
+						SendCmd("< GET " .. i .. " TX_STATUS >", "< REP " .. i .. " TX_STATUS", cmdGap)
+						SendCmd("< GET " .. i .. " TX_TYPE >", "< REP " .. i .. " TX_TYPE", cmdGap)
+						SendCmd("< GET " .. i .. " LED_STATUS >", "< REP " .. i .. " LED_STATUS", cmdGap)
+					end
+				end
+			end
+		elseif string.find(inStr, "TX_AVAILABLE NO") ~= nil then
+			for i = 1, nMics do
+				str = "REP SEC " .. i
+				if string.find(inStr, str) ~= nil then
+					Controls.AvailableSecondary[i].Boolean = false
+					if not Controls.Available[i].Boolean then
+						DeviceSetUnavailable(i)
+					end
+				else
+					str = "REP " .. i
+					if string.find(inStr, str) ~= nil then
+						Controls.Available[i].Boolean = false
+						if not Controls.AvailableSecondary[i].Boolean then
+							DeviceSetUnavailable(i)
+						end
+					end
+				end
+			end
+		elseif string.find(inStr, "TX_TYPE MXW1") ~= nil then
+			for i = 1, nMics do
+				str = "REP SEC " .. i
+				if string.find(inStr, str) ~= nil then
+					if secondaryActive[i] then
+						Controls.IsMXW2[i].Boolean = false
+						Controls.IsMXW6[i].Boolean = false
+						Controls.IsMXW8[i].Boolean = false
+						Controls.IsMXW1[i].Boolean = false
+						Controls.Type[i].String = "Body Pack"
+						Controls.IsMXW1[i].Boolean = true
+					end
+				else
+					str = "REP " .. i
+					if string.find(inStr, str) ~= nil then
+						if primaryActive[i] then
+							Controls.IsMXW2[i].Boolean = false
+							Controls.IsMXW6[i].Boolean = false
+							Controls.IsMXW8[i].Boolean = false
+							Controls.IsMXW1[i].Boolean = true
+							Controls.Type[i].String = "Body Pack"
+						end
+					end
+				end
+			end
+		elseif string.find(inStr, "TX_TYPE MXW2") ~= nil then
+			for i = 1, nMics do
+				str = "REP SEC " .. i
+				if string.find(inStr, str) ~= nil then
+					if secondaryActive[i] then
+						Controls.IsMXW1[i].Boolean = false
+						Controls.IsMXW6[i].Boolean = false
+						Controls.IsMXW8[i].Boolean = false
+						Controls.IsMXW2[i].Boolean = true
+						Controls.Type[i].String = "Handheld"
+					end
+				else
+					str = "REP " .. i
+					if string.find(inStr, str) ~= nil then
+						if primaryActive[i] then
+							Controls.IsMXW1[i].Boolean = false
+							Controls.IsMXW6[i].Boolean = false
+							Controls.IsMXW8[i].Boolean = false
+							Controls.IsMXW2[i].Boolean = true
+							Controls.Type[i].String = "Handheld"
+						end
+					end
+				end
+			end
+		elseif string.find(inStr, "TX_TYPE MXW6") ~= nil then
+			for i = 1, nMics do
+				str = "REP SEC " .. i
+				if string.find(inStr, str) ~= nil then
+					if secondaryActive[i] then
+						Controls.IsMXW1[i].Boolean = false
+						Controls.IsMXW2[i].Boolean = false
+						Controls.IsMXW8[i].Boolean = false
+						Controls.IsMXW6[i].Boolean = true
+						Controls.Type[i].String = "Boundary"
+					end
+				else
+					str = "REP " .. i
+					if string.find(inStr, str) ~= nil then
+						if primaryActive[i] then
+							Controls.IsMXW1[i].Boolean = false
+							Controls.IsMXW2[i].Boolean = false
+							Controls.IsMXW8[i].Boolean = false
+							Controls.IsMXW6[i].Boolean = true
+							Controls.Type[i].String = "Boundary"
+						end
+					end
+				end
+			end
+		elseif string.find(inStr, "TX_TYPE MXW8") ~= nil then
+			for i = 1, nMics do
+				str = "REP SEC " .. i
+				if string.find(inStr, str) ~= nil then
+					if secondaryActive[i] then
+						Controls.IsMXW1[i].Boolean = false
+						Controls.IsMXW2[i].Boolean = false
+						Controls.IsMXW6[i].Boolean = false
+						Controls.IsMXW8[i].Boolean = true
+						Controls.Type[i].String = "Gooseneck"
+					end
+				else
+					str = "REP " .. i
+					if string.find(inStr, str) ~= nil then
+						if primaryActive[i] then
+							Controls.IsMXW1[i].Boolean = false
+							Controls.IsMXW2[i].Boolean = false
+							Controls.IsMXW6[i].Boolean = false
+							Controls.IsMXW8[i].Boolean = true
+							Controls.Type[i].String = "Gooseneck"
+						end
+					end
+				end
+			end
+		elseif string.find(inStr, "TX_STATUS UNKNOWN") ~= nil then
+			for i = 1, nMics do
+				str = "REP SEC " .. i
+				if string.find(inStr, str) ~= nil then
+					secondaryActive[i] = false
+					if not primaryActive[i] then
+						Controls.IsActive[i].Boolean = false
+						Controls.IsMute[i].Boolean = false
+						Controls.IsStandby[i].Boolean = false
+						Controls.IsCharger[i].Boolean = false
+						Controls.IsUnknown[i].Boolean = true
+					end
+				else
+					str = "REP " .. i
+					if string.find(inStr, str) ~= nil then
+						primaryActive[i] = false
+						if not secondaryActive[i] then
+							Controls.IsActive[i].Boolean = false
+							Controls.IsMute[i].Boolean = false
+							Controls.IsStandby[i].Boolean = false
+							Controls.IsCharger[i].Boolean = false
+							Controls.IsUnknown[i].Boolean = true
+						end
+					end
+				end
+			end
+		elseif string.find(inStr, "TX_STATUS ACTIVE") ~= nil then
+			for i = 1, nMics do
+				str = "REP SEC " .. i
+				if string.find(inStr, str) ~= nil then
+					secondaryActive[i] = true
+					Controls.IsMute[i].Boolean = false
+					Controls.IsStandby[i].Boolean = false
+					Controls.IsCharger[i].Boolean = false
+					Controls.IsUnknown[i].Boolean = false
+					Controls.IsActive[i].Boolean = true
+					SendCmd("< SET SEC " .. i .. " LED_STATUS OF ON >", "< REP SEC " .. i .. " LED_STATUS", cmdGap)
+					SendCmd("< GET SEC " .. i .. " LED_STATUS >", "< REP SEC " .. i .. " LED_STATUS", cmdGap)
+				else
+					str = "REP " .. i
+					if string.find(inStr, str) ~= nil then
+						print("Channel" .. i .. " is active.\n")
+						primaryActive[i] = true
+						Controls.IsMute[i].Boolean = false
+						Controls.IsStandby[i].Boolean = false
+						Controls.IsCharger[i].Boolean = false
+						Controls.IsUnknown[i].Boolean = false
+						Controls.IsActive[i].Boolean = true
+						print("    Set LED green and poll LED status.\n")
+						SendCmd("< SET " .. i .. " LED_STATUS OF ON >", "< REP " .. i .. " LED_STATUS", cmdGap)
+						SendCmd("< GET " .. i .. " LED_STATUS >", "< REP " .. i .. " LED_STATUS", cmdGap)
+					end
+				end
+			end
+		elseif string.find(inStr, "TX_STATUS MUTE") ~= nil then
+			for i = 1, nMics do
+				str = "REP SEC " .. i
+				if string.find(inStr, str) ~= nil then
+					if secondaryActive[i] then
+						Controls.IsActive[i].Boolean = false
+						Controls.IsStandby[i].Boolean = false
+						Controls.IsCharger[i].Boolean = false
+						Controls.IsUnknown[i].Boolean = false
+						Controls.IsMute[i].Boolean = true
+						SendCmd("< GET SEC " .. i .. " LED_STATUS >", "< REP SEC " .. i .. " LED_STATUS", cmdGap)
+					end
+				else
+					str = "REP " .. i
+					if string.find(inStr, str) ~= nil then
+						if primaryActive[i] then
+							Controls.IsActive[i].Boolean = false
+							Controls.IsStandby[i].Boolean = false
+							Controls.IsCharger[i].Boolean = false
+							Controls.IsUnknown[i].Boolean = false
+							Controls.IsMute[i].Boolean = true
+							SendCmd("< GET " .. i .. " LED_STATUS >", "< REP " .. i .. " LED_STATUS", cmdGap)
+						end
+					end
+				end
+			end
+		elseif string.find(inStr, "TX_STATUS STANDBY") ~= nil then
+			for i = 1, nMics do
+				str = "REP SEC " .. i
+				if string.find(inStr, str) ~= nil then
+					if secondaryActive[i] then
+						Controls.IsActive[i].Boolean = false
+						Controls.IsMute[i].Boolean = false
+						Controls.IsCharger[i].Boolean = false
+						Controls.IsUnknown[i].Boolean = false
+						Controls.IsStandby[i].Boolean = true
+					end
+				else
+					str = "REP " .. i
+					if string.find(inStr, str) ~= nil then
+						if primaryActive[i] then
+							Controls.IsActive[i].Boolean = false
+							Controls.IsMute[i].Boolean = false
+							Controls.IsCharger[i].Boolean = false
+							Controls.IsUnknown[i].Boolean = false
+							Controls.IsStandby[i].Boolean = true
+						end
+					end
+				end
+			end
+		elseif string.find(inStr, "TX_STATUS ON_CHARGER") ~= nil then
+			for i = 1, nMics do
+				str = "REP SEC " .. i
+				if string.find(inStr, str) ~= nil then
+					secondaryActive[i] = false
+					if not primaryActive[i] then
+						Controls.IsActive[i].Boolean = false
+						Controls.IsMute[i].Boolean = false
+						Controls.IsStandby[i].Boolean = false
+						Controls.IsUnknown[i].Boolean = false
+						Controls.IsCharger[i].Boolean = true
+					end
+				else
+					str = "REP " .. i
+					if string.find(inStr, str) ~= nil then
+						primaryActive[i] = false
+						if not secondaryActive[i] then
+							Controls.IsActive[i].Boolean = false
+							Controls.IsMute[i].Boolean = false
+							Controls.IsStandby[i].Boolean = false
+							Controls.IsUnknown[i].Boolean = false
+							Controls.IsCharger[i].Boolean = true
+						end
+					end
+				end
+			end
+		elseif string.find(inStr, "LED_STATUS OF OF") ~= nil then
+			for i = 1, nMics do
+				str = "REP SEC " .. i
+				if string.find(inStr, str) ~= nil then
+					if secondaryActive[i] then
+						if greenLED[i] then
+							greenLED[i] = false
+							Controls.LED_Green_State[i].Boolean = false
+						end
+						if redLED[i] then
+							redLED[i] = false
+							Controls.LED_Red_State[i].Boolean = false
+						end
+					end
+				else
+					str = "REP " .. i
+					if string.find(inStr, str) ~= nil then
+						if primaryActive[i] then
+							if greenLED[i] then
+								greenLED[i] = false
+								Controls.LED_Green_State[i].Boolean = false
+							end
+							if redLED[i] then
+								redLED[i] = false
+								Controls.LED_Red_State[i].Boolean = false
+							end
+						end
+					end
+				end
+			end
+		elseif string.find(inStr, "LED_STATUS ON OF") ~= nil then
+			for i = 1, nMics do
+				str = "REP SEC " .. i
+				if string.find(inStr, str) ~= nil then
+					if secondaryActive[i] then
+						if greenLED[i] then
+							greenLED[i] = false
+							Controls.LED_Green_State[i].Boolean = false
+						end
+						if not redLED[i] then
+							redLED[i] = true
+							Controls.LED_Red_State[i].Boolean = true
+						end
+					end
+				else
+					str = "REP " .. i
+					if string.find(inStr, str) ~= nil then
+						if primaryActive[i] then
+							if greenLED[i] then
+								greenLED[i] = false
+								Controls.LED_Green_State[i].Boolean = false
+							end
+							if not redLED[i] then
+								redLED[i] = true
+								Controls.LED_Red_State[i].Boolean = true
+							end
+						end
+					end
+				end
+			end
+		elseif string.find(inStr, "LED_STATUS OF ON") ~= nil then
+			for i = 1, nMics do
+				str = "REP SEC " .. i
+				if string.find(inStr, str) ~= nil then
+					if secondaryActive[i] then
+						if not greenLED[i] then
+							greenLED[i] = true
+							Controls.LED_Green_State[i].Boolean = true
+						end
+						if redLED[i] then
+							redLED[i] = false
+							Controls.LED_Red_State[i].Boolean = false
+						end
+					end
+				else
+					str = "REP " .. i
+					if string.find(inStr, str) ~= nil then
+						if primaryActive[i] then
+							if not greenLED[i] then
+								greenLED[i] = true
+								Controls.LED_Green_State[i].Boolean = true
+							end
+							if redLED[i] then
+								redLED[i] = false
+								Controls.LED_Red_State[i].Boolean = false
+							end
+						end
+					end
+				end
+			end
+		elseif string.find(inStr, "BUTTON_STS ON") ~= nil then
+			for i = 1, nMics do
+				str = "REP SEC " .. i
+				if string.find(inStr, str) ~= nil then
+					if secondaryActive[i] then
+						Controls.MicButtonState[i].Boolean = true
+						Controls.MicButtonToggle[i].Boolean = not Controls.MicButtonToggle[i].Boolean
+					end
+				else
+					str = "REP " .. i
+					if string.find(inStr, str) ~= nil then
+						if primaryActive[i] then
+							Controls.MicButtonState[i].Boolean = true
+							Controls.MicButtonToggle[i].Boolean = not Controls.MicButtonToggle[i].Boolean
+						end
+					end
+				end
+			end
+		elseif string.find(inStr, "BUTTON_STS OFF") ~= nil then
+			for i = 1, nMics do
+				str = "REP SEC " .. i
+				if string.find(inStr, str) ~= nil then
+					if secondaryActive[i] then
+						Controls.MicButtonState[i].Boolean = false
+					end
+				else
+					str = "REP " .. i
+					if string.find(inStr, str) ~= nil then
+						if primaryActive[i] then
+							Controls.MicButtonState[i].Boolean = false
+						end
+					end
+				end
+			end
+		end
+		if #fifo > 0 then
+			if fifo[1].tries < 3 then
+				-- now check if it is a reply
+				if string.find(inStr, fifo[1].check) ~= nil then
+					-- it is our response
+					cmdTimer:Stop()
+					fifo[1].tries = 0
+					cmdTimerRunning = true
+					cmdTimer:Start(fifo[1].gap)
+				end
+			end
+		end
+	end
+
+	sock.Data = function(sock, err)
+		local start, stop, len
+
+		sockInBuf = sockInBuf .. sock:Read(sock.BufferLength)
+		print("strbuf = ", sockInBuf)
+		start, stop = string.find(sockInBuf, ">")
+		while start ~= nil do
+			ParseInput(string.sub(sockInBuf, 1, start))
+			sockInBuf = string.sub(sockInBuf, stop + 1) -- remove parsed input
+			start, stop = string.find(sockInBuf, ">") -- look for newline again
+		end
+	end
+
+	Controls.ipAddress.EventHandler = function(ctrl)
+		if sock.IsConnected then
+			sock:Disconnect()
+		end
+		if string.len(Controls.ipAddress.String) > 0 and (Controls.tcpPort.Value > 0) then
+			sock:Connect(Controls.ipAddress.String, Controls.tcpPort.Value)
+		end
+	end
+
+	Controls.tcpPort.EventHandler = function(ctrl)
+		if sock.IsConnected then
+			sock:Disconnect()
+		end
+		if string.len(Controls.ipAddress.String) > 0 and (Controls.tcpPort.Value > 0) then
+			sock:Connect(Controls.ipAddress.String, Controls.tcpPort.Value)
+		end
+	end
+
+	Controls.GetAvailable.EventHandler = function(ctrl)
+		local i
+		for i = 1, nMics do
+			SendCmd("< GET " .. i .. " TX_AVAILABLE >", "< REP " .. i .. " TX_AVAILABLE", cmdGap)
+			SendCmd("< GET SEC " .. i .. " TX_AVAILABLE >", "< REP SEC " .. i .. " TX_AVAILABLE", cmdGap)
+		end
+	end
+
+	Controls.GetType.EventHandler = function(ctrl)
+		local i
+		for i = 1, nMics do
+			SendCmd("< GET " .. i .. " TX_TYPE >", "< REP " .. i .. " TX_TYPE", cmdGap)
+			SendCmd("< GET SEC " .. i .. " TX_TYPE >", "< REP SEC " .. i .. " TX_TYPE", cmdGap)
+		end
+	end
+
+	for i = 1, nMics do
+		Controls.Unknown[i].EventHandler = function(ctrl)
+			if ctrl.Boolean then
+				if primaryActive[i] then
+					SendCmd("< SET " .. i .. " TX_STATUS UNKNOWN >", "< REP " .. i .. " TX_STATUS", 0.1)
+				elseif secondaryActive[i] then
+					SendCmd("< SET SEC " .. i .. " TX_STATUS UNKNOWN >", "< REP SEC " .. i .. " TX_STATUS", 0.1)
+				end
+			end
+		end
+		Controls.Active[i].EventHandler = function(ctrl)
+			if ctrl.Boolean then
+				if primaryActive[i] then
+					SendCmd("< SET " .. i .. " TX_STATUS ACTIVE >", "< REP " .. i .. " TX_STATUS", 0.1)
+				elseif secondaryActive[i] then
+					SendCmd("< SET SEC " .. i .. " TX_STATUS ACTIVE >", "< REP SEC " .. i .. " TX_STATUS", 0.1)
+				end
+			end
+		end
+		Controls.Mute[i].EventHandler = function(ctrl)
+			if ctrl.Boolean then
+				if primaryActive[i] then
+					SendCmd("< SET " .. i .. " TX_STATUS MUTE >", "< REP " .. i .. " TX_STATUS", 0.1)
+				elseif secondaryActive[i] then
+					SendCmd("< SET SEC " .. i .. " TX_STATUS MUTE >", "< REP SEC " .. i .. " TX_STATUS", 0.1)
+				end
+			end
+		end
+		Controls.Standby[i].EventHandler = function(ctrl)
+			if ctrl.Boolean then
+				if primaryActive[i] then
+					SendCmd("< SET " .. i .. " TX_STATUS STANDBY >", "< REP " .. i .. " TX_STATUS", 0.1)
+				elseif secondaryActive[i] then
+					SendCmd("< SET SEC " .. i .. " TX_STATUS STANDBY >", "< REP SEC " .. i .. " TX_STATUS", 0.1)
+				end
+			end
+		end
+
+		-- the following is not ideal, just programmed to make it work for Salesforce.
+		Controls.LED_Green_Off[i].EventHandler = function(ctrl)
+			if ctrl.Boolean then
+				if not greenLED[i] or redLED[i] then
+					if primaryActive[i] then
+						SendCmd("< SET " .. i .. " LED_STATUS OF ON >", "< REP " .. i .. " LED_STATUS", 0.1)
+					elseif secondaryActive[i] then
+						SendCmd("< SET SEC " .. i .. " LED_STATUS OF ON >", "< REP SEC " .. i .. " LED_STATUS", 0.1)
+					end
+				end
+			else
+				if greenLED[i] or redLED[i] then
+					if primaryActive[i] then
+						SendCmd("< SET " .. i .. " LED_STATUS OF OF >", "< REP " .. i .. " LED_STATUS", 0.1)
+					elseif secondaryActive[i] then
+						SendCmd("< SET SEC " .. i .. " LED_STATUS OF OF >", "< REP SEC " .. i .. " LED_STATUS", 0.1)
+					end
+				end
+			end
+		end
+		Controls.LED_Red_Off[i].EventHandler = function(ctrl)
+			if ctrl.Boolean then
+				if not redLED[i] or greenLED[i] then
+					if primaryActive[i] then
+						SendCmd("< SET " .. i .. " LED_STATUS ON OF >", "< REP " .. i .. " LED_STATUS", 0.1)
+					elseif secondaryActive[i] then
+						SendCmd("< SET SEC " .. i .. " LED_STATUS ON OF >", "< REP SEC " .. i .. " LED_STATUS", 0.1)
+					end
+				end
+			else
+				if redLED[i] or greenLED[i] then
+					if primaryActive[i] or greenLED[i] then
+						SendCmd("< SET " .. i .. " LED_STATUS OF OF >", "< REP " .. i .. " LED_STATUS", 0.1)
+					elseif secondaryActive[i] then
+						SendCmd("< SET SEC " .. i .. " LED_STATUS OF OF >", "< REP SEC " .. i .. " LED_STATUS", 0.1)
+					end
+				end
+			end
+		end
+		Controls.LED_Red_Green[i].EventHandler = function(ctrl)
+			if ctrl.Boolean then
+				if not redLED[i] or greenLED[i] then
+					if primaryActive[i] then
+						SendCmd("< SET " .. i .. " LED_STATUS ON OF >", "< REP " .. i .. " LED_STATUS", 0.1)
+					elseif secondaryActive[i] then
+						SendCmd("< SET SEC " .. i .. " LED_STATUS ON OF >", "< REP SEC " .. i .. " LED_STATUS", 0.1)
+					end
+				end
+			else
+				if not greenLED[i] or redLED[i] then
+					if primaryActive[i] then
+						SendCmd("< SET " .. i .. " LED_STATUS OF ON >", "< REP " .. i .. " LED_STATUS", 0.1)
+					elseif secondaryActive[i] then
+						SendCmd("< SET SEC " .. i .. " LED_STATUS OF ON >", "< REP SEC " .. i .. " LED_STATUS", 0.1)
+					end
+				end
+			end
+		end
+	end
+
+	ClearOutputs()
+	Controls.tcpPort.Value = 2202
+	print("MXW IP = ", Controls.ipAddress.String, " TCP Port = ", math.floor(Controls.tcpPort.Value))
+	if string.len(Controls.ipAddress.String) > 0 and (Controls.tcpPort.Value > 0) then
+		sock:Connect(Controls.ipAddress.String, Controls.tcpPort.Value)
+	end
+end
