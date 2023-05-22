@@ -1,0 +1,165 @@
+-- Plugin for Kramer Protocol 2000
+-- Built in Lua
+
+-- Layout inspired by VideoHub plugin @ https://github.com/locimation/qsys-plugins
+
+PluginInfo = {
+    Name = "Kramer~Protocol 2000", -- The tilde here indicates folder structure in the Shematic Elements pane
+    Version = "0.1.0-master",
+    Id = "kramer-2000.plugin.0.1.0-master",
+    Description = "Plugin implementing Kramer Protocol 2000",
+    ShowDebug = true,
+    Author = "Joel Wetzell"
+}
+
+function GetPrettyName()
+	return "Kramer Protocol 2000"
+end
+
+-- Once you've drawn your plugin in Designer, you can determine what colors you use a lot. Save yourself some time by putting them in a table, and then simply calling them later.
+local Colors = {
+    White = {255, 255, 255},
+    Black = {0, 0, 0},
+    Red = {255, 0, 0},
+    Green = {0, 255, 0},
+    Blue = {0, 0, 255},
+	DarkGrey = {0x56,0x56,0x56},
+
+	LCD = { 0x02, 0x33, 0xb2 }
+}
+
+-- We can let users determine some of the plugin properties by exposing them here
+-- While this function can be very useful, it is completely optional and not always needed.
+-- If no Properties are set here, only the position and fill properties of your plugin will show in the Properties pane
+function GetProperties()
+	props = {
+		{
+			Name = "IP Address",
+			Type = "string",
+			Value = "10.0.0.5"
+		}
+	}
+	return props
+end
+
+-- The below function is optional (like GetProperties() is), but it can allow further customization of what users can and can't do with your plugin.
+-- In this example, when Model 1 is selected in the properties pane, the ability to modify some of the properties will be hidden, only allowing customization with Model 2
+-- Another application of this is if you have different input/output types for different models, and want those properties to be dynamic in the Properties pane
+function RectifyProperties(props)
+	return props
+end
+
+-- The below function is where you will populate the controls for your plugin.
+function GetControls(props)
+	local controls = {
+		
+	}
+	return controls
+end
+
+-- Variable holding Page Names for ease
+local pagenames = {"System"}
+
+function GetPages(props) -- This function allows you to populate pages in your plugin.
+	local pages = {}
+	table.insert(pages, {name = pagenames[1]})
+	return pages
+end
+
+function GetControlLayout(props)
+	local controls = {
+		
+	}
+
+	local graphics = {
+
+	}
+	
+	return controls, graphics
+end
+
+if (Controls) then
+	local Kramer = {
+		socket = TcpSocket.New(),
+		setStatus = function (value, msg) 
+			-- 0 = OK
+			-- 1 = Compromised
+			-- 2 = Fault
+			-- 3 = Not Present
+			-- 4 = Missing
+			-- 5 = Initializing
+			-- >5 = Fault
+			Controls['Status'].Value = value;
+			Controls['Status'].String = msg;
+		end
+	}
+
+	function getCmdString(bytes)
+		local cmd = ""
+		for k,v in pairs(bytes) do
+			cmd = cmd .. string.pack("B", v)
+		end
+		return cmd
+	end
+
+	function sendCommand(cmd)
+		if Kramer.socket.IsConnected then 
+			print("Sending packet to connected Kramer")
+		else
+			print("Following would have been sent if Kramer was connected")
+		end;
+		print(hex_dump(getCmdString(cmd)))
+		if Kramer.socket.IsConnected then
+			Kramer.socket:Write(getCmdString(cmd))
+		end
+	end
+
+	function hex_dump (str)
+		local len = string.len( str )
+		local dump = ""
+		local hex = ""
+		local asc = ""
+		
+		for i = 1, len do
+			if 1 == i % 8 then
+				dump = dump .. hex .. asc .. "\n"
+				hex = string.format( "%04x: ", i - 1 )
+				asc = ""
+			end
+			
+			local ord = string.byte( str, i )
+			hex = hex .. string.format( "%02x ", ord )
+			if ord >= 32 and ord <= 126 then
+				asc = asc .. string.char( ord )
+			else
+				asc = asc .. "."
+			end
+		end
+		return dump .. hex .. string.rep( "   ", 8 - len % 8 ) .. asc
+	end
+
+	Kramer.socket.Reconnect = function()
+		Kramer.setStatus(5,"Attempting to reconnect")
+	end
+
+	Kramer.socket.Data = function ()
+		print("Reading " .. Kramer.socket.BufferLength .. " Bytes")
+		local data = Kramer.socket:Read(Kramer.socket.BufferLength);
+		print(hex_dump(data))	
+	end
+
+	Kramer.socket.Closed = function()
+		Kramer.setStatus(2,"Connection closed by Kramer")
+	end
+
+	Kramer.socket.Error = function(sock, err)
+		print("TCP Socket Error: ", err)
+		Kramer.setStatus(2,"Communication error with Kramer")
+	end
+
+	Kramer.socket.Timeout = function(sock, err)
+		Kramer.setStatus(2,"Timeout in connection to Kramer")
+		keepAliveTimer:Stop()
+	end
+	
+end

@@ -1,0 +1,1173 @@
+-- Plugin for NovaStar Video Wall controllers
+-- Built in Lua
+
+-- Layout inspired by VideoHub plugin @ https://github.com/locimation/qsys-plugins
+
+PluginInfo = {
+    Name = "NovaStar~VX4S/VX6S/ProHD/ProHDJr/MCTRL4K", -- The tilde here indicates folder structure in the Shematic Elements pane
+    Version = "0.1.0-master",
+    Id = "novastar.plugin.0.1.0-master",
+    Description = "Plugin for controlling NovaStar video wall controllers",
+    ShowDebug = true,
+    Author = "Joel Wetzell"
+}
+
+function GetPrettyName()
+	return "NovaStar Controller"
+end
+
+-- Once you've drawn your plugin in Designer, you can determine what colors you use a lot. Save yourself some time by putting them in a table, and then simply calling them later.
+local Colors = {
+    White = {255, 255, 255},
+    Black = {0, 0, 0},
+    Red = {255, 0, 0},
+    Green = {0, 255, 0},
+    Blue = {0, 0, 255},
+	DarkGrey = {0x56,0x56,0x56},
+
+	LCD = { 0x02, 0x33, 0xb2 }
+}
+
+-- We can let users determine some of the plugin properties by exposing them here
+-- While this function can be very useful, it is completely optional and not always needed.
+-- If no Properties are set here, only the position and fill properties of your plugin will show in the Properties pane
+function GetProperties()
+	props = {
+		{
+			Name = "IP Address",
+			Type = "string",
+			Value = "10.0.0.5"
+		},
+		{
+			Name = 'Model',
+			Type = 'enum',
+			Choices = { 'VX4S', 'VX4S_N', 'VX6S', 'PROHD', 'PROUHDJR', 'MCTRL4K' },
+			Value = 'VX4S'
+		},
+		{
+            Name = "Default Brightness",
+            Type = "integer",
+            Min = 0,
+            Max = 255,
+            Value = 128
+        },
+	}
+	return props
+end
+
+-- The below function is optional (like GetProperties() is), but it can allow further customization of what users can and can't do with your plugin.
+-- In this example, when Model 1 is selected in the properties pane, the ability to modify some of the properties will be hidden, only allowing customization with Model 2
+-- Another application of this is if you have different input/output types for different models, and want those properties to be dynamic in the Properties pane
+function RectifyProperties(props)
+	return props
+end
+
+-- The below function is where you will populate the controls for your plugin.
+function GetControls(props)
+	local controls = {
+		-- Source Inputs
+		{
+			Name = "IN1",
+			ControlType = "Button",
+			ButtonType = "Trigger"
+		},
+		{
+			Name = "IN2",
+			ControlType = "Button",
+			ButtonType = "Trigger"
+		},
+		{
+			Name = "IN3",
+			ControlType = "Button",
+			ButtonType = "Trigger"
+		},
+		{
+			Name = "IN4",
+			ControlType = "Button",
+			ButtonType = "Trigger"
+		},
+		{
+			Name = "IN5",
+			ControlType = "Button",
+			ButtonType = "Trigger"
+		},
+		{
+			Name = "IN6",
+			ControlType = "Button",
+			ButtonType = "Trigger"
+		},
+		{
+			Name = "IN7",
+			ControlType = "Button",
+			ButtonType = "Trigger"
+		},
+		{
+			Name = "IN8",
+			ControlType = "Button",
+			ButtonType = "Trigger"
+		},
+		{
+			Name = "IN9",
+			ControlType = "Button",
+			ButtonType = "Trigger"
+		},
+		{
+			Name = "IN0",
+			ControlType = "Button",
+			ButtonType = "Trigger"
+		},
+		--Brightness Knob
+		{
+			Name = "Brightness",
+			ControlType = "Knob",
+			ControlUnit = "Integer",
+			Min = 0,
+			Max = 255,
+			PinStyle = "Both",
+			UserPin = true
+		},
+
+		-- Test Pattern Buttons
+		{
+			Name = "TEST_RED",
+			ControlType = "Button",
+			ButtonType = "Trigger"
+		},
+
+		{
+			Name = "TEST_GREEN",
+			ControlType = "Button",
+			ButtonType = "Trigger"
+		},
+		{
+			Name = "TEST_BLUE",
+			ControlType = "Button",
+			ButtonType = "Trigger"
+		},
+		{
+			Name = "TEST_WHITE",
+			ControlType = "Button",
+			ButtonType = "Trigger"
+		},
+		{
+			Name = "TEST_HORIZ",
+			ControlType = "Button",
+			ButtonType = "Trigger"
+		},
+		{
+			Name = "TEST_VERT",
+			ControlType = "Button",
+			ButtonType = "Trigger"
+		},
+		{
+			Name = "TEST_DIAG",
+			ControlType = "Button",
+			ButtonType = "Trigger"
+		},
+		{
+			Name = "TEST_GRAY",
+			ControlType = "Button",
+			ButtonType = "Trigger"
+		},
+		{
+			Name = "TEST_AGING",
+			ControlType = "Button",
+			ButtonType = "Trigger"
+		},
+
+		{
+			Name = "PRESET1",
+			ControlType = "Button",
+			ButtonType = "Trigger"
+		},
+		{
+			Name = "PRESET2",
+			ControlType = "Button",
+			ButtonType = "Trigger"
+		},
+		{
+			Name = "PRESET3",
+			ControlType = "Button",
+			ButtonType = "Trigger"
+		},
+		{
+			Name = "PRESET4",
+			ControlType = "Button",
+			ButtonType = "Trigger"
+		},
+		{
+			Name = "PRESET5",
+			ControlType = "Button",
+			ButtonType = "Trigger"
+		},
+		{
+			Name = "PRESET6",
+			ControlType = "Button",
+			ButtonType = "Trigger"
+		},
+		{
+			Name = "PRESET7",
+			ControlType = "Button",
+			ButtonType = "Trigger"
+		},
+		{
+			Name = "PRESET8",
+			ControlType = "Button",
+			ButtonType = "Trigger"
+		},
+		{
+			Name = "PRESET9",
+			ControlType = "Button",
+			ButtonType = "Trigger"
+		},
+		{
+			Name = "PRESET10",
+			ControlType = "Button",
+			ButtonType = "Trigger"
+		},
+
+		{
+			Name = "Status",
+			ControlType = "Indicator",
+			IndicatorType = "Status",
+			PinStyle = "Output",
+			UserPin = true
+		}
+	}
+	return controls
+end
+
+-- Variable holding Page Names for ease
+local pagenames = {"System"}
+
+function GetPages(props) -- This function allows you to populate pages in your plugin.
+	local pages = {}
+	table.insert(pages, {name = pagenames[1]})
+	return pages
+end
+
+function GetControlLayout(props)
+	local controls = {}
+
+	local rackSize = {1000, 120}
+
+	local inputPosition = {rackSize[1] * 5/16 + 10,5}
+	local testPosition = {rackSize[1] * 9/16 + 15,5}
+	local presetPosition = {rackSize[1] * 13/16 + 20,5}
+
+	local graphics = {
+
+		{ -- Outer box
+			Type = "GroupBox",
+			StrokeWidth = 1,
+			CornerRadius = 8,
+			Fill = Colors.Black,
+			StrokeColor = {0,0,0},
+			Size = rackSize,
+			Position = {0,0}
+		},
+		-- Inputs box
+		{ 
+			Type = "GroupBox",
+			Text = "INPUTS",
+			Color = Colors.White,
+			HTextAlign = "CENTER",
+			CornerRadius = 3,
+			Fill = Colors.Black,
+			StrokeColor = Colors.White,
+			StrokeWidth = 1,
+			Size = {250, rackSize[2] - 10},
+			Position = inputPosition
+		},
+
+		-- Test box
+		{ 
+			Type = "GroupBox",
+			Text = "TEST",
+			Color = Colors.White,
+			HTextAlign = "CENTER",
+			CornerRadius = 3,
+			Fill = Colors.Black,
+			StrokeColor = Colors.White,
+			StrokeWidth = 1,
+			Size = {250, rackSize[2] - 10},
+			Position = testPosition
+		},
+		-- Preset box
+		{ 
+			Type = "GroupBox",
+			Text = "PRESET",
+			Color = Colors.White,
+			HTextAlign = "CENTER",
+			CornerRadius = 3,
+			Fill = Colors.Black,
+			StrokeColor = Colors.White,
+			StrokeWidth = 1,
+			Size = {160, rackSize[2] - 10},
+			Position = presetPosition
+		},
+		-- NovaStar Text
+		{ 
+			Type = "Label",
+			Text = "NovaStar",
+			TextSize = 16,
+			HTextAlign = "Center",
+			IsBold = true,
+			Size = {150,16},
+			Color = Colors.White,
+			Position = {60, rackSize[2]*1/8}
+		}
+
+	}
+
+	controls['Brightness'] = {
+		Style="Knob",
+		Color = Colors.DarkGrey,
+		Fill = Colors.DarkGrey,
+		Size={rackSize[2]/2,rackSize[2]/2},
+		Position= {250, rackSize[2]*1/4}
+	}
+
+	local SourceButton = {
+		yStart = inputPosition[2] + 20,
+		Padding = 5
+	}
+
+	local TestButton = {
+		yStart = testPosition[2] + 20,
+		Padding = 5
+	}
+	local PresetButton = {
+		yStart = presetPosition[2] + 20,
+		Padding = 3
+	}
+
+	SourceButton.Size = {
+		(rackSize[2] - 30 - (SourceButton.Padding * 2))/2,
+		(rackSize[2] - 30 - (SourceButton.Padding * 2))/2
+	}
+
+	TestButton.Size = {
+		(rackSize[2] - 30 - (TestButton.Padding * 2))/2,
+		(rackSize[2] - 30 - (TestButton.Padding * 2))/2
+	}
+
+	PresetButton.Size = {
+		(rackSize[2] - 30 - (PresetButton.Padding * 2))/3,
+		(rackSize[2] - 30 - (PresetButton.Padding * 2))/3
+	}
+
+	SourceButton.xStart = inputPosition[1] + ((250 - (((SourceButton.Size[1] * 5) + (SourceButton.Padding * 4))))/2)
+	TestButton.xStart = testPosition[1] + ((250 - (((TestButton.Size[1] * 5) + (TestButton.Padding * 4))))/2)
+	PresetButton.xStart = presetPosition[1] + ((160 - (((PresetButton.Size[1] * 5) + (PresetButton.Padding * 4))))/2)
+
+	local TestLabels = {
+		"Red","Green","Blue","White","Horiz","Vert","Diag","Gray","Aging"
+	}
+
+	local InputLabels = {
+		VX4S = {
+			"DVI",
+			"HDMI",
+			"VGA1",
+			"VGA2",
+			"CVBS1",
+			"CVBS2",
+			"SDI",
+			"DP",
+		},
+		VX4S_N = {
+			"HDMI",
+			"DVI",
+			"VGA",
+			"",
+			"",
+			"CVBS",
+			"DP",
+			"SDI",
+			"",
+			"",
+		},
+		VX6S = {
+			"HDMI1",
+			"HDMI2",
+			"SDI1",
+			"SDI2",
+			"DVI1",
+			"DVI2",
+			"USB",
+		},
+		PROHD = {
+			"SDI",
+			"DVI",
+			"HDMI",
+			"DP",
+			"VGA",
+			"CVBS",
+		},
+		PROUHDJR = {
+			"SDI",
+			"DVI",
+			"HDMI",
+			"DP",
+		},
+		MCTRL4K = {
+			"DVI",
+			"HDMI",
+			"DP",
+		}
+	}
+
+	
+	--First row of input buttons
+	controls['IN1'] = {
+		Style = "Button",
+		ButtonType = "Trigger",
+		Legend = InputLabels[props['Model'].Value][1] ~= nil and InputLabels[props['Model'].Value][1] or "1" ,
+		UnlinkOffColor = true,
+		OffColor = Colors.White,
+		Color = Colors.Red,
+		Position = {SourceButton.xStart, SourceButton.yStart},
+		Size = SourceButton.Size
+	}
+
+	controls['IN2'] = {
+		Style = "Button",
+		ButtonType = "Trigger",
+		Legend = InputLabels[props['Model'].Value][2] ~= nil and InputLabels[props['Model'].Value][2] or "2" ,
+		UnlinkOffColor = true,
+		OffColor = Colors.White,
+		Color = Colors.Red,
+		Position = {SourceButton.xStart + ((SourceButton.Size[1]+SourceButton.Padding)*1), SourceButton.yStart},
+		Size = SourceButton.Size
+	}
+
+	controls['IN3'] = {
+		Style = "Button",
+		ButtonType = "Trigger",
+		Legend = InputLabels[props['Model'].Value][3] ~= nil and InputLabels[props['Model'].Value][3] or "3" ,
+		UnlinkOffColor = true,
+		OffColor = Colors.White,
+		Color = Colors.Red,
+		Position = {SourceButton.xStart + ((SourceButton.Size[1]+SourceButton.Padding)*2),SourceButton.yStart},
+		Size = SourceButton.Size
+	}
+
+	controls['IN4'] = {
+		Style = "Button",
+		ButtonType = "Trigger",
+		Legend = InputLabels[props['Model'].Value][4] ~= nil and InputLabels[props['Model'].Value][4] or"4",
+		UnlinkOffColor = true,
+		OffColor = Colors.White,
+		Color = Colors.Red,
+		Position = {SourceButton.xStart + ((SourceButton.Size[1]+SourceButton.Padding)*3),SourceButton.yStart},
+		Size = SourceButton.Size
+	}
+
+
+	controls['IN5'] = {
+		Style = "Button",
+		ButtonType = "Trigger",
+		Legend = InputLabels[props['Model'].Value][5] ~= nil and InputLabels[props['Model'].Value][5] or"5",
+		UnlinkOffColor = true,
+		OffColor = Colors.White,
+		Color = Colors.Red,
+		Position = {SourceButton.xStart + ((SourceButton.Size[1]+SourceButton.Padding)*4),SourceButton.yStart},
+		Size = SourceButton.Size
+	}
+
+	--First row of test buttons
+	controls['TEST_RED'] = {
+		Style = "Button",
+		ButtonType = "Trigger",
+		Legend = TestLabels[1] ~= nil and TestLabels[1] or "1" ,
+		UnlinkOffColor = true,
+		OffColor = Colors.White,
+		Color = Colors.Red,
+		Position = {TestButton.xStart, TestButton.yStart},
+		Size = TestButton.Size
+	}
+
+	controls['TEST_GREEN'] = {
+		Style = "Button",
+		ButtonType = "Trigger",
+		Legend = TestLabels[2] ~= nil and TestLabels[2] or "2" ,
+		UnlinkOffColor = true,
+		OffColor = Colors.White,
+		Color = Colors.Red,
+		Position = {TestButton.xStart + ((TestButton.Size[1]+TestButton.Padding)*1), TestButton.yStart},
+		Size = TestButton.Size
+	}
+
+	controls['TEST_BLUE'] = {
+		Style = "Button",
+		ButtonType = "Trigger",
+		Legend = TestLabels[3] ~= nil and TestLabels[3] or "3" ,
+		UnlinkOffColor = true,
+		OffColor = Colors.White,
+		Color = Colors.Red,
+		Position = {TestButton.xStart + ((TestButton.Size[1]+TestButton.Padding)*2),TestButton.yStart},
+		Size = TestButton.Size
+	}
+
+	controls['TEST_WHITE'] = {
+		Style = "Button",
+		ButtonType = "Trigger",
+		Legend = TestLabels[4] ~= nil and TestLabels[4] or "4",
+		UnlinkOffColor = true,
+		OffColor = Colors.White,
+		Color = Colors.Red,
+		Position = {TestButton.xStart + ((TestButton.Size[1]+TestButton.Padding)*3),TestButton.yStart},
+		Size = TestButton.Size
+	}
+
+
+	controls['TEST_HORIZ'] = {
+		Style = "Button",
+		ButtonType = "Trigger",
+		Legend = TestLabels[5] ~= nil and TestLabels[5] or "5",
+		UnlinkOffColor = true,
+		OffColor = Colors.White,
+		Color = Colors.Red,
+		Position = {TestButton.xStart + ((TestButton.Size[1]+TestButton.Padding)*4),TestButton.yStart},
+		Size = TestButton.Size
+	}
+
+	--First row of preset buttons
+	controls['PRESET1'] = {
+		Style = "Button",
+		ButtonType = "Trigger",
+		Legend = "1" ,
+		UnlinkOffColor = true,
+		OffColor = Colors.White,
+		Color = Colors.Red,
+		Position = {PresetButton.xStart, PresetButton.yStart},
+		Size = PresetButton.Size
+	}
+
+	controls['PRESET2'] = {
+		Style = "Button",
+		ButtonType = "Trigger",
+		Legend = "2" ,
+		UnlinkOffColor = true,
+		OffColor = Colors.White,
+		Color = Colors.Red,
+		Position = {PresetButton.xStart + ((PresetButton.Size[1]+PresetButton.Padding)*1), PresetButton.yStart},
+		Size = PresetButton.Size
+	}
+
+	controls['PRESET3'] = {
+		Style = "Button",
+		ButtonType = "Trigger",
+		Legend = "3" ,
+		UnlinkOffColor = true,
+		OffColor = Colors.White,
+		Color = Colors.Red,
+		Position = {PresetButton.xStart + ((PresetButton.Size[1]+PresetButton.Padding)*2), PresetButton.yStart},
+		Size = PresetButton.Size
+	}
+
+	controls['PRESET4'] = {
+		Style = "Button",
+		ButtonType = "Trigger",
+		Legend = "4" ,
+		UnlinkOffColor = true,
+		OffColor = Colors.White,
+		Color = Colors.Red,
+		Position = {PresetButton.xStart + ((PresetButton.Size[1]+PresetButton.Padding)*3), PresetButton.yStart},
+		Size = PresetButton.Size
+	}
+
+	controls['PRESET5'] = {
+		Style = "Button",
+		ButtonType = "Trigger",
+		Legend = "5" ,
+		UnlinkOffColor = true,
+		OffColor = Colors.White,
+		Color = Colors.Red,
+		Position = {PresetButton.xStart + ((PresetButton.Size[1]+PresetButton.Padding)*4), PresetButton.yStart},
+		Size = PresetButton.Size
+	}
+
+	--bump down second row of buttons
+	SourceButton.yStart = SourceButton.yStart + SourceButton.Size[1] + (SourceButton.Padding/2)
+	TestButton.yStart = TestButton.yStart + TestButton.Size[1] + (TestButton.Padding/2)
+	PresetButton.yStart = PresetButton.yStart + PresetButton.Size[1] + (PresetButton.Padding/2)
+
+	--Second row of input buttons
+	controls['IN6'] = {
+		Style = "Button",
+		ButtonType = "Trigger",
+		Legend = InputLabels[props['Model'].Value][6] ~= nil and InputLabels[props['Model'].Value][6] or"6",
+		UnlinkOffColor = true,
+		OffColor = Colors.White,
+		Color = Colors.Red,
+		Position = {SourceButton.xStart,SourceButton.yStart},
+		Size = SourceButton.Size
+	}
+
+	controls['IN7'] = {
+		Style = "Button",
+		ButtonType = "Trigger",
+		Legend = InputLabels[props['Model'].Value][7] ~= nil and InputLabels[props['Model'].Value][7] or"7",
+		UnlinkOffColor = true,
+		OffColor = Colors.White,
+		Color = Colors.Red,
+		Position = {SourceButton.xStart + ((SourceButton.Size[1]+SourceButton.Padding)*1), SourceButton.yStart},
+		Size = SourceButton.Size
+	}
+
+
+	controls['IN8'] = {
+		Style = "Button",
+		ButtonType = "Trigger",
+		Legend = InputLabels[props['Model'].Value][8] ~= nil and InputLabels[props['Model'].Value][8] or"8",
+		UnlinkOffColor = true,
+		OffColor = Colors.White,
+		Color = Colors.Red,
+		Position = {SourceButton.xStart + ((SourceButton.Size[1]+SourceButton.Padding)*2),SourceButton.yStart},
+		Size = SourceButton.Size
+	}
+
+	controls['IN9'] = {
+		Style = "Button",
+		ButtonType = "Trigger",
+		Legend = InputLabels[props['Model'].Value][9] ~= nil and InputLabels[props['Model'].Value][9] or"9",
+		UnlinkOffColor = true,
+		OffColor = Colors.White,
+		Color = Colors.Red,
+		Position = {SourceButton.xStart + ((SourceButton.Size[1]+SourceButton.Padding)*3),SourceButton.yStart},
+		Size = SourceButton.Size
+	}
+
+
+	controls['IN0'] = {
+		Style = "Button",
+		ButtonType = "Trigger",
+		Legend = InputLabels[props['Model'].Value][10] ~= nil and InputLabels[props['Model'].Value][10] or"0",
+		UnlinkOffColor = true,
+		OffColor = Colors.White,
+		Color = Colors.Red,
+		Position = {SourceButton.xStart + ((SourceButton.Size[1]+SourceButton.Padding)*4),SourceButton.yStart},
+		Size = SourceButton.Size
+	}
+
+	--Second row of test buttons
+	controls['TEST_VERT'] = {
+		Style = "Button",
+		ButtonType = "Trigger",
+		Legend = TestLabels[6] ~= nil and TestLabels[6] or "6",
+		UnlinkOffColor = true,
+		OffColor = Colors.White,
+		Color = Colors.Red,
+		Position = {TestButton.xStart,TestButton.yStart},
+		Size = TestButton.Size
+	}
+
+	controls['TEST_DIAG'] = {
+		Style = "Button",
+		ButtonType = "Trigger",
+		Legend = TestLabels[7] ~= nil and TestLabels[7] or "7",
+		UnlinkOffColor = true,
+		OffColor = Colors.White,
+		Color = Colors.Red,
+		Position = {TestButton.xStart + ((TestButton.Size[1]+TestButton.Padding)*1), TestButton.yStart},
+		Size = TestButton.Size
+	}
+
+
+	controls['TEST_GRAY'] = {
+		Style = "Button",
+		ButtonType = "Trigger",
+		Legend = TestLabels[8] ~= nil and TestLabels[8] or "8",
+		UnlinkOffColor = true,
+		OffColor = Colors.White,
+		Color = Colors.Red,
+		Position = {TestButton.xStart + ((TestButton.Size[1]+TestButton.Padding)*2),TestButton.yStart},
+		Size = TestButton.Size
+	}
+
+	controls['TEST_AGING'] = {
+		Style = "Button",
+		ButtonType = "Trigger",
+		Legend = TestLabels[9] ~= nil and TestLabels[9] or "9",
+		UnlinkOffColor = true,
+		OffColor = Colors.White,
+		Color = Colors.Red,
+		Position = {TestButton.xStart + ((TestButton.Size[1]+TestButton.Padding)*3),TestButton.yStart},
+		Size = TestButton.Size
+	}
+
+	--Second row of preset buttons
+	controls['PRESET6'] = {
+		Style = "Button",
+		ButtonType = "Trigger",
+		Legend = "6" ,
+		UnlinkOffColor = true,
+		OffColor = Colors.White,
+		Color = Colors.Red,
+		Position = {PresetButton.xStart, PresetButton.yStart},
+		Size = PresetButton.Size
+	}
+
+	controls['PRESET7'] = {
+		Style = "Button",
+		ButtonType = "Trigger",
+		Legend = "7" ,
+		UnlinkOffColor = true,
+		OffColor = Colors.White,
+		Color = Colors.Red,
+		Position = {PresetButton.xStart + ((PresetButton.Size[1]+PresetButton.Padding)*1), PresetButton.yStart},
+		Size = PresetButton.Size
+	}
+
+	controls['PRESET8'] = {
+		Style = "Button",
+		ButtonType = "Trigger",
+		Legend = "8" ,
+		UnlinkOffColor = true,
+		OffColor = Colors.White,
+		Color = Colors.Red,
+		Position = {PresetButton.xStart + ((PresetButton.Size[1]+PresetButton.Padding)*2), PresetButton.yStart},
+		Size = PresetButton.Size
+	}
+
+	controls['PRESET9'] = {
+		Style = "Button",
+		ButtonType = "Trigger",
+		Legend = "9" ,
+		UnlinkOffColor = true,
+		OffColor = Colors.White,
+		Color = Colors.Red,
+		Position = {PresetButton.xStart + ((PresetButton.Size[1]+PresetButton.Padding)*3), PresetButton.yStart},
+		Size = PresetButton.Size
+	}
+
+	controls['PRESET10'] = {
+		Style = "Button",
+		ButtonType = "Trigger",
+		Legend = "10" ,
+		UnlinkOffColor = true,
+		OffColor = Colors.White,
+		Color = Colors.Red,
+		Position = {PresetButton.xStart + ((PresetButton.Size[1]+PresetButton.Padding)*4), PresetButton.yStart},
+		Size = PresetButton.Size
+	}
+
+	controls['Status'] = {
+		Style = "Text",
+		Color = Colors.LCD,
+		TextSize = 10,
+		UserPin = true,
+		PinStyle = "Output",
+		Size = {150,rackSize[2]/2},
+		Position = {60, rackSize[2]*1/4}
+	}
+	
+	return controls, graphics
+end
+
+
+	
+if (Controls) then
+	local NovaStar = {
+		IP = '',
+		socket = TcpSocket.New(),
+		setStatus = function (value, msg) 
+			-- 0 = OK
+			-- 1 = Compromised
+			-- 2 = Fault
+			-- 3 = Not Present
+			-- 4 = Missing
+			-- 5 = Initializing
+			-- >5 = Fault
+			Controls['Status'].Value = value;
+			Controls['Status'].String = msg;
+		end,
+		Commands = {
+			Preamble = {0x55, 0xAA},
+			Connect = {0x00,0x00,0xFE,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x02,0x00,0x00,0x00,0x02,0x00},
+			Brightness = {0x00,0x00,0xFE,0xFF,0x01,0xFF,0xFF,0xFF,0x01,0x00,0x01,0x00,0x00,0x02,0x01,0x00},
+			Presets = {
+				VX4S = {
+					{0x00,0x2e,0xfe,0x00,0x00,0x00,0x00,0x00,0x01,0x00,0x70,0x00,0x20,0x02,0x01,0x00,0x00},
+					{0x00,0x2e,0xfe,0x00,0x00,0x00,0x00,0x00,0x01,0x00,0x70,0x00,0x20,0x02,0x01,0x00,0x01},
+					{0x00,0x2e,0xfe,0x00,0x00,0x00,0x00,0x00,0x01,0x00,0x70,0x00,0x20,0x02,0x01,0x00,0x02},
+					{0x00,0x2e,0xfe,0x00,0x00,0x00,0x00,0x00,0x01,0x00,0x70,0x00,0x20,0x02,0x01,0x00,0x03},
+					{0x00,0x2e,0xfe,0x00,0x00,0x00,0x00,0x00,0x01,0x00,0x70,0x00,0x20,0x02,0x01,0x00,0x04},
+	
+					{0x00,0x95,0xfe,0x00,0x00,0x00,0x00,0x00,0x01,0x00,0x70,0x00,0x20,0x02,0x01,0x00,0x05},
+					{0x00,0x95,0xfe,0x00,0x00,0x00,0x00,0x00,0x01,0x00,0x70,0x00,0x20,0x02,0x01,0x00,0x06},
+					{0x00,0x95,0xfe,0x00,0x00,0x00,0x00,0x00,0x01,0x00,0x70,0x00,0x20,0x02,0x01,0x00,0x07},
+					{0x00,0x95,0xfe,0x00,0x00,0x00,0x00,0x00,0x01,0x00,0x70,0x00,0x20,0x02,0x01,0x00,0x08},
+					{0x00,0x95,0xfe,0x00,0x00,0x00,0x00,0x00,0x01,0x00,0x70,0x00,0x20,0x02,0x01,0x00,0x09},
+				},
+				VX6S = {
+					{0x00,0x00,0xFE,0x00,0x00,0x00,0x00,0x00,0x01,0x00,0x00,0x01,0x51,0x13,0x01,0x00,0x00},
+					{0x00,0x00,0xFE,0x00,0x00,0x00,0x00,0x00,0x01,0x00,0x00,0x01,0x51,0x13,0x01,0x00,0x01},
+					{0x00,0x00,0xFE,0x00,0x00,0x00,0x00,0x00,0x01,0x00,0x00,0x01,0x51,0x13,0x01,0x00,0x02},
+					{0x00,0x00,0xFE,0x00,0x00,0x00,0x00,0x00,0x01,0x00,0x00,0x01,0x51,0x13,0x01,0x00,0x03},
+					{0x00,0x00,0xFE,0x00,0x00,0x00,0x00,0x00,0x01,0x00,0x00,0x01,0x51,0x13,0x01,0x00,0x04},
+					{0x00,0x00,0xFE,0x00,0x00,0x00,0x00,0x00,0x01,0x00,0x00,0x01,0x51,0x13,0x01,0x00,0x05},
+					{0x00,0x00,0xFE,0x00,0x00,0x00,0x00,0x00,0x01,0x00,0x00,0x01,0x51,0x13,0x01,0x00,0x06},
+					{0x00,0x00,0xFE,0x00,0x00,0x00,0x00,0x00,0x01,0x00,0x00,0x01,0x51,0x13,0x01,0x00,0x07},
+					{0x00,0x00,0xFE,0x00,0x00,0x00,0x00,0x00,0x01,0x00,0x00,0x01,0x51,0x13,0x01,0x00,0x08},
+					{0x00,0x00,0xFE,0x00,0x00,0x00,0x00,0x00,0x01,0x00,0x00,0x01,0x51,0x13,0x01,0x00,0x09},
+				},
+				PROUHDJR = {
+					{0x00,0x00,0xFE,0x00,0x00,0x00,0x00,0x00,0x01,0x00,0x00,0x01,0x51,0x13,0x01,0x00,0x00},
+					{0x00,0x00,0xFE,0x00,0x00,0x00,0x00,0x00,0x01,0x00,0x00,0x01,0x51,0x13,0x01,0x00,0x01},
+					{0x00,0x00,0xFE,0x00,0x00,0x00,0x00,0x00,0x01,0x00,0x00,0x01,0x51,0x13,0x01,0x00,0x02},
+					{0x00,0x00,0xFE,0x00,0x00,0x00,0x00,0x00,0x01,0x00,0x00,0x01,0x51,0x13,0x01,0x00,0x03},
+					{0x00,0x00,0xFE,0x00,0x00,0x00,0x00,0x00,0x01,0x00,0x00,0x01,0x51,0x13,0x01,0x00,0x04},
+					{0x00,0x00,0xFE,0x00,0x00,0x00,0x00,0x00,0x01,0x00,0x00,0x01,0x51,0x13,0x01,0x00,0x05},
+					{0x00,0x00,0xFE,0x00,0x00,0x00,0x00,0x00,0x01,0x00,0x00,0x01,0x51,0x13,0x01,0x00,0x06},
+					{0x00,0x00,0xFE,0x00,0x00,0x00,0x00,0x00,0x01,0x00,0x00,0x01,0x51,0x13,0x01,0x00,0x07},
+					{0x00,0x00,0xFE,0x00,0x00,0x00,0x00,0x00,0x01,0x00,0x00,0x01,0x51,0x13,0x01,0x00,0x08},
+					{0x00,0x00,0xFE,0x00,0x00,0x00,0x00,0x00,0x01,0x00,0x00,0x01,0x51,0x13,0x01,0x00,0x09},
+				}
+
+			},
+			TestPatterns = {
+				RED = {
+					{0x00,0xe7,0xfe,0x00,0x01,0x00,0xff,0xff,0x01,0x00,0x01,0x01,0x00,0x02,0x01,0x00,0x02},
+					{0x00,0xe8,0xfe,0x00,0x01,0x01,0xff,0xff,0x01,0x00,0x01,0x01,0x00,0x02,0x01,0x00,0x02},
+					{0x00,0xe9,0xfe,0x00,0x01,0x02,0xff,0xff,0x01,0x00,0x01,0x01,0x00,0x02,0x01,0x00,0x02},
+					{0x00,0xea,0xfe,0x00,0x01,0x03,0xff,0xff,0x01,0x00,0x01,0x01,0x00,0x02,0x01,0x00,0x02},
+				},
+				GREEN = {
+					{0x00,0xe7,0xfe,0x00,0x01,0x00,0xff,0xff,0x01,0x00,0x01,0x01,0x00,0x02,0x01,0x00,0x03},
+					{0x00,0xe8,0xfe,0x00,0x01,0x01,0xff,0xff,0x01,0x00,0x01,0x01,0x00,0x02,0x01,0x00,0x03},
+					{0x00,0xe9,0xfe,0x00,0x01,0x02,0xff,0xff,0x01,0x00,0x01,0x01,0x00,0x02,0x01,0x00,0x03},
+					{0x00,0xea,0xfe,0x00,0x01,0x03,0xff,0xff,0x01,0x00,0x01,0x01,0x00,0x02,0x01,0x00,0x03},
+				},
+				BLUE = {
+					{0x00,0xe7,0xfe,0x00,0x01,0x00,0xff,0xff,0x01,0x00,0x01,0x01,0x00,0x02,0x01,0x00,0x04},
+					{0x00,0xe8,0xfe,0x00,0x01,0x01,0xff,0xff,0x01,0x00,0x01,0x01,0x00,0x02,0x01,0x00,0x04},
+					{0x00,0xe9,0xfe,0x00,0x01,0x02,0xff,0xff,0x01,0x00,0x01,0x01,0x00,0x02,0x01,0x00,0x04},
+					{0x00,0xea,0xfe,0x00,0x01,0x03,0xff,0xff,0x01,0x00,0x01,0x01,0x00,0x02,0x01,0x00,0x04},
+				},
+				WHITE = {
+					{0x00,0xe7,0xfe,0x00,0x01,0x00,0xff,0xff,0x01,0x00,0x01,0x01,0x00,0x02,0x01,0x00,0x05},
+					{0x00,0xe8,0xfe,0x00,0x01,0x01,0xff,0xff,0x01,0x00,0x01,0x01,0x00,0x02,0x01,0x00,0x05},
+					{0x00,0xe9,0xfe,0x00,0x01,0x02,0xff,0xff,0x01,0x00,0x01,0x01,0x00,0x02,0x01,0x00,0x05},
+					{0x00,0xea,0xfe,0x00,0x01,0x03,0xff,0xff,0x01,0x00,0x01,0x01,0x00,0x02,0x01,0x00,0x05},
+				},
+				HORIZ = {
+					{0x00,0xe7,0xfe,0x00,0x01,0x00,0xff,0xff,0x01,0x00,0x01,0x01,0x00,0x02,0x01,0x00,0x06},
+					{0x00,0xe8,0xfe,0x00,0x01,0x01,0xff,0xff,0x01,0x00,0x01,0x01,0x00,0x02,0x01,0x00,0x06},
+					{0x00,0xe9,0xfe,0x00,0x01,0x02,0xff,0xff,0x01,0x00,0x01,0x01,0x00,0x02,0x01,0x00,0x06},
+					{0x00,0xea,0xfe,0x00,0x01,0x03,0xff,0xff,0x01,0x00,0x01,0x01,0x00,0x02,0x01,0x00,0x06},
+				},
+				VERT = {
+					{0x00,0xe7,0xfe,0x00,0x01,0x00,0xff,0xff,0x01,0x00,0x01,0x01,0x00,0x02,0x01,0x00,0x07},
+					{0x00,0xe8,0xfe,0x00,0x01,0x01,0xff,0xff,0x01,0x00,0x01,0x01,0x00,0x02,0x01,0x00,0x07},
+					{0x00,0xe9,0xfe,0x00,0x01,0x02,0xff,0xff,0x01,0x00,0x01,0x01,0x00,0x02,0x01,0x00,0x07},
+					{0x00,0xea,0xfe,0x00,0x01,0x03,0xff,0xff,0x01,0x00,0x01,0x01,0x00,0x02,0x01,0x00,0x07},
+				},
+				DIAG = {
+					{0x00,0xe7,0xfe,0x00,0x01,0x00,0xff,0xff,0x01,0x00,0x01,0x01,0x00,0x02,0x01,0x00,0x08},
+					{0x00,0xe8,0xfe,0x00,0x01,0x01,0xff,0xff,0x01,0x00,0x01,0x01,0x00,0x02,0x01,0x00,0x08},
+					{0x00,0xe9,0xfe,0x00,0x01,0x02,0xff,0xff,0x01,0x00,0x01,0x01,0x00,0x02,0x01,0x00,0x08},
+					{0x00,0xea,0xfe,0x00,0x01,0x03,0xff,0xff,0x01,0x00,0x01,0x01,0x00,0x02,0x01,0x00,0x08},
+				},
+				GRAY = {
+					{0x00,0xe7,0xfe,0x00,0x01,0x00,0xff,0xff,0x01,0x00,0x01,0x01,0x00,0x02,0x01,0x00,0x09},
+					{0x00,0xe8,0xfe,0x00,0x01,0x01,0xff,0xff,0x01,0x00,0x01,0x01,0x00,0x02,0x01,0x00,0x09},
+					{0x00,0xe9,0xfe,0x00,0x01,0x02,0xff,0xff,0x01,0x00,0x01,0x01,0x00,0x02,0x01,0x00,0x09},
+					{0x00,0xea,0xfe,0x00,0x01,0x03,0xff,0xff,0x01,0x00,0x01,0x01,0x00,0x02,0x01,0x00,0x09},
+				},
+				AGING = {
+					{0x00,0xe7,0xfe,0x00,0x01,0x00,0xff,0xff,0x01,0x00,0x01,0x01,0x00,0x02,0x01,0x00,0x0A},
+					{0x00,0xe8,0xfe,0x00,0x01,0x01,0xff,0xff,0x01,0x00,0x01,0x01,0x00,0x02,0x01,0x00,0x0A},
+					{0x00,0xe9,0xfe,0x00,0x01,0x02,0xff,0xff,0x01,0x00,0x01,0x01,0x00,0x02,0x01,0x00,0x0A},
+					{0x00,0xea,0xfe,0x00,0x01,0x03,0xff,0xff,0x01,0x00,0x01,0x01,0x00,0x02,0x01,0x00,0x0A},
+				}
+			},
+			DisplayNormal = { 0x00,0x00,0xFE,0x00,0x00,0x00,0x00,0x00,0x01,0x00,0x50,0x00,0x20,0x02,0x01,0x00,0x00 },
+			DisplayNormalAlt = { 0x00,0x38,0xFE,0x00,0x00,0x00,0x00,0x00,0x01,0x00,0x04,0x00,0x00,0x13,0x01,0x00,0x03 },
+			Inputs = {
+				VX4S = {
+					{0x00,0x00,0xFE,0x00,0x00,0x00,0x00,0x00,0x01,0x00,0x2D,0x00,0x20,0x02,0x01,0x00,0x10}, --DVI
+					{0x00,0x00,0xFE,0x00,0x00,0x00,0x00,0x00,0x01,0x00,0x2D,0x00,0x20,0x02,0x01,0x00,0xA0}, --HDMI
+					{0x00,0x00,0xFE,0x00,0x00,0x00,0x00,0x00,0x01,0x00,0x2D,0x00,0x20,0x02,0x01,0x00,0x01}, --VGA1
+					{0x00,0x00,0xFE,0x00,0x00,0x00,0x00,0x00,0x01,0x00,0x2D,0x00,0x20,0x02,0x01,0x00,0x02}, --VGA2
+					{0x00,0x00,0xFE,0x00,0x00,0x00,0x00,0x00,0x01,0x00,0x2D,0x00,0x20,0x02,0x01,0x00,0x71}, --CVBS1
+					{0x00,0x00,0xFE,0x00,0x00,0x00,0x00,0x00,0x01,0x00,0x2D,0x00,0x20,0x02,0x01,0x00,0x72}, --CVBS2
+					{0x00,0x00,0xFE,0x00,0x00,0x00,0x00,0x00,0x01,0x00,0x2D,0x00,0x20,0x02,0x01,0x00,0x40}, --SDI
+					{0x00,0x00,0xFE,0x00,0x00,0x00,0x00,0x00,0x01,0x00,0x2D,0x00,0x20,0x02,0x01,0x00,0x90}, --DP
+					{},
+					{},
+				},
+				VX4S_N = {
+					{0x00,0x00,0xFE,0x00,0x00,0x00,0x00,0x00,0x01,0x00,0x2D,0x00,0x20,0x02,0x01,0x00,0xA0}, --HDMI
+					{0x00,0x00,0xFE,0x00,0x00,0x00,0x00,0x00,0x01,0x00,0x2D,0x00,0x20,0x02,0x01,0x00,0x10}, --DVI
+					{0x00,0x00,0xFE,0x00,0x00,0x00,0x00,0x00,0x01,0x00,0x2D,0x00,0x20,0x02,0x01,0x00,0x01}, --VGA
+					{},
+					{},
+					{0x00,0x00,0xFE,0x00,0x00,0x00,0x00,0x00,0x01,0x00,0x2D,0x00,0x20,0x02,0x01,0x00,0x71}, --CVBS
+					{0x00,0x00,0xFE,0x00,0x00,0x00,0x00,0x00,0x01,0x00,0x2D,0x00,0x20,0x02,0x01,0x00,0x90}, --DP
+					{0x00,0x00,0xFE,0x00,0x00,0x00,0x00,0x00,0x01,0x00,0x2D,0x00,0x20,0x02,0x01,0x00,0x40}, --SDI
+					{},
+					{},
+				},
+				VX6S = {
+					{0x00,0x88,0xFE,0x00,0x00,0x00,0x00,0x00,0x01,0x00,0x12,0x00,0x02,0x13,0x03,0x00,0x00,0x00,0x11}, --HDMI1 
+					{0x00,0xA8,0xFE,0x00,0x00,0x00,0x00,0x00,0x01,0x00,0x12,0x00,0x02,0x13,0x03,0x00,0x01,0x00,0x12}, --HDMI2
+					{0x00,0xC4,0xFE,0x00,0x00,0x00,0x00,0x00,0x01,0x00,0x12,0x00,0x02,0x13,0x03,0x00,0x02,0x00,0x31}, --SDI1
+					{0x00,0xD4,0xFE,0x00,0x00,0x00,0x00,0x00,0x01,0x00,0x12,0x00,0x02,0x13,0x03,0x00,0x03,0x00,0x32}, --SDI2
+					{0x00,0xD6,0xFE,0x00,0x00,0x00,0x00,0x00,0x01,0x00,0x12,0x00,0x02,0x13,0x03,0x00,0x04,0x00,0x01}, --DVI1
+					{0x00,0xD7,0xFE,0x00,0x00,0x00,0x00,0x00,0x01,0x00,0x12,0x00,0x02,0x13,0x03,0x00,0x06,0x00,0x02}, --DVI2
+					{0x00,0xD9,0xFE,0x00,0x00,0x00,0x00,0x00,0x01,0x00,0x12,0x00,0x02,0x13,0x03,0x00,0x07,0x00,0xA0}, --USB
+					{},
+					{},
+					{},
+				},
+				PROHD = {
+					{0x00,0x2B,0xFE,0x00,0x00,0x00,0x00,0x00,0x01,0x00,0x22,0x00,0x20,0x02,0x01,0x00,0x1A}, --SDI
+					{0x00,0x34,0xFE,0x00,0x00,0x00,0x00,0x00,0x01,0x00,0x22,0x00,0x20,0x02,0x01,0x00,0x1C}, --DVI
+					{0x00,0x3F,0xFE,0x00,0x00,0x00,0x00,0x00,0x01,0x00,0x22,0x00,0x20,0x02,0x01,0x00,0x1B}, --HDMI
+					{0x00,0x51,0xFE,0x00,0x00,0x00,0x00,0x00,0x01,0x00,0x22,0x00,0x20,0x02,0x01,0x00,0x1E}, --DP
+					{0x00,0x48,0xFE,0x00,0x00,0x00,0x00,0x00,0x01,0x00,0x22,0x00,0x20,0x02,0x01,0x00,0x17}, --VGA
+					{0x00,0x5A,0xFE,0x00,0x00,0x00,0x00,0x00,0x01,0x00,0x22,0x00,0x20,0x02,0x01,0x00,0x02}, --CVBS
+					{},
+					{},
+					{},
+					{},
+				},
+				PROUHDJR = {
+					{0x00,0x2B,0xFE,0x00,0x00,0x00,0x00,0x00,0x01,0x00,0x22,0x00,0x20,0x02,0x01,0x00,0x1A}, --SDI
+					{0x00,0x34,0xFE,0x00,0x00,0x00,0x00,0x00,0x01,0x00,0x22,0x00,0x20,0x02,0x01,0x00,0x1C}, --DVI
+					{0x00,0x3F,0xFE,0x00,0x00,0x00,0x00,0x00,0x01,0x00,0x22,0x00,0x20,0x02,0x01,0x00,0x1B}, --HDMI
+					{0x00,0x51,0xFE,0x00,0x00,0x00,0x00,0x00,0x01,0x00,0x22,0x00,0x20,0x02,0x01,0x00,0x1E}, --DP
+					{},
+					{},
+					{},
+					{},
+					{},
+					{},
+				},
+				MCTRL4K = {
+					{0x00,0x3E,0xFE,0xFF,0x00,0x00,0x00,0x00,0x01,0x00,0x23,0x00,0x00,0x02,0x01,0x00,0x61}, --DVI
+					{0x00,0x8A,0xFE,0xFF,0x00,0x00,0x00,0x00,0x01,0x00,0x23,0x00,0x00,0x02,0x01,0x00,0x05}, --HDMI
+					{0x00,0x9D,0xFE,0xFF,0x00,0x00,0x00,0x00,0x01,0x00,0x23,0x00,0x00,0x02,0x01,0x00,0x5F}, --DP
+					{},
+					{},
+					{},
+					{},
+					{},
+					{},
+					{},
+				}
+
+			}
+		},
+		Response = {
+			Connected = {0xAA,0x55,0x00,0x00,0x00,0xFE,0x00,0x00,0x00,0x00,0x00,0x00,0x02,0x00,0x00,0x00,0x02,0x00,0x06,0x61,0xBE,0x56},
+			ConnectedAlt = {0xAA,0x55,0x00,0x00,0x00,0xFE,0x00,0x00,0x00,0x00,0x00,0x00,0x02,0x00,0x00,0x00,0x02,0x00,0x2a,0x61,0xE2,0x56}
+		},
+
+	}
+	NovaStar.socket.ReadTimeout = 0
+	NovaStar.socket.WriteTimeout = 0
+	NovaStar.socket.ReconnectTimeout = 0
+
+	function computeChecksum(bytes)
+        local sum = 0
+        for k,v in pairs(bytes) do
+            sum = sum + v
+        end
+        sum = sum + 0x5555
+        local sum_l = sum >> 8
+        local sum_h = sum & 0xFF
+
+		local checksum = {}
+        table.insert(checksum, sum_h)
+        table.insert(checksum, sum_l)
+        return checksum
+    end
+
+	function getCmdString(bytes)
+		local cmd = ""
+		for k,v in pairs(bytes) do
+			cmd = cmd .. string.pack("B", v)
+		end
+		return cmd
+	end
+
+	function sendPreset(preset)
+		sendCommand(preset)
+	end
+
+	function sendTestPattern(pattern)
+		for k,v in pairs(pattern) do
+            sendCommand(v)
+        end
+	end
+
+	function sendCommand(cmd)
+		if NovaStar.socket.IsConnected then 
+			print("Sending packet to connected NovaStar")
+		else
+			print("Disconnected for some reason?")
+		end;
+		print(hex_dump(getCmdString(NovaStar.Commands.Preamble) .. getCmdString(cmd) .. getCmdString(computeChecksum(cmd))))
+		if NovaStar.socket.IsConnected then
+			NovaStar.socket:Write(getCmdString(NovaStar.Commands.Preamble) .. getCmdString(cmd) .. getCmdString(computeChecksum(cmd)))
+		end
+	end
+
+	function sendBrightness(value)
+		local cmd = NovaStar.Commands.Brightness
+		cmd[17] = value
+		if NovaStar.socket.IsConnected then
+			NovaStar.socket:Write(getCmdString(NovaStar.Commands.Preamble) .. getCmdString(cmd) .. getCmdString(computeChecksum(cmd)))
+		end
+	end
+
+	function hex_dump (str)
+		local len = string.len( str )
+		local dump = ""
+		local hex = ""
+		local asc = ""
+		
+		for i = 1, len do
+			if 1 == i % 8 then
+				dump = dump .. hex .. asc .. "\n"
+				hex = string.format( "%04x: ", i - 1 )
+				asc = ""
+			end
+			
+			local ord = string.byte( str, i )
+			hex = hex .. string.format( "%02x ", ord )
+			if ord >= 32 and ord <= 126 then
+				asc = asc .. string.char( ord )
+			else
+				asc = asc .. "."
+			end
+		end
+		return dump .. hex .. string.rep( "   ", 8 - len % 8 ) .. asc
+	end
+
+	NovaStar.socket.Connected = function()
+		print("TCP Connection Established to NovaStar @ " .. Properties['IP Address'].Value)
+		sendCommand(NovaStar.Commands.Connect)
+	end
+
+	NovaStar.socket.Reconnect = function()
+		print("TCP Socket Reconnecting?")
+		NovaStar.setStatus(5,"Attempting to reconnect")
+	end
+
+	NovaStar.socket.Data = function ()
+		print("Reading " .. NovaStar.socket.BufferLength .. " Bytes")
+		local data = NovaStar.socket:Read(NovaStar.socket.BufferLength);
+		print(hex_dump(data))
+		if data == getCmdString(NovaStar.Response.Connected) then
+			print("Successful Connection Response Received")
+			NovaStar.setStatus(0,"Connected - " .. Properties['IP Address'].Value)
+			if(Properties['Default Brightness'].Value ~= '' and Controls['Brightness'].Value == Properties['Default Brightness'].Value ) then
+				print('Sending default brightness value of ' .. Properties['Default Brightness'].Value)
+				Controls['Brightness'].Value = Properties['Default Brightness'].Value
+				sendBrightness(Properties['Default Brightness'].Value)
+			end;
+		elseif data == getCmdString(NovaStar.Response.ConnectedAlt) then
+			print("Successful Connection Response Received")
+			NovaStar.setStatus(0,"Connected - " .. Properties['IP Address'].Value)
+			if(Properties['Default Brightness'].Value ~= '' and Controls['Brightness'].Value == Properties['Default Brightness'].Value ) then
+				print('Sending default brightness value of ' .. Properties['Default Brightness'].Value)
+				Controls['Brightness'].Value = Properties['Default Brightness'].Value
+				sendBrightness(Properties['Default Brightness'].Value)
+			end;
+		end
+	end
+
+	NovaStar.socket.Closed = function()
+		print("TCP Socket Closed?")
+		NovaStar.setStatus(2,"Connection closed by NovaStar")
+	end
+
+	NovaStar.socket.Error = function(sock, err)
+		print("TCP Socket Error: ", err)
+		NovaStar.setStatus(2,"Communication error with NovaStar")
+		NovaStar.socket:Connect(NovaStar.IP, 5200);
+	end
+
+	NovaStar.socket.Timeout = function(sock, err)
+		print("TCP Socket Timeout" )
+		NovaStar.setStatus(2,"Timeout in connection to NovaStar")
+		NovaStar.socket:Connect(NovaStar.IP, 5200);
+	end
+
+	if Properties['Model'].Value ~= '' then
+		for k,v in pairs(NovaStar.Commands.Inputs[Properties['Model'].Value]) do
+			if (v ~= nil and #v > 1) then
+				print("value is not nill and length greater than 1")
+				Controls['IN'..k].EventHandler = function()
+					if(Properties['Model'].Value ~= 'VX6S') then 
+						sendCommand(NovaStar.Commands.DisplayNormal)
+					else
+						sendCommand(NovaStar.Commands.DisplayNormalAlt)
+					end;
+					sendCommand(v)
+				end
+			else
+				if(k == 10) then 
+					Controls['IN0'].IsDisabled = true;
+					Controls['IN0'].IsInvisible = true;
+				else
+					Controls['IN'..k].IsDisabled = true;
+					Controls['IN'..k].IsInvisible = true;
+				end;
+			end;
+		end
+
+		for k,v in pairs(NovaStar.Commands.TestPatterns) do
+			Controls['TEST_'..k].EventHandler = function()
+				sendTestPattern(v)
+			end
+		end
+
+		presetTable = NovaStar.Commands.Presets[Properties['Model'].Value]
+		print(presetTable)
+		if presetTable ~= nil then
+			for k,v in pairs(presetTable) do 
+				print('PRESET'..k)
+				Controls['PRESET'..k].EventHandler = function()
+					sendPreset(v)
+				end
+			end
+		end
+		
+	end
+	
+
+	Controls['Brightness'].EventHandler = function()
+		sendBrightness(Controls['Brightness'].Value)
+	end
+
+	if(Properties['IP Address'].Value ~= '') then
+		NovaStar.IP = Properties['IP Address'].Value
+		NovaStar.setStatus(5, 'Connecting to NovaStar');
+		NovaStar.socket:Connect(NovaStar.IP, 5200);
+	else
+		NovaStar.setStatus(3, '\nPlease set IP address.');
+		Controls['IN1'].IsDisabled = true;
+		Controls['IN2'].IsDisabled = true;
+		Controls['IN3'].IsDisabled = true;
+		Controls['IN4'].IsDisabled = true;
+		Controls['IN5'].IsDisabled = true;
+		Controls['IN6'].IsDisabled = true;
+		Controls['IN7'].IsDisabled = true;
+		Controls['IN8'].IsDisabled = true;
+		Controls['IN9'].IsDisabled = true;
+		Controls['IN0'].IsDisabled = true;
+		Controls['Brightness'].IsDisabled = true;
+	end;
+
+	if(Properties['Default Brightness'].Value ~= '') then
+		Controls['Brightness'].Value = Properties['Default Brightness'].Value
+		sendBrightness(Properties['Default Brightness'].Value)
+	end;
+
+end
