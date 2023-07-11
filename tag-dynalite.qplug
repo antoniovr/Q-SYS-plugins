@@ -1,0 +1,1399 @@
+-- Information block for the plugin
+PluginInfo = {
+  Name = "TAG~Dynalite~Envision Gateway",
+  Version = "2.3",
+  BuildVersion = "2.3.0.34",
+  Id = "6add4168-6655-4304-9f33-2a756b485f67",
+  Description = "A Q-SYS plugin for the Phillips Dynalite Ethernet Gateway (PDEG) and Phillips Dynalite Ethernet Bridge (PDEB).",
+  ShowDebug = true,
+  Author = "Jason Foord"
+}
+
+Color = {
+  White = {255, 255, 255},
+  Black = {29, 29, 29},
+  LtBlack = {88, 88, 88},
+  Gray = {65, 65, 65},
+  LtGray = {248, 248, 248},
+  DkPurple = {37, 31, 45},
+  Teal = {1, 141, 176}
+}
+
+Defaults = {
+  Font = "Roboto",
+  FontSize = 12,
+  Color = Color.Gray,
+  TextBoxSize = {228, 16},
+  StatusSize = {228, 16},
+  LabelSize = {90, 16}
+}
+
+-- Define the color of the plugin object in the design
+function GetColor(props)
+  return Color.Teal
+end
+
+-- The name that will initially display when dragged into a design
+function GetPrettyName(props)
+  return string.format("Dynalite\nEnvision Gateway\n[%s]", PluginInfo.Version)
+end
+
+-- Optional function used if plugin has multiple pages
+PageNames = { "Dashboard", "Configuration" }  --List the pages within the plugin
+function GetPages(props)
+  local pages = {}
+  for i = 1, props["Area Slots"].Value do
+    table.insert(pages, {name = string.format("Slot %d", i)})
+  end
+  return pages
+end
+
+-- Define User configurable Properties of the plugin
+function GetProperties()
+  local props = {
+    {
+      Name = "Protocol",
+      Type = "enum",
+      Choices = {
+        "DyNet 1",
+        "DyNet Text"
+      },
+      Value = "DyNet 1"
+    },
+    {
+      Name = "Enable Polling",
+      Type = "enum",
+      Choices = {"Yes", "No"},
+      Value = "Yes"
+    },
+    {
+        Name = "Poll Rate (s)",
+        Type = "integer",
+        Min  = 5,
+        Max = 60,
+        Value = 5
+    },
+    {
+      Name = "Connection Type",
+      Type = "enum",
+      Choices = {
+        "TCP",
+        "Serial"
+      },
+      Value = "TCP"
+    },
+    {
+        Name = "Area Slots",
+        Type = "integer",
+        Min  = 2,
+        Max = 50,
+        Value = 2
+    },
+    {
+        Name = "Presets",
+        Type = "integer",
+        Min  = 2,
+        Max = 50,
+        Value = 10
+    },
+    {
+        Name = "Enable Logical Channels",
+        Type = "enum",
+        Choices = {"Yes", "No"},
+        Value = "No"
+    },
+    {
+        Name = "Logical Channels",
+        Type = "integer",
+        Min  = 1,
+        Max = 50,
+        Value = 4
+    }
+  
+  }
+  return props
+end
+
+-- Optional function to define pins on the plugin that are not connected to a Control
+function GetPins(props)
+  local pins = {}
+  
+  if props['Connection Type'].Value == "Serial" then
+      table.insert(pins, {
+          Name = "Serial",
+          Direction = "input",
+          Domain = "serial",
+      })
+  end
+  return pins
+end
+
+-- Optional function to update available properties when properties are altered by the user
+function RectifyProperties(props)
+  props["Logical Channels"].IsHidden = props["Enable Logical Channels"].Value == "No"
+  props["Enable Polling"].IsHidden = props["Protocol"].Value == "DyNet Text"
+  props["Poll Rate (s)"].IsHidden = props["Enable Polling"].Value == "No" or props["Protocol"].Value == "DyNet Text"
+  -- props["Connection Type"].IsHidden = props["DyNet Protocol"].Value == "Text"
+  -- if props["DyNet Protocol"].Value == "Text" then
+  --   props["Connection Type"].Value = "TCP"
+  -- end
+  return props
+end
+
+-- Defines the Controls used within the plugin
+function GetControls(props)
+  local ctrls = {}
+  local count = props["Area Slots"].Value
+  
+  table.insert(ctrls, {
+      Name = "ip_address",
+      ControlType = "Text",
+      UserPin = true,
+      PinStyle = "Both"
+  })
+  
+  table.insert(ctrls, {
+      Name = "port",
+      ControlType = "Knob",
+      ControlUnit = "Integer",
+      Min = 49152,
+      Max = 65535,
+      DefaultValue = 50000,
+      UserPin = true,
+      PinStyle = "Both"
+  })
+  
+  table.insert(ctrls, {
+      Name = "device_status",
+      ControlType = "Indicator",
+      IndicatorType = "Status",
+      UserPin = true,
+      PinStyle = "Output"
+  })
+  
+  table.insert(ctrls, {
+      Name = "connect",
+      ControlType = "Button",
+      ButtonType = "Toggle",
+      UserPin = true,
+      PinStyle = "Both"
+  })
+  
+  table.insert(ctrls, {
+      Name = "area_number",
+      ControlType = "Knob",
+      ControlUnit = "Integer",
+      Min = 0,
+      Max = 250,
+      UserPin = true,
+      PinStyle = "Both",
+      Count = count
+  })
+  
+  table.insert(ctrls, {
+      Name = "area_status",
+      ControlType = "Indicator",
+      IndicatorType = "Status",
+      UserPin = true,
+      PinStyle = "Output",
+      Count = count
+  })
+  
+  if props["Protocol"].Value == "DyNet 1" then
+      -- should be an array of 8 buttons to set bits
+      for byte = 0, 7 do
+          table.insert(ctrls, {
+              Name = string.format("join_byte_%s", byte),
+              ControlType = "Knob",
+              ControlUnit = "Integer",
+              Min = 0,
+              Max = 1,
+              DefaultValue = 1,
+              UserPin = true,
+              PinStyle = "Both",
+              Count = count
+          })
+      end
+  
+      table.insert(ctrls, {
+          Name = "join_hex",
+          ControlType = "Text",
+          UserPin = true,
+          PinStyle = "Output",
+          Count = count
+      })
+  end
+  
+  for preset = 1, props["Presets"].Value do
+  
+      table.insert(ctrls, {
+          Name = string.format("fade_time_%d", preset),
+          ControlType = "Knob",
+          ControlUnit = "Integer",
+          Min = 0,
+          Max = 30,
+          UserPin = true,
+          PinStyle = "Both",
+          Count = count
+      })
+  
+      table.insert(ctrls, {
+          Name = string.format("preset_load_%d", preset),
+          ControlType = "Button",
+          ButtonType = "Trigger",
+          UserPin = true,
+          PinStyle = "Both",
+          Count = count
+      })
+  
+      table.insert(ctrls, {
+          Name = string.format("preset_match_%d", preset),
+          ControlType = "Indicator",
+          IndicatorType = "LED",
+          UserPin = true,
+          PinStyle = "Output",
+          Count = count
+      })
+  
+  end
+  
+  if props["Enable Logical Channels"].Value == "Yes" then
+  
+      local min, max
+      if (props['Protocol'].Value == "DyNet Text") then
+          min = 0
+          max = 100
+      elseif (props['Protocol'].Value == "DyNet 1") then
+          if props["Connection Type"].Value == "TCP" then
+              min = 255
+              max = 0
+          elseif props["Connection Type"].Value == "Serial" then
+              min = 255
+              max = 1
+          end
+      end
+  
+      for channel = 1, props["Logical Channels"].Value do
+  
+          table.insert(ctrls, {
+              Name = string.format("channel_%d", channel),
+              ControlType = "Knob",
+              ControlUnit = (props['Protocol'].Value == "DyNet Text") and "Percent" or "Integer",
+              Min = min,
+              Max = max,
+              UserPin = true,
+              PinStyle = "Both",
+              Count = count
+          })
+  
+      end
+  end
+  return ctrls
+end
+
+--Layout of controls and graphics for the plugin UI to display
+function GetControlLayout(props)
+  local layout = {}
+  local graphics = {}
+  local max_width, max_depth = 318, 300
+  
+  local page_index = props["page_index"].Value
+  local count = props["Area Slots"].Value
+  
+  table.insert(graphics, {
+      Type = "Image",
+      Image = "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",
+      Position = {0, 0},
+      Size = {max_width, 144}
+  })
+  
+  -------------------------
+  ----- Configuration -----
+  -------------------------
+  
+  table.insert(graphics, {
+      Type = "Header",
+      Text = "DEVICE CONFIGURATION",
+      Size = {max_width, 16},
+      Position = {0, 164},
+      Font = "Roboto",
+      FontSize = 13,
+      FontStyle = "Light"
+  
+  })
+  
+  table.insert(graphics, {
+      Type = "Label",
+      Text = "IP Address",
+      Size = Defaults.LabelSize,
+      Position = {0, 186},
+      HTextAlign = "Left",
+      FontSize = Defaults.FontSize
+  })
+  
+  table.insert(graphics, {
+      Type = "Label",
+      Text = "Port",
+      Size = Defaults.LabelSize,
+      Position = {0, 206},
+      HTextAlign = "Left",
+      FontSize = Defaults.FontSize
+  })
+  
+  table.insert(graphics, {
+    Type = "Label",
+    Text = (props['Connection Type'].Value == "Serial") and "TCP Controls Disabled" or (props['Protocol'].Value == "DyNet Text") and "DyNet Text Uses Port 23" or "Default Server Port is 50000",
+    Size = {Defaults.TextBoxSize[1] - 36, 16},
+    Position = {Defaults.LabelSize[1] + 36, 206},
+    HTextAlign = "Center",
+    Font = "Roboto",
+    FontSize = 10,
+    FontStyle = "Italic"
+  }) 
+  
+  table.insert(graphics, {
+      Type = "Label",
+      Text = "Device Status",
+      Size = Defaults.LabelSize,
+      Position = {0, 226},
+      HTextAlign = "Left",
+      FontSize = Defaults.FontSize
+  })
+  
+  table.insert(graphics, {
+      Type = "Label",
+      Text = "Connect",
+      Size = Defaults.LabelSize,
+      Position = {0, 246},
+      HTextAlign = "Left",
+      FontSize = Defaults.FontSize,
+  })
+  
+  layout["ip_address"] = {
+      PrettyName = "Device~IP Address",
+      Style = "Text",
+      TextBoxStyle = "Normal",
+      Size = Defaults.TextBoxSize,
+      Position = {max_width-Defaults.TextBoxSize[1], 186}
+  }
+  
+  layout["port"] = {
+    PrettyName = "Device~Port",
+    Style = "Text",
+    TextBoxStyle = "Normal",
+    Size = {36, 16},
+    Position = {max_width-Defaults.TextBoxSize[1], 206}
+  }
+  
+  layout["device_status"] = {
+      PrettyName = "Device~Status",
+      Style = "Text",
+      TextBoxStyle = "Normal",
+      IsReadOnly = true,
+      Size = Defaults.StatusSize,
+      Position = {max_width-Defaults.StatusSize[1], 226}
+  }
+  
+  layout["connect"] = {
+      PrettyName = "Device~Connect",
+      Style = "Button",
+      ButtonStyle = "Toggle",
+      Position = {Defaults.LabelSize[1], 246},
+      Color = {0, 159, 60}
+  }
+  
+  -------------------------
+  ----- Area Controls -----
+  -------------------------
+  
+  local starting_depth = 262
+  
+  table.insert(graphics, {
+      Type = "Header",
+      Text = "SLOT CONFIGURATION",
+      Size = {max_width, 16},
+      Position = {0, starting_depth},
+      Font = "Roboto",
+      FontSize = 13,
+      FontStyle = "Light"
+  })
+  
+  table.insert(graphics, {
+      Type = "Label",
+      Text = "Area",
+      Size = Defaults.LabelSize,
+      Position = {0, starting_depth + 22},
+      HTextAlign = "Left",
+      Font = Defaults.Font,
+      FontSize = Defaults.FontSize,
+  })
+  
+  layout[string.format("area_number %d", page_index)] = {
+      PrettyName = string.format("Area Slot %d~Number", page_index),
+      Style = "Text",
+      TextBoxStyle = "Normal",
+      Size = {36, 16},
+      Position = {Defaults.LabelSize[1], starting_depth + 22},
+  }
+  
+  layout[string.format("area_status %d", page_index)] = {
+    PrettyName = string.format("Area Slot %d~Status", page_index),
+    Style = "Text",
+    --IndicatorType = "Status",
+    Size = {Defaults.StatusSize[1] - 41, 16},
+    Position = {Defaults.LabelSize[1] + 41, starting_depth + 22},
+  }
+  
+  if props["Protocol"].Value == "DyNet 1" then
+      table.insert(graphics, {
+          Type = "Label",
+          Text = "Join",
+          Size = Defaults.LabelSize,
+          Position = {0, starting_depth + 42},
+          HTextAlign = "Left",
+          Font = Defaults.Font,
+          FontSize = Defaults.FontSize,
+      })
+  
+      for byte = 0, 7 do
+          layout[string.format("join_byte_%s %d", byte, page_index)] = {
+              PrettyName = string.format("Area Slot %d~Join Byte %s", page_index, byte),
+              Style = "Text",
+              TextBoxStyle = "Normal",
+              Size = {20, 16},
+              Position = {Defaults.LabelSize[1] + (byte * 22), starting_depth + 42},
+          }
+      end
+  
+      layout[string.format("join_hex %d", page_index)] = {
+          PrettyName = string.format("Area Slot %d~Join Hex", page_index),
+          Style = "Text",
+          TextBoxStyle = "Normal",
+          Color = {194, 194, 194},
+          IsReadOnly = true,
+          Size = {52, 16},
+          Position = {Defaults.LabelSize[1] + (8 * 22), starting_depth + 42},
+      }
+  end
+  
+  -- table.insert(graphics, {
+  --     Type = "Label",
+  --     Text = "Default Join ID is 255",
+  --     Size = {Defaults.TextBoxSize[1] - 36, 16},
+  --     Position = {Defaults.LabelSize[1] + 36, starting_depth + 42},
+  --     HTextAlign = "Center",
+  --     Font = "Roboto",
+  --     FontSize = 10,
+  --     FontStyle = "Italic"
+  -- }) 
+  
+  local alt = true
+  local x = 0
+  
+  table.insert(graphics, {
+      Type = "Svg",
+      Image = "PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iaXNvLTg4NTktMSI/Pg0KPCEtLSBHZW5lcmF0b3I6IEFkb2JlIElsbHVzdHJhdG9yIDE4LjEuMSwgU1ZHIEV4cG9ydCBQbHVnLUluIC4gU1ZHIFZlcnNpb246IDYuMDAgQnVpbGQgMCkgIC0tPg0KPHN2ZyB2ZXJzaW9uPSIxLjEiIGlkPSJDYXBhXzEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHg9IjBweCIgeT0iMHB4Ig0KCSB2aWV3Qm94PSIwIDAgMTQuNzA3IDE0LjcwNyIgc3R5bGU9ImVuYWJsZS1iYWNrZ3JvdW5kOm5ldyAwIDAgMTQuNzA3IDE0LjcwNzsiIHhtbDpzcGFjZT0icHJlc2VydmUiPg0KPGc+DQoJPHJlY3QgeD0iNi4yNzUiIHk9IjAiIHN0eWxlPSJmaWxsOiMwMzAxMDQ7IiB3aWR0aD0iMi4xNTgiIGhlaWdodD0iMTQuNzA3Ii8+DQo8L2c+DQoNCjwvc3ZnPg0K",
+      Position = {max_width , 0},
+      Size = {20, max_depth}
+  })
+  
+  for preset = 1, props["Presets"].Value do
+  
+      x = (max_width + 20) + (math.floor((preset-1)/10) *  (max_width/2))
+      y = ((max_depth/10) * (preset-1)) - (max_depth * (math.floor((preset-1)/10)))
+  
+      table.insert(graphics, 1, {
+          Type = "Label",
+          Text = string.format("P %d", preset),
+          Size = {(max_width/2), max_depth/10},
+          Position = {x, y},
+          HTextAlign = "Left",
+          Font = Defaults.Font,
+          FontSize = Defaults.FontSize,
+          Fill = alt and {0, 0, 0, 0} or {0, 0, 0, 25},
+          StrokeWidth = 0
+      })
+  
+      table.insert(graphics, {
+          Type = "Label",
+          Text = "->",
+          Size = {15, max_depth/10},
+          Position = {(x+(max_width/4.5))-40, y},
+          HTextAlign = "Right",
+          Font = Defaults.Font,
+          FontSize = Defaults.FontSize,
+          Fill = {0, 0, 0, 0},
+          StrokeWidth = 0
+      })
+  
+      layout[string.format("fade_time_%d %d", preset, page_index)] = {
+          PrettyName = string.format("Area Slot %d~Preset %d~Fade Time", page_index, preset),
+          Style = "Text",
+          TextBoxStyle = "Normal",
+          Margin = 3,
+          Size = {41, 26},
+          Position = {x+(max_width/2)-5-41-36-26, y+2},
+      }
+  
+      layout[string.format("preset_load_%d %d", preset, page_index)] = {
+          PrettyName = string.format("Area Slot %d~Preset %d~Load", page_index, preset),
+          Style = "Button",
+          ButtonStyle = "Trigger",
+          Legend = "Load",
+          Margin = 3,
+          Size = {36, 26},
+          Position = {x+(max_width/2)-5-36-26, y+2},
+          Color = {0, 159, 60}
+      }
+  
+      layout[string.format("preset_match_%d %d", preset, page_index)] = {
+          PrettyName = string.format("Area Slot %d~Preset %d~Match", page_index, preset),
+          Style = "Indicator",
+          IndicatorStyle = "LED",
+          Margin = 7,
+          Size = {26, 26},
+          Position = {x+(max_width/2)-5-26, y+2},
+          Color = {0, 159, 60}
+      }
+  
+      alt = not alt
+  end
+  
+  local alt = true
+  local starting_width = (max_width + 20) + (math.ceil( props["Presets"].Value /10) *  (max_width/2))
+  
+  if props["Enable Logical Channels"].Value == "Yes" then
+  
+      table.insert(graphics, {
+          Type = "Svg",
+          Image = "PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iaXNvLTg4NTktMSI/Pg0KPCEtLSBHZW5lcmF0b3I6IEFkb2JlIElsbHVzdHJhdG9yIDE4LjEuMSwgU1ZHIEV4cG9ydCBQbHVnLUluIC4gU1ZHIFZlcnNpb246IDYuMDAgQnVpbGQgMCkgIC0tPg0KPHN2ZyB2ZXJzaW9uPSIxLjEiIGlkPSJDYXBhXzEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHg9IjBweCIgeT0iMHB4Ig0KCSB2aWV3Qm94PSIwIDAgMTQuNzA3IDE0LjcwNyIgc3R5bGU9ImVuYWJsZS1iYWNrZ3JvdW5kOm5ldyAwIDAgMTQuNzA3IDE0LjcwNzsiIHhtbDpzcGFjZT0icHJlc2VydmUiPg0KPGc+DQoJPHJlY3QgeD0iNi4yNzUiIHk9IjAiIHN0eWxlPSJmaWxsOiMwMzAxMDQ7IiB3aWR0aD0iMi4xNTgiIGhlaWdodD0iMTQuNzA3Ii8+DQo8L2c+DQoNCjwvc3ZnPg0K",
+          Position = {starting_width , 0},
+          Size = {20, max_depth}
+      })
+  
+      for channel = 1, props["Logical Channels"].Value do
+  
+          x = starting_width + 20 + (math.floor((channel-1)/10) * (max_width/2))
+          y = ((max_depth/10) * (channel-1)) - (max_depth * (math.floor((channel-1)/10)))
+  
+          table.insert(graphics, 1, {
+              Type = "Label",
+              Text = string.format("Ch %d", channel),
+              Size = {(max_width/2), max_depth/10},
+              Position = {x, y},
+              HTextAlign = "Left",
+              Font = Defaults.Font,
+              FontSize = Defaults.FontSize,
+              Fill = alt and {0, 0, 0, 0} or {0, 0, 0, 25},
+              StrokeWidth = 0
+          })
+  
+          layout[string.format("channel_%d %d", channel, page_index)] = {
+              PrettyName = string.format("Area Slot %d~Channel %d Level", page_index, channel),
+              Style = "Fader",
+              Size = {124,24},
+              Position = {x + 35, y+3}
+          }
+  
+          alt = not alt
+      end
+  end
+  return layout, graphics
+end
+
+--Start event based logic
+if Controls then
+
+  -- Constants
+  commandQueue = {}
+  max_controls = #Controls["area_number"]
+  pollTimer, queueTimer = Timer.New(), Timer.New()
+  
+  Protocol = {
+  
+    ['WhoAreYou'] = {
+    
+      ['DyNet Text'] = "WhoAreYou",
+      
+      ['DyNet 1'] = function()
+      
+      end
+      
+    },
+    
+    ['RequestCurrentPresets'] = {
+    
+      ['DyNet Text'] = function(area) -- can i do join values with dynet text?
+        return string.format("RCP %s", area)
+      end,
+      
+      ['DyNet 1'] = function(area, join)
+        return GeneratePacket({0x1C, tonumber(area), 0x00, 0x63, 0x00, 0x00, join})
+      end
+      
+    },
+    
+    ['RequestCurrentLevels'] = {
+    
+      ['DyNet Text'] = function(channel, area)
+        return string.format("RCL %d %s", channel, area)
+      end,
+      
+      ['DyNet 1'] = function(channel, area, join)
+        return GeneratePacket({0x1C, tonumber(area), tonumber(channel) - 1, 0x61, 0x00, 0x00, join})
+      end
+      
+    },
+    
+    ['RecallPreset'] = {
+    
+      ['DyNet Text'] = function(preset, area, fade)
+        return string.format("p %s %s %s 255", preset, area, fade)
+      end,
+      
+      ['DyNet 1'] = function(preset, area, fade, join)
+        local fade = bitstring.pack("16:int", (tonumber(fade) * 0.05))
+        local hi, low = fade:sub(1, 1), fade:sub(2, 2)
+        
+        --print( string.format( "[%X][%X]", string.byte(low), string.byte(hi) ) )
+        
+        return GeneratePacket({0x1C, tonumber(area), tonumber(preset) - 1, 0x65, string.byte(low), string.byte(hi), join})
+      end
+      
+    },
+    
+    ['SetLevel'] = {
+    
+      ['DyNet Text'] = function(channel, level, area)
+        return string.format('CL %d %d %d 200 255', channel, level, area)
+      end,
+      
+      ['DyNet 1'] = function(channel, level, area, join)
+        return GeneratePacket({0x1C, tonumber(area), tonumber(channel) - 1, 0x71, tonumber(level), 0x05, join})
+      end
+      
+    },
+    
+  }
+
+  function ResetTimers()
+    pollTimer:Stop()
+    queueTimer:Stop()
+  end
+  
+  function DisableTcpControls(bool)
+    Controls["ip_address"].IsDisabled = bool
+    Controls["port"].IsDisabled = bool
+  end
+  
+  function getJoin(position)
+    if Properties["Protocol"].Value ~= "DyNet 1" then return 0xFF end
+    local join
+    local bits = ''
+  
+    for byte = 0, 7 do
+      local bit = Controls[string.format('join_byte_%d', byte)][position].String
+      bits = bits .. bit
+    end
+  
+    print(bits)
+    join = string.byte( bitstring.frombinstream(bits) )
+    
+    Controls[string.format('join_hex')][position].String = bitstring.hexstream( bitstring.pack('8:int', join) )
+    return join
+  end
+
+  if Properties["Connection Type"].Value == "TCP" then
+
+    -- Services
+    sock = TcpSocket.New()
+    sock.ReadTimeout = 0
+    sock.ReconnectTimeout = 1
+    
+    -----------------
+    ----- Setup -----
+    -----------------
+    
+    function Connect()
+    
+      isDyNetText = (Properties['Protocol'].Value == "DyNet Text")
+      
+      ResetTimers()
+      
+      -- empty command queue
+      commandQueue = {}
+      
+      if sock.IsConnected then sock:Disconnect() end
+      
+      if not Controls["connect"].Boolean then SetStatus(3, "Component Manually Disconnected") return sock:Disconnect() end
+      
+      local ip_addr = Controls["ip_address"].String:match('(%d?%d?%d%.%d?%d?%d%.%d?%d?%d%.%d?%d?%d)')
+      
+      Controls["ip_address"].Color = ip_addr and 'Green' or 'Red'
+      
+      if not ip_addr then return print("User.Error: IP address invalid") end
+      
+      print("User.Info: Connecting Socket...")
+      
+      Controls['port'].IsDisabled = isDyNetText
+      
+      sock:Connect(ip_addr, isDyNetText and 23 or math.floor(Controls['port'].Value))
+      
+    end
+    
+    ----------------------------
+    ----- Queue Management -----
+    ----------------------------
+    
+    function Dequeue()
+      
+      queueTimer:Stop()
+      
+      if #commandQueue > 0 and sock.IsConnected then
+          Send(table.remove(commandQueue, 1))
+      end
+      
+      queueTimer:Start(0.1)
+    end
+    
+    ------------------------------------
+    ----- Socket & Data Management -----
+    ------------------------------------
+    
+    sock.EventHandler = function(sock, evt, err)
+    
+      if evt == TcpSocket.Events.Connected then
+      
+        SetStatus(0, "Connected")
+        
+        if (not isDyNetText) then Begin() end
+        
+      elseif evt == TcpSocket.Events.Data then
+      
+        SetStatus(0)
+        
+        local data = sock:Read(sock.BufferLength)
+        
+        ParseData(data)
+        
+        queueTimer:Start(0)
+        
+      else
+      
+        SetStatus(4, evt)
+      
+        Connect()
+        
+      end
+    end
+    
+    function Send(data)
+      
+      if not sock.IsConnected then return print("User.Warning: Socket not Connected") end
+      
+      local command = ""
+      
+      if (isDyNetText) then
+        
+        print(string.format("Sending ASCII:%s", data))
+        
+        command = data
+        
+      else
+      
+        local hex = ""
+        
+        for i, byte in ipairs(data) do
+          command = command .. string.char(byte)
+          hex = hex .. string.format("[%02X]", byte)
+        end
+        
+        print(string.format("Sending HEX:%s", hex))
+      
+      end
+      
+      if (isDyNetText) then command = command .. '\r' end
+      
+      sock:Write(command)
+      
+    end
+
+  elseif Properties["Connection Type"].Value == "Serial" then
+    
+    -- Services
+    serial = SerialPorts[1]
+    -- sock.ReadTimeout = 0
+    -- sock.ReconnectTimeout = 1
+    
+    -----------------
+    ----- Setup -----
+    -----------------
+    
+    function Connect()
+    
+      isDyNetText = (Properties['Protocol'].Value == "DyNet Text")
+      
+      ResetTimers()
+      
+      -- empty command queue
+      commandQueue = {}
+      
+      if not Controls["connect"].Boolean then SetStatus(3, "Component Manually Disconnected") return serial:Close() end
+      
+      print("User.Info: Connecting Serial Port...")
+      
+      if not serial.IsOpen then
+        serial:Open(9600, 8, 'N') --9600,N,8,1
+      end
+    end
+    
+    ----------------------------
+    ----- Queue Management -----
+    ----------------------------
+    
+    function Dequeue()
+      
+      queueTimer:Stop()
+      
+      if #commandQueue > 0 and serial.IsOpen then
+          Send(table.remove(commandQueue, 1))
+      end
+      
+      queueTimer:Start(0.1)
+    end
+    
+    ------------------------------------
+    ----- Serial & Data Management -----
+    ------------------------------------
+    
+    serial.EventHandler = function(port, evt)
+    
+      if evt == SerialPorts.Events.Connected then
+      
+        SetStatus(0, "Connected")
+        
+        if (not isDyNetText) then Begin() end
+        
+      elseif evt == SerialPorts.Events.Data then
+      
+        SetStatus(0)
+        
+        local data = serial:Read(serial.BufferLength)
+        
+        ParseData(data)
+        
+        queueTimer:Start(0)
+        
+      else
+      
+        SetStatus(4, evt)
+      
+        Timer.CallAfter(Connect, 1)
+        
+      end
+    end
+    
+    function Send(data)
+      
+      if not serial.IsOpen then return print("User.Warning: Serial Port not Connected") end
+      
+      local command = ""
+      
+      if (isDyNetText) then
+        
+        print(string.format("Sending ASCII:%s", data))
+        
+        command = data
+        
+      else
+      
+        local hex = ""
+        
+        for i, byte in ipairs(data) do
+          command = command .. string.char(byte)
+          hex = hex .. string.format("[%02X]", byte)
+        end
+        
+        print(string.format("Sending HEX:%s", hex))
+      
+      end
+      
+      if (isDyNetText) then command = command .. '\r' end
+      
+      serial:Write(command)
+      
+    end
+  
+  end
+
+  -------------------
+  ----- Polling -----
+  -------------------
+  
+  function Begin()
+  
+    Poll()
+            
+    queueTimer:Start(0)
+    
+    if Properties["Enable Polling"].Value == "Yes" then pollTimer:Start(Properties["Poll Rate (s)"].Value) end
+  
+  end
+  
+  function Poll()
+    
+    print("User.Info: Polling...")
+  
+    --Enqueue('WhoAreYou')
+    
+    for i = 1, Properties["Area Slots"].Value do
+      GetCurrentPresets(Controls['area_number'][i].String, i)
+      
+      GetChannelLevels(Controls['area_number'][i].String, i)
+    end
+    
+  end; pollTimer.EventHandler = Poll
+  
+  function Enqueue(cmd, position)
+    if not position then return table.insert(commandQueue, cmd) end
+    table.insert(commandQueue, position, cmd)
+    if (position == 1) then queueTimer:Start(0) end
+  end
+  
+  ----------------------------
+  ----- Helper Functions -----
+  ----------------------------
+  
+  function SetStatus(value, string)
+  
+    Controls["device_status"].Value = value and value or Controls["device_status"].Value
+    Controls["device_status"].String = string and string or Controls["device_status"].String
+    
+  end
+  
+  function GeneratePacket(tbl)
+    
+    local sum, command = 0, ""
+    
+    -- sum the table
+    for i, byte in ipairs(tbl) do
+      sum = sum + byte
+    end
+    
+    -- pack to 8 bit signed integer
+    sum = bitstring.pack("8:int", sum)
+    
+    -- convert to binary stream
+    local bin = bitstring.binstream(sum)
+    
+    local new_bin = ""
+    
+    -- invert the binary stream
+    for i = 1, bin:len() do
+    
+      local bit = bin:sub(i, i)
+      local new_bit
+      
+      if bit == "0" then
+        new_bit = "1"
+      elseif bit == "1" then
+        new_bit = "0"
+      end
+      
+      new_bin = new_bin .. new_bit
+    end
+    
+    -- add 1, then pack to 8 bit signed integer again
+    local checksum = bitstring.pack("8:int", string.byte( bitstring.frombinstream(new_bin) ) + 1 )
+    
+    -- add it to the command
+    table.insert(tbl, string.byte(checksum))
+    
+    return tbl
+  end
+  
+  
+  
+  function GetPositionsFromArea(area, join) -- update this to also accept a join value and match to that
+    
+    local tbl = {}
+  
+    -- bitmatch the join values
+    local function matchJoinValues(configuredJoin, receivedJoin) 
+      if not receivedJoin then return true end -- if no received join, just return true so it only matches the area value
+      local configuredJoinBits = bitstring.binstream( bitstring.pack('8:int', configuredJoin) )
+      local receivedJoinBits = bitstring.binstream( bitstring.pack('8:int', receivedJoin) )
+      print( string.format('Matching Join Bits: [%s] to [%s]', receivedJoinBits, configuredJoinBits) )
+      for i = 1, 8 do
+        if string.sub(configuredJoinBits, i, i) == '1' and string.sub(receivedJoinBits, i, i) == '1' then
+          print( string.format('Matched at Bit [%d]', i) )
+          return true
+        end
+      end
+      return false
+    end
+    
+    for i, ctl in ipairs(Controls["area_number"]) do
+      
+      if ( math.floor(ctl.Value) == tonumber(area) ) and matchJoinValues(area_props[i].join, join) then
+        table.insert(tbl, i)
+      end
+    end
+    
+    return tbl
+    
+  end
+  
+  function SetPresetLEDs(preset, area, join)
+  
+    if (preset ~= 0) then print(string.format("Area [%s], is Updating to Preset [%d]", area, preset)) end
+    
+    -- get control positions for this area
+    positions = GetPositionsFromArea(area, join)
+      
+    -- for all returned positons, do;
+    for _, position in ipairs(positions) do
+      
+      -- iterate vertically through the preset LED controls
+      for i = 1, Properties["Presets"].Value do
+        
+        -- set the preset true if it matches, else false
+        Controls[string.format("preset_match_%d", i)][position].Boolean = ((i == tonumber(preset)) and area_props[position].validPreset == true)
+        
+      end
+    end
+  end
+  
+  function UpdateActiveChannels(channel, area, target, current, join)
+  
+    if (Properties["Enable Logical Channels"].Value == "No") then return end
+  
+    -- get control positions for this area
+    positions = GetPositionsFromArea(area, join)
+    
+    channel = tonumber(channel)
+    
+    -- for all returned positons, do;
+    for _, position in ipairs(positions) do
+    
+      print(string.format("Area [%s], Channel [%d] is %s", area, channel, ((area_props[position].isMoving[channel] == false) and string.format("Updating to Target [%d]", target) or "Not Available for Updates")))
+      
+      if area_props[position].isMoving[channel] == false then
+      
+        -- set the channel level for the incoming channel
+        Controls[string.format("channel_%d", channel)][position].String = target
+      
+      end
+    end
+  end
+  
+  function AreaIsDuplicate(area, position)
+    matches = 0
+    for i, c in ipairs(Controls['area_number']) do
+      if (c.String == area and area_props[i].join == area_props[position].join) then matches = matches + 1 end
+      if (matches > 1) then return true end
+    end
+    return false
+  end
+  
+  
+  
+  ------------------------
+  ----- API Requests -----
+  ------------------------
+  
+  function GetCurrentPresets(area, position)
+    
+    Controls['area_status'][position].Value = (tonumber(area) == 0) and 3 or 0
+    Controls['area_status'][position].String = (tonumber(area) == 0) and "Area Undefined" or ""
+    
+    
+    if (tonumber(area) == 0) then
+    
+      Controls['area_status'][position].Value = 3
+      Controls['area_status'][position].String = "Area Undefined"
+      
+      return
+      
+    elseif AreaIsDuplicate(area, position) then
+      
+      Controls['area_status'][position].Value = 1
+      Controls['area_status'][position].String = "Area is Duplicate"
+      
+    end
+    
+    print(string.format("Getting Preset for Area [%s]", area and area or "-"))
+    
+    Enqueue(Protocol['RequestCurrentPresets'][Properties['Protocol'].Value](area, area_props[position].join))
+    
+  end
+  
+  function GetChannelLevels(area, position)
+    
+    if Properties["Enable Logical Channels"].Value == "No" then return end 
+  
+    if (tonumber(area) == 0) then return end
+    
+    print(string.format("Getting Channel Levels for Area [%s]", area and area or "-"))
+    
+    for ch = 1, Properties["Logical Channels"].Value do
+      
+      Enqueue(Protocol['RequestCurrentLevels'][Properties['Protocol'].Value](ch, area, area_props[position].join))
+    end
+    
+  end
+  
+  function ParseData(data)
+    
+    local hex = ""
+    
+    for i = 1, data:len() do
+      hex = hex .. string.format("[%02X]", string.byte(data:sub(i, i)))
+    end
+    
+    if (not data) then return end
+    
+    if (isDyNetText) then
+      
+      --print(string.format("Data:%s", data))
+      
+      if data:find("Telnet Connection Established") then
+        
+        Enqueue('ReplyOK 0')
+        Enqueue('Echo 0')
+        Enqueue('WhoAreYou')
+        Enqueue('Verbose')
+        
+        Begin()
+        
+      return end
+      
+      --if not (line == "") then print(string.format("Sock.Data: '%s'", line)) end
+      
+      --[[device = line:match("I am (%w+)")
+      if device then Controls["device_type"].String = device end]]
+      
+      --[[box = line:match("Box (%w+)")
+      if box then Controls["box"].String = box end]]
+      
+      --[[version = line:match(", v([%w,]+)")
+      if version then Controls["version"].String = version:gsub(",", ".") end]]
+      
+      preset, area = data:match("Reply with Current Preset (%d+), Area (%d+)")
+      if (preset and area) then SetPresetLEDs(preset, area) end
+        
+      channel, area, target, current = data:match("Reply with Current Level Ch (%w+), Area (%d+), TargLev (%d+)%%, CurrLev (%d+)%%")
+      if (channel and area and target and current) then UpdateActiveChannels(channel, area, target, current) end
+      
+    else
+    
+      print(string.format("Data:%s", hex))
+    
+      if (string.byte(data:sub(1, 1)) == 0xAC) then -- dynet 2 response
+      
+        if (string.byte(data:sub(2, 2)) == 0x03) then
+        
+          local area = string.byte(data:sub(8, 8))
+          local preset = string.byte(data:sub(12, 12))
+          -- local join = string.byte(data:sub(9, 9))
+          
+          SetPresetLEDs(preset, area)
+          
+        elseif (string.byte(data:sub(2, 2)) == 0x07) then
+        
+          local area = string.byte(data:sub(8, 8))
+          local channel = string.byte(data:sub(12, 12))
+          local target = string.byte(data:sub(16, 16))
+          
+          -- convert to fader range
+          target = (((target - 0) * (0 - 255)) / (254 - 0)) + 255
+          
+          target = math.floor(target)
+          
+          --print(target)
+          
+          UpdateActiveChannels(channel, area, target, current)
+          
+        end
+      
+      elseif (string.byte(data:sub(1, 1)) == 0x1C) then -- dynet 1 logical response
+        
+        local opcode = string.byte(data:sub(4, 4))
+        local area = string.byte(data:sub(2, 2))
+        local join = string.byte(data:sub(7, 7))
+  
+        if (opcode == 0x60) then
+        
+          local channel = string.byte(data:sub(3, 3)) + 1
+          local target = string.byte(data:sub(5, 5))
+          
+          -- convert to fader range
+          -- target = (((target - 0) * (0 - 255)) / (254 - 0)) + 255
+          
+          -- target = math.floor(target)
+          
+          UpdateActiveChannels(channel, area, target, current, join)
+          
+        elseif (opcode == 0x62) then
+  
+          local preset = string.byte(data:sub(3, 3)) + 1
+          
+          SetPresetLEDs(preset, area, join)
+          
+        end
+  
+      end
+    end
+    
+  end
+
+  -------------------------
+  ----- EventHandlers -----
+  -------------------------
+  
+  Controls["ip_address"].EventHandler = Connect
+  Controls["port"].EventHandler = Connect
+  Controls["connect"].EventHandler = Connect
+  
+  queueTimer.EventHandler = Dequeue
+  
+    -------------------------------------------------
+    -- Variables/Constants for Fader Functionality --
+    -------------------------------------------------
+    
+    area_props = {}
+    
+    for area = 1, Properties["Area Slots"].Value do
+    
+      -- set up object for area number control and channel faders
+      table.insert(area_props, {
+        areaSpamTimer = Timer.New(),
+        validPreset = true,
+        channelSpamTimers = {},
+        canUpdate = {},
+        isMovingTimers = {},
+        isMoving = {},
+        join = getJoin(area),
+      })
+      
+      if Properties["Protocol"].Value == "DyNet 1" then
+        -- do eventhandlers for bit controls
+        for byte = 0, 7 do
+          Controls[string.format('join_byte_%d', byte)][area].EventHandler = function()
+            area_props[area].join = getJoin(area)
+          end
+        end
+      end
+  
+  
+  
+      if Properties["Enable Logical Channels"].Value == "Yes" then 
+        for channel = 1, Properties["Logical Channels"].Value do
+          table.insert(area_props[area].channelSpamTimers, Timer.New())
+          table.insert(area_props[area].canUpdate, true)
+          table.insert(area_props[area].isMovingTimers, Timer.New())
+          table.insert(area_props[area].isMoving, false)
+        end
+      end
+      
+    end
+  
+  -------------------------------------------------
+  -------------------------------------------------
+  -------------------------------------------------
+  
+  for position, area in ipairs(Controls["area_number"]) do
+    
+    -- fetch area presets and levels
+    area.EventHandler = function()
+      
+      -- to stop spamming requests if someone is using the mouse to drag the 'zone number' control
+      area_props[position].areaSpamTimer.EventHandler = function(t)
+        t:Stop()
+        area_props[position].validPreset = true
+        GetCurrentPresets(area.String, position)
+        GetChannelLevels(area.String, position)
+      
+      end
+      
+      area_props[position].areaSpamTimer:Start(.5)
+    
+    end
+  
+    -- set up preset recall eventhandlers
+    for preset = 1, Properties["Presets"].Value do
+    
+      Controls[string.format("preset_load_%d", preset)][position].EventHandler = function()
+        
+        -- is a valid preset state because a preset has been recalled
+        
+        print(string.format("Position [%s] Preset is Valid", position))
+        area_props[position].validPreset = true
+        
+        Enqueue(Protocol['RecallPreset'][Properties['Protocol'].Value](preset, area.String, math.floor(Controls[string.format("fade_time_%d", preset)][position].Value * 1000), area_props[position].join), 1)
+        
+        GetCurrentPresets(area.String, position)
+        
+        GetChannelLevels(area.String, position)
+        
+      end
+    
+    end
+    
+    if (Properties["Enable Logical Channels"].Value == "Yes") then
+  
+      -- set up fader eventhandlers
+      for channel = 1, Properties["Logical Channels"].Value do
+        
+        -- don't receive polling updates while fader is moving
+        area_props[position].isMovingTimers[channel].EventHandler = function(t)
+          t:Stop()
+          area_props[position].isMoving[channel] = false
+          print(string.format("Area [%s], Channel [%d] is %s", area.String, channel, ((area_props[position].isMoving[channel] == false) and "Listening for Polling Updates" or "Not Available")))
+        end
+  
+        Controls[string.format("channel_%d", channel)][position].EventHandler = function(ctl)
+        
+          -- not a valid preset state as the fader has been moved manually
+          if (area_props[position].isMoving[channel] == false) then
+          
+            print(string.format("Position [%s] Preset is Invalid Becase [Manual Logical Channel Adjustment]", position))
+            area_props[position].validPreset = false
+            
+          end
+          
+          SetPresetLEDs(0, area.String)
+          
+          -- if cannot update, return here
+          if not area_props[position].canUpdate[channel] then return end
+            
+          area_props[position].canUpdate[channel] = false
+          
+          area_props[position].isMoving[channel] = true
+          
+          -- to stop spamming requests when the fader is moved
+          area_props[position].channelSpamTimers[channel].EventHandler = function(t)
+            t:Stop()
+            
+            -- get the level value
+            local level = math.floor(ctl.Value)
+            
+            -- write this command directly so there's no delay which would occur by queueing
+            Send(Protocol['SetLevel'][Properties['Protocol'].Value](channel, level, area.String, area_props[position].join))
+            area_props[position].canUpdate[channel] = true
+          
+            area_props[position].isMovingTimers[channel]:Start(1)
+          end
+        
+          area_props[position].channelSpamTimers[channel]:Start(.2)
+        
+        end
+      end
+    end
+  end
+
+  DisableTcpControls((Properties["Connection Type"].Value == 'Serial'))
+  
+  Connect()
+
+end

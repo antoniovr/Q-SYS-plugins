@@ -1,0 +1,454 @@
+-- Sequencer
+-- by Paul Zander
+-- May 2023
+
+-- Information block for the plugin
+PluginInfo = {
+  Name = "Sequencer",
+  Version = "1.1",
+  BuildVersion = "1.1.0.0",
+  Id = "859f42af-ede4-4392-a921-73f65cee3029",
+  Author = "Paul Zander",
+  Description = "Sequences power-ups or anything else that requires delays"  
+}
+
+-- Define the color of the plugin object in the design
+function GetColor(props)
+  return { 255, 160, 0 }
+end
+
+-- The name that will initially display when dragged into a design
+function GetPrettyName(props)
+  return "Sequencer " .. PluginInfo.Version
+end
+
+-- Optional function used if plugin has multiple pages
+PageNames = {"Sequencer"}  --List the pages within the plugin
+function GetPages(props)
+  local pages = {}
+  for ix,name in ipairs(PageNames) do
+    table.insert(pages, {name = PageNames[ix]})
+  end
+  return pages
+end
+
+-- Define User configurable Properties of the plugin
+function GetProperties()
+  local props = {}
+  table.insert(props, {
+    Name = "Debug Print",
+    Type = "enum",
+    Choices = {"None", "Tx/Rx", "Tx", "Rx", "Function Calls", "All"},
+    Value = "None"
+  })
+  table.insert(props, {
+    Name = "Number of Devices",
+    Type = "integer",
+    Min = 2,
+    Max = 64,
+    Value = 2
+  })
+  return props
+end
+
+-- Optional function to update available properties when properties are altered by the user
+function RectifyProperties(props)
+  if props.plugin_show_debug.Value == false then 
+    props["Debug Print"].IsHidden = true 
+  end
+  return props
+end
+
+-- Defines the Controls used within the plugin
+function GetControls(props)
+  local ctrls = {}
+  table.insert(ctrls, {
+    Name = "SequenceOn",
+    ControlType = "Button",
+    ButtonType = "Trigger",
+    Count = 1,
+    UserPin = true,
+    PinStyle = "Both"
+  })
+  table.insert(ctrls, {
+    Name = "SequenceOff",
+    ControlType = "Button",
+    ButtonType = "Trigger",
+    Count = 1,
+    UserPin = true,
+    PinStyle = "Both"
+  })
+  table.insert(ctrls, {
+    Name = "Delay",
+    ControlType = "Knob",
+    ControlUnit = "Float",
+    Min = 0.001,
+    Max = 60,
+    Count = 1,
+    UserPin = true,
+    PinStyle = "Both"
+  })
+  table.insert(ctrls, {
+    Name = "DeviceState",
+    ControlType = "Button",
+    ButtonType = "Toggle",
+    Count = props['Number of Devices'].Value,
+    UserPin = true,
+    PinStyle = "Output"
+  })
+  table.insert(ctrls, {
+    Name = "DeviceOn",
+    ControlType = "Button",
+    ButtonType = "Trigger",
+    Count = props['Number of Devices'].Value,
+    UserPin = true,
+    PinStyle = "Output"
+  })
+  table.insert(ctrls, {
+    Name = "DeviceOff",
+    ControlType = "Button",
+    ButtonType = "Trigger",
+    Count = props['Number of Devices'].Value,
+    UserPin = true,
+    PinStyle = "Output"
+  })
+  table.insert(ctrls, {
+    Name = "DeviceBypass",
+    ControlType = "Button",
+    ButtonType = "Toggle",
+    Count = props['Number of Devices'].Value,
+    UserPin = true,
+    PinStyle = "Output"
+  })
+  table.insert(ctrls, {
+    Name = "SequenceRunning",
+    ControlType = "Indicator",
+    IndicatorType = "Led",
+    UserPin = true,
+    PinStyle = "Output",
+  })
+  table.insert(ctrls, {
+    Name = "AbortSequence",
+    ControlType = "Button",
+    ButtonType = "Trigger",
+    UserPin = true,
+    PinStyle = "Both"
+  })
+  table.insert(ctrls, {
+    Name = "ReverseOffOrder",
+    ControlType = "Button",
+    ButtonType = "Toggle",
+    UserPin = true,
+    PinStyle = "Both"
+  })
+  return ctrls
+end
+
+--Layout of controls and graphics for the plugin UI to display
+function GetControlLayout(props)
+  local layout = {}
+  local graphics = {}
+  local CurrentPage = PageNames[props["page_index"].Value]
+  if CurrentPage == "Sequencer" then
+    
+    --***Graphics***
+    table.insert(graphics,{
+      Type = "GroupBox",
+      Text = "Sequence Control",
+      Position = {10, 15},
+      Size = {261, 165} ,
+      FontSize = 12,
+      StrokeWidth = 1,
+      Radius = 8,
+      HTextAlign = "Left"
+    })
+    table.insert(graphics,{
+      Type = "Text",
+      Text = "Running",
+      Position = {87, 80},
+      Size = {78, 25},
+      FontSize = 18
+    })
+    table.insert(graphics,{
+      Type = "Text",
+      Text = "Delay (S)",
+      Position = {87, 115},
+      Size = {78, 25},
+      FontSize = 18
+    })
+    table.insert(graphics,{
+      Type = "Text",
+      Text = "Reverse Off Order",
+      Position = {45, 150},
+      Size = {150, 25},
+      FontSize = 18
+    })
+    table.insert(graphics,{
+      Type = "Header",
+      Text = "Taps",
+      Position = {10, 185},
+      Size = {261, 25},
+      FontSize = 18
+    })
+    table.insert(graphics,{
+      Type = "Text",
+      Text = "Off",
+      Position = {57, 215},
+      Size = {65, 25},
+      FontSize = 18
+    })
+    table.insert(graphics,{
+      Type = "Text",
+      Text = "State",
+      Position = {107, 215},
+      Size = {65, 25},
+      FontSize = 18
+    })
+    table.insert(graphics,{
+      Type = "Text",
+      Text = "On",
+      Position = {157, 215},
+      Size = {65, 25},
+      FontSize = 18
+    })
+    table.insert(graphics,{
+      Type = "Text",
+      Text = "Bypass",
+      Position = {207, 215},
+      Size = {65, 25},
+      FontSize = 18
+    })
+    for i=1, tonumber(props['Number of Devices'].Value) do
+      table.insert(graphics,{
+        Type = "Text",
+        Text = "Tap " .. i,
+        Position = {5, i * 20 + 223},
+        Size = {60, 24},
+        FontSize = 15
+      })
+    end
+    
+    --***Layout***
+    layout["SequenceOff"] = {
+      PrettyName = "Sequence Off",
+      Style = "Button",
+      Position = {22, 38},
+      Size = {70, 35},
+      FontSize = 20,
+      Color = {255, 0, 0},
+      Legend = "Off"
+    }
+    layout["AbortSequence"] = {
+      PrettyName = "Abort",
+      Style = "Button",
+      Position = {107, 38},
+      Size = {70, 35},
+      FontSize = 20,
+      Legend = "Abort"
+    }  
+    layout["SequenceOn"] = {
+      PrettyName = "Sequence On",
+      Style = "Button",
+      Position = {192, 38},
+      Size = {70, 35},
+      FontSize = 20,
+      Color = {0, 255, 0},
+      Legend = "On"
+    }
+    layout["SequenceRunning"] = {
+      PrettyName = "Sequence Running",
+      Style = "LED",
+      Position = {177, 85},
+      Size = {16, 16},
+      FontSize = 25
+    }  
+    layout["Delay"] = {
+      PrettyName = "Delay",
+      Style = "Knob",
+      Position = {167, 110},
+      Size = {36, 36}
+    }
+    layout["ReverseOffOrder"] = {
+      PrettyName = "Reverse Off Order",
+      Style = "Button",
+      Position = {195, 153},
+      Size = {50, 20},
+      FontSize = 20
+    }
+    for i=1, tonumber(props['Number of Devices'].Value) do
+      layout["DeviceOff " .. i] = {
+        PrettyName = "Device " .. i .. "~Off Trigger",
+        Style = "Button",
+        Position = {65, i * 20 + 225},
+        Size = {45, 20}
+     }
+      layout["DeviceState " .. i] = {
+        PrettyName = "Device " .. i .. "~State",
+        Style = "Button",
+        Position = {116, i * 20 + 225},
+        Size = {45, 20}
+      }
+       layout["DeviceOn " .. i] = {
+        PrettyName = "Device " .. i .. "~On Trigger",
+        Style = "Button",
+        Position = {167, i * 20 + 225},
+        Size = {45, 20}
+      }
+      layout["DeviceBypass " .. i] = {
+        PrettyName = "Device " .. i .. "~Bypass",
+        Style = "Button",
+        Position = {218, i * 20 + 225},
+        Size = {45, 20},
+        Color = {242, 137, 174}
+      }
+    end
+  elseif CurrentPage == "N/A" then
+    -- TBD
+  end
+  return layout, graphics
+end
+
+--Start event based logic
+if Controls then
+  Index = 1 --Keeps track of which tap is currently being changed
+  Running = false --Whether or not the sequencer is currently running
+  Direction = true --Whether the sequencer is currently turning on (true) or off (false)
+  
+  --Variables for debuging scenarios
+  DebugTx              = false
+  DebugRx              = false
+  DebugFunction        = false
+  DebugPrint           = Properties["Debug Print"].Value
+  
+  --Objects
+  SequenceTimer=Timer.New() --Tracks time between tap changes
+  
+  --Colors
+  Gray = "#7f7f7f"
+  Red = "#ff0000"
+  Green = "#00ff00"
+  Orange = "#ffa500"
+  
+  
+    --***Helper functions***
+  
+    --A function to determine common print statement scenarios for troubleshooting
+    function SetupDebugPrint()
+      if DebugPrint == "Tx/Rx" then
+        DebugTx,DebugRx = true,true
+      elseif DebugPrint == "Tx" then
+        DebugTx = true
+      elseif DebugPrint == "Rx" then
+        DebugRx = true
+      elseif DebugPrint == "Function Calls" then
+        DebugFunction = true
+      elseif DebugPrint == "All" then
+        DebugTx,DebugRx,DebugFunction = true,true,true
+      end
+    end
+  
+    --Manages the Running variable state and dynamic colors of buttons
+  function UpdateRunning()
+    if DebugFunction then print("UpdateRunning() Called") end
+    Controls['SequenceRunning'].Boolean=Running
+    if Running then
+      Controls['SequenceOn'].Color = Gray
+      Controls['SequenceOff'].Color = Gray
+      Controls['AbortSequence'].Color = Orange
+    else
+      Controls['SequenceOn'].Color = Green
+      Controls['SequenceOff'].Color = Red
+      Controls['AbortSequence'].Color = Gray
+    end
+  end
+  
+  --Runs inside the event handlers for the On and Off buttons. Which button was pressed is passed in as currentDirection (On is true)
+  function StartSequence(currentDirection)
+    if not Running then --Make sure the sequence is not already running
+      Running = true
+      UpdateRunning()
+      Direction = currentDirection --Are we turning on or off?
+      Index = 1 --Start at the beginning (or end)
+      ReverseOffOrder = Controls['ReverseOffOrder'].Boolean --Whether or not the off sequence should run backwards
+      ChangeNext() --Runs first cycle while waiting for first timer tick
+      if Running then SequenceTimer:Start(Controls["Delay"].Value) end --Start the sequence loop with the delay period specified
+    end
+  end
+  
+  --Called each timer tick to change state/fire trigger of the next tap in the sequence
+  function ChangeNext()
+    if DebugFunction then print("ChangeNext() Called") end
+    if Running then --Only do if the sequence is currently running
+      if ReverseOffOrder == true and Direction == false then tap = Properties['Number of Devices'].Value + 1 - Index else tap = Index end --Invert index if Reverse Off Order is selected
+      if Index <= Properties['Number of Devices'].Value then --if there are still taps to change
+        print("1")
+        if Controls["DeviceBypass"][tap].Boolean == false then
+          print("2")
+          Controls['DeviceState'][tap].Boolean=Direction
+          if Direction == true then
+            Controls['DeviceOn'][tap]:Trigger()
+          elseif Direction == false then
+            Controls['DeviceOff'][tap]:Trigger()
+          end
+        end
+        Index=Index+1
+      else
+        Running=false
+        SequenceTimer:Stop()
+      end
+    end
+    UpdateRunning()
+  end
+  
+  --EventHandlers
+  SequenceTimer.EventHandler = function()
+    ChangeNext()
+  end
+  
+  Controls["SequenceOn"].EventHandler = function()
+    StartSequence(true) 
+  end
+  
+  Controls["SequenceOff"].EventHandler = function()
+    StartSequence(false)
+  end
+  
+  Controls['AbortSequence'].EventHandler = function()
+    Running = false --ChangeNext() checks Running every cycle, so it will stop at the begining of the next cycle
+    UpdateRunning()
+  end
+  
+  --Adds event handlers to each State button to also fire the associated trigger
+  for i,v in ipairs(Controls['DeviceState']) do 
+    v.EventHandler = function()
+      if v.Boolean then
+        Controls['DeviceOn'][i]:Trigger()
+      else
+        Controls['DeviceOff'][i]:Trigger()
+      end
+    end
+  end
+  
+  --Adds event handlers to each On trigger button to also update the state button
+  for i,v in ipairs(Controls['DeviceOn']) do 
+    v.EventHandler = function()
+      Controls['DeviceState'][i].Boolean = true
+    end
+  end
+  
+  --Adds event handlers to each Off trigger button to also update the state button
+  for i,v in ipairs(Controls['DeviceOff']) do 
+    v.EventHandler = function()
+      Controls['DeviceState'][i].Boolean = false
+    end
+  end
+  
+  --Initialization Function
+  function Initialization()
+    SetupDebugPrint()
+    if DebugFunction then print("Initialization() Called") end
+    UpdateRunning()
+  end
+  
+  Initialization()
+end

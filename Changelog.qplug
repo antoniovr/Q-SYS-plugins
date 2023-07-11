@@ -1,0 +1,463 @@
+PluginInfo =
+{
+  Name = "Changelog",
+  Version = "1.0",
+  Id = "35c370ac-e7b9-4791-a2c9-10b34751bb19",
+  Description = "Changelog",
+  ShowDebug = true,
+};
+
+blockCol = {0x99, 0x33, 0xff};
+
+
+-------------------------------------
+function GetPrettyName(props)
+  return "Changelog V"..PluginInfo.Version;
+end
+
+
+-------------------------------------
+
+
+--Change block color:
+-------------------------------------
+function GetColor(props)
+  --  array of three hex values: { 0xRed, 0xGreen, 0xBlue }
+  return blockCol;
+end
+
+function GetProperties()
+  props = {};
+  --table.insert( props, {
+  --  Name = "Awesomeness", Type = "integer", Min = 0, Max = 11, Value = 10,
+  --});
+  return props;
+end
+
+function GetControls(props)
+  ctrls = {};
+	
+	table.insert( ctrls,
+	{
+		Name = "Log",
+    ControlType = "Text",		
+		Count = 1,
+	});
+
+  table.insert( ctrls,
+	{
+		Name = "Status",
+    ControlType = "Indicator",
+    IndicatorType = "Status",
+    PinStyle = "Output",		
+		Count = 1,
+	});
+
+	-- ControlId: "%Ia@Vn3^7N>GGD&F'uQ_History
+	-- ControlName: History
+	-- VisualStyle: Text
+	table.insert( ctrls,
+	{
+		Name = "History",
+		
+		
+    ControlType = "Indicator",
+    IndicatorType = "Text",
+		TextBoxType = "Normal",
+		
+		Count = 1,
+		PinStyle = "None",
+		UserPin = false
+	});
+
+
+	-- ControlId: "%Ia@Vn3^7N>GGD&F'uQ_ExportLog
+	-- ControlName: ExportLog
+	-- VisualStyle: Button
+	table.insert( ctrls,
+	{
+		Name = "ExportLog",
+		
+		
+		ControlType = "Button",
+		ButtonType = "Trigger",
+		
+		Count = 1,
+		PinStyle = "None",
+		UserPin = false
+	});
+
+
+	-- ControlId: "%Ia@Vn3^7N>GGD&F'uQ_Name
+	-- ControlName: Name
+	-- VisualStyle: Text
+	table.insert( ctrls,
+	{
+		Name = "Name",
+		
+		
+		ControlType = "Text",
+		TextBoxType = "Normal",
+		
+		Count = 1,
+		PinStyle = "None",
+		UserPin = false
+	});
+
+
+	-- ControlId: "%Ia@Vn3^7N>GGD&F'uQ_Notes
+	-- ControlName: Notes
+	-- VisualStyle: Text
+	table.insert( ctrls,
+	{
+		Name = "Notes",
+		
+		
+		ControlType = "Text",
+		TextBoxType = "Normal",
+		
+		Count = 1,
+		PinStyle = "None",
+		UserPin = false
+	});
+
+
+	-- ControlId: "%Ia@Vn3^7N>GGD&F'uQ_Enter
+	-- ControlName: Enter
+	-- VisualStyle: Button
+	table.insert( ctrls,
+	{
+		Name = "Enter",
+		
+		
+		ControlType = "Button",
+		ButtonType = "Trigger",
+		
+		Count = 1,
+		PinStyle = "None",
+		UserPin = false
+	});
+
+  return ctrls;
+end
+
+function GetControlLayout(props)
+  layout = {};
+  graphics = {};
+  
+  layout.Log={Style = "None"}
+
+  layout.Status={Style = "None"}
+
+	layout["History"] = {
+      Style = "Text",
+      Position = {13 , 127},
+      Size = {429,426},
+      HTextAlign = "Left",
+      VTextAlign = "Top",
+      FontSize = 14,
+      Font = "Roboto",
+      FontStyle="Regular",
+
+	};
+
+	layout["ExportLog"] = {
+      Style = "Button",
+      ButtonStyle = "Trigger",
+      Position = {13 , 555},
+      Size = {118,39},
+      HTextAlign = "Center",
+      FontSize = 9,
+      Font = "Roboto",
+      FontStyle="Regular",
+      Legend = [===[Export to Core]===],
+      Color = {255,255,255,255},
+      OffColor = {0,0,0,0},
+      StrokeColor = {105,105,105,255},
+      StrokeWidth = 1,
+      CornerRadius = 2,
+      Padding = 0,
+      Margin = 2,
+      IsReadOnly = false,
+      ZOrder = 2,
+
+	};
+
+	layout["Name"] = {
+      Style = "Text",
+      TextBoxStyle = "Normal",
+      Position = {148 , 25},
+      Size = {256,16},
+      HTextAlign = "Left",
+      FontSize = 9,
+      Font = "Roboto",
+      FontStyle="Regular",
+      Legend = [===[Programmer]===],
+      Color = {255,255,255,255},
+      OffColor = {0,0,0,0},
+      StrokeColor = {105,105,105,255},
+      StrokeWidth = 1,
+      CornerRadius = 0,
+      Padding = 0,
+      Margin = 0,
+      IsReadOnly = false,
+      ZOrder = 4,
+
+	};
+
+	layout["Notes"] = {
+      Style = "Text",
+      TextBoxStyle = "Normal",
+      Position = {148 , 41},
+      Size = {256,16},
+      HTextAlign = "Left",
+      FontSize = 9,
+      Font = "Roboto",
+      FontStyle="Regular",
+      Legend = [===[]===],
+      Color = {255,255,255,255},
+      OffColor = {0,0,0,0},
+      StrokeColor = {105,105,105,255},
+      StrokeWidth = 1,
+      CornerRadius = 0,
+      Padding = 0,
+      Margin = 0,
+      IsReadOnly = false,
+      ZOrder = 6,
+
+	};
+
+	layout["Enter"] = {
+      Style = "Button",
+      ButtonStyle = "Trigger",
+      Position = {20 , 57},
+      Size = {384,28},
+      HTextAlign = "Center",
+      FontSize = 9,
+      Font = "Roboto",
+      FontStyle="Bold",
+      Legend = [===[Update]===],
+      Color = {255,255,255,255},
+      OffColor = {0,0,0,0},
+      StrokeColor = {105,105,105,255},
+      StrokeWidth = 1,
+      CornerRadius = 2,
+      Padding = 0,
+      Margin = 2,
+      IsReadOnly = false,
+      ZOrder = 7,
+
+	};
+
+	table.insert( graphics, {
+      Type = "Array",
+      Text = [===[Programmer]===],
+      FontSize = 11,
+      Font = "Roboto",
+      FontStyle="Regular",
+      HTextAlign = "Left",
+      StrokeWidth = 0,
+      StrokeColor = {0,0,0,255},
+      StrokeWidth = 0,
+      CornerRadius = 0,
+      Color = {51,51,51,255},
+      Fill = {0,0,0,0},
+      Position = {20 , 25},
+      Size = {128,16},
+      Padding = 0,
+      Margin = 0,
+      ZOrder = 3,
+	  });
+
+	table.insert( graphics, {
+      Type = "Array",
+      Text = [===[Notes]===],
+      FontSize = 11,
+      Font = "Roboto",
+      FontStyle="Regular",
+      HTextAlign = "Left",
+      StrokeWidth = 0,
+      StrokeColor = {0,0,0,255},
+      StrokeWidth = 0,
+      CornerRadius = 0,
+      Color = {51,51,51,255},
+      Fill = {0,0,0,0},
+      Position = {20 , 41},
+      Size = {128,16},
+      Padding = 0,
+      Margin = 0,
+      ZOrder = 5,
+	  });
+
+	table.insert( graphics, {
+      Type = "GroupBox",
+      Text = [===[Update Changelog]===],
+      FontSize = 12,
+      Font = "Roboto",
+      FontStyle="Regular",
+      HTextAlign = "Left",
+      StrokeWidth = 1,
+      StrokeColor = {0,0,0,255},
+      StrokeWidth = 1,
+      CornerRadius = 8,
+      Color = {51,51,51,255},
+      Fill = {0,0,0,0},
+      Position = {0 , 0},
+      Size = {453,97},
+      Padding = 0,
+      Margin = 0,
+      ZOrder = 8,
+	  });
+
+	table.insert( graphics, {
+      Type = "GroupBox",
+      Text = [===[Changelog]===],
+      FontSize = 12,
+      Font = "Roboto",
+      FontStyle="Regular",
+      HTextAlign = "Left",
+      StrokeWidth = 1,
+      StrokeColor = {0,0,0,255},
+      StrokeWidth = 1,
+      CornerRadius = 8,
+      Color = {51,51,51,255},
+      Fill = {0,0,0,0},
+      Position = {0 , 102},
+      Size = {453,500},
+      Padding = 0,
+      Margin = 0,
+      ZOrder = 9,
+	  });
+	
+  return layout,graphics;
+end
+
+if Controls then
+ 
+  --[[
+  Design Changelog Logger
+  Created by K. Rhodus - QSC
+  kevin.rhodus@qsc.com
+
+  Version History:
+  1.0 - Initial Build
+
+  ]]--
+
+
+  -----------------------------------------------------------------------------------------------------------------------------------------
+  --      Setup File      --
+  ----------------------------------------------------------------------------------------------------------------------------------------
+
+  json = qsc_json
+
+
+  logtbl = {}
+
+  -----------------------------------------------------------------------------------------------------------------------------------------
+  --      Startup Initalization      --
+  ----------------------------------------------------------------------------------------------------------------------------------------
+
+  --Initalize Log
+  if Controls.Log.String ~= "" then --Load Log field into table
+    print("Importing Log")
+    logtbl = json.decode(Controls.Log.String)
+  else logtbl = {}
+  end
+
+
+  --Check Design ID against last Log Entry
+
+  CheckID = function()
+    local design = Design.GetStatus()
+    if #logtbl >= 1 then
+      if logtbl[#logtbl].DesignCode == design.DesignCode then
+      print("Code Match")
+      Controls.Status.Value = 0
+      else
+        print("Mismatch!")
+        Controls.Status.Value = 1
+        Controls.Status.String = "Changelog Requires Updating"
+        Log.Error("Changelog Requires Updating")
+      end
+    else
+      print("No Entries")
+        Controls.Status.Value = 2
+        Controls.Status.String = "Changelog Has No Entries"
+        Log.Error("Changelog Has No Entries")
+    end
+  end
+
+  CheckID()
+  -----------------------------------------------------------------------------------------------------------------------------------------
+  --      Create Print Log      --
+  ----------------------------------------------------------------------------------------------------------------------------------------
+
+  History = function()
+    local printstring
+    if #logtbl >=1 then
+      for i = 1,#logtbl do 
+          local buildstring = string.format("%i: %s - Programmer: %s - Notes: %s - Version: %s, Design Name: %s, Design Code: %s", i, logtbl[i].Date, logtbl[i].Name, logtbl[i].Note, logtbl[i].Version, logtbl[i].DesignName, logtbl[i].DesignCode)
+          
+          if i > 1 then
+            printstring = (buildstring .. "\r\r".. printstring)
+          else
+            printstring = buildstring
+          end
+        end
+      else
+        printstring = "No Entries in Changelog"
+    end
+    Controls.History.String = printstring
+  end
+
+  History()
+  -----------------------------------------------------------------------------------------------------------------------------------------
+  --      Add a Field to Log     --
+  ----------------------------------------------------------------------------------------------------------------------------------------
+
+  Controls.Enter.EventHandler = function()
+    local temptbl = {}
+    local design = Design.GetStatus()
+    temptbl.Date = os.date("%x")
+    temptbl.Name = Controls.Name.String
+    temptbl.Note = Controls.Notes.String
+    temptbl.Version = System.Version
+    temptbl.DesignName = design.DesignName
+    temptbl.DesignCode = design.DesignCode
+    
+    Log.Message(string.format("Changelog Update: %s - Programmer: %s - Notes: %s - Version: %s, Design Name: %s, Design Code: %s", temptbl.Date, temptbl.Name, temptbl.Note, temptbl.Version, temptbl.DesignName, temptbl.DesignCode))
+    
+    
+    table.insert(logtbl, temptbl)
+    Controls.Log.String = json.encode(logtbl)
+    Controls.Name.String = ""
+    Controls.Notes.String = ""
+    History()
+    CheckID()
+  end
+
+
+
+  -----------------------------------------------------------------------------------------------------------------------------------------
+  --      Export Changelog     --
+  -----------------------------------------------------------------------------------------------------------------------------------------
+
+  --Export
+  Controls.ExportLog.EventHandler = function()
+    local myfile = io.open ("media/changelog.json","w+")
+    if myfile~=nil then
+      myfile:write(Controls.Log.String)
+      print("Changelog Exported to Core")
+      myfile:close()
+    else
+      print("myfile==nil")
+    end
+    Controls.History.String = ("Changelog Exported to Core. To View, Open Core Manager and Browse Media Directory\r\r" .. Controls.History.String)
+  end
+
+
+
+
+
+end
