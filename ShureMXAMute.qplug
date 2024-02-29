@@ -1,0 +1,773 @@
+-- Craeted by Clint Vigil
+-- clint.vigil@gmail.com
+
+PluginInfo = {
+	Name = "Shure~MXAMute 0.2",
+	Version = "0.2.0.0-master",
+	Id = "qsysc.shure.mxa.mute.0.2",
+	Description = "Plugin for control of a Shure MXA mute button",
+	ShowDebug = true
+}
+
+port = 2202
+local Colors = {
+	Red = 			{RGB = {255,72,42},		ShureName = "RED", 			Friendly = "Red", 				Num = 1,},
+	Orange = 		{RGB = {255,150,48},	ShureName = "ORANGE",		Friendly = "Orange",			Num = 2,},
+	Gold = 			{RGB = {255,215,0},		ShureName = "GOLD",			Friendly = "Gold",				Num = 3,},
+	Yellow = 		{RGB = {255,243,44},	ShureName = "YELLOW",		Friendly = "Yellow",			Num = 4,},
+	YellowGreen = 	{RGB = {216,255,0},		ShureName = "YELLOWGREEN",	Friendly = "Yellow Green",		Num = 5,},
+	Green = 		{RGB = {60,252,34},		ShureName = "GREEN",		Friendly = "Green",				Num = 6,},
+	Turquoise = 	{RGB = {64,224,208},	ShureName = "TURQUOISE",	Friendly = "Turquoise",			Num = 7,},
+	PowderBlue = 	{RGB = {176,224,230},	ShureName = "POWDERBLUE",	Friendly = "Powder Blue",		Num = 8,},
+	Cyan = 			{RGB = {0,255,255},		ShureName = "CYAN",			Friendly = "Cyan",				Num = 9,},
+	Skyblue = 		{RGB = {0,191,255},		ShureName = "SKYBLUE",		Friendly = "Sky Blue",			Num = 10,},
+	Blue =			{RGB = {38,110,255},	ShureName = "BLUE",			Friendly = "Blue",				Num = 11,},
+	Purple = 		{RGB = {196,143,255},	ShureName = "PURPLE",		Friendly = "Purple",			Num = 12,},
+	Lightpurple = 	{RGB = {210,165,255},	ShureName = "LIGHTPURPLE",	Friendly = "Light Purple",		Num = 13,},
+	Violet = 		{RGB = {238,130,238},	ShureName = "VIOLET",		Friendly = "Violet",			Num = 14,},
+	Orchid = 		{RGB = {218,112,214},	ShureName = "ORCHID",		Friendly = "Orchid",			Num = 15,},
+	Pink = 			{RGB = {255,90,179},	ShureName = "PINK",			Friendly = "Pink",				Num = 16,},
+	White = 		{RGB = {255,255,255},	ShureName = "WHITE",		Friendly = "White",				Num = 17,},
+	Gray1 =			{RGB = {204,204,204},	ShureName = "",				Friendly = "Very Light Gray",	Num = 18,},
+	Gray2 =			{RGB = {153,153,153},	ShureName = "",				Friendly = "Light Gray",		Num = 19,},
+	Gray3 =			{RGB = {102,102,102},	ShureName = "",				Friendly = "Dark Gray",			Num = 20,},
+	Gray4 =			{RGB = {51,51,51},		ShureName = "",				Friendly = "Very Dark Gray",	Num = 21,},
+	Black = 		{RGB = {0, 0, 0},		ShureName = "",				Friendly = "Black",				Num = 22,},
+}
+
+local indexColors = {}
+local indexShure = {}
+for k, v in pairs(Colors) do
+	if v.Num > 0 and v.Num < 18 then
+		indexColors[v.Num] = {}
+		indexColors[v.Num].RGB = v.RGB
+		indexColors[v.Num].ShureName = v.ShureName
+		indexColors[v.Num].Friendly = v.Friendly
+		indexShure[v.ShureName] = {}
+		indexShure[v.ShureName].Num = v.Num
+		indexShure[v.ShureName].Friendly = v.Friendly
+		indexShure[v.ShureName].RGB = v.RGB
+	end
+end
+
+function GetColor(props)
+	return Colors.Gray2.RGB
+end
+
+function GetProperties()
+	props = {
+		{
+			Name = "IP Address",
+			Type = "string",
+			Value = "10.0.0.0"
+		}
+	}
+	return props
+end
+
+function RectifyProperties(props)
+	return props
+end
+
+function GetControls(props)
+	ctls = {
+		{Name = "Online",ControlType = "Indicator",IndicatorType = "Led", PinStyle = "Output",Count = 1,	UserPin = true},
+		{Name = "ConnectionState",ControlType = "Indicator",IndicatorType = "Text",	PinStyle = "Output",UserPin = true},
+		{Name = "Model",ControlType = "Indicator",IndicatorType = "Text",PinStyle = "Output",UserPin = true	},
+		{Name = "SerialNumber",	ControlType = "Indicator",	IndicatorType = "Text",	PinStyle = "Output",UserPin = true},
+		{Name = "FirmwareVersion",ControlType = "Indicator",IndicatorType = "Text",	PinStyle = "Output",UserPin = true},
+		{Name = "ControlMAC",ControlType = "Indicator",	IndicatorType = "Text",	PinStyle = "Output",UserPin = true},
+		{Name = "DeviceID",	ControlType = "Indicator",	IndicatorType = "Text",	PinStyle = "Output",UserPin = true},
+		{Name = "Flash-On",	ControlType = "Button",	ButtonType = "Momentary",UserPin = true,PinStyle = "Both"},
+		{Name = "Flash-Off",ControlType = "Button",	ButtonType = "Momentary",UserPin = true,PinStyle = "Both"},
+		{Name = "PresetRecall",	ControlType = "Button",	ButtonType = "Momentary",	UserPin = true,	PinStyle = "Input",	Count = 10},
+		{Name = "PresetName",ControlType = "Indicator",	IndicatorType = "Text",	PinStyle = "Output",UserPin = true,	Count = 10},
+		{Name = "Reboot",ControlType = "Button",ButtonType = "Momentary",UserPin = true,PinStyle = "Input"},
+		{Name = "BrightnessInt",ControlType = "Knob",ControlUnit = "Integer",Min = 0,Max = 5,UserPin = true,PinStyle = "Both"},
+		{Name = "Brightness",ControlType = "Button",ButtonType = "Momentary",UserPin = true,PinStyle = "Both",	Count = 6},
+		{Name = "BrightnessText",ControlType = "Indicator",	IndicatorType = "Text",	PinStyle = "Output",UserPin = true},
+		{Name = "LedColorUnmutedText",	ControlType = "Indicator",	IndicatorType = "Text",	PinStyle = "Output",UserPin = true},
+		{Name = "LedColorMutedText",ControlType = "Indicator",IndicatorType = "Text",PinStyle = "Output",UserPin = true},
+		{Name = "LedColorUnmutedInt",ControlType = "Knob",ControlUnit = "Integer",Min = 1,Max = 17,	UserPin = true,	PinStyle = "Both"},
+		{Name = "LedColorMutedInt",	ControlType = "Knob",ControlUnit = "Integer",Min = 1,Max = 17,	UserPin = true,	PinStyle = "Both"},
+		{Name = "LedColorMuted",ControlType = "Button",	ButtonType = "Momentary",UserPin = true,PinStyle = "Both",	Count = 17},
+		{Name = "LedColorUnmuted",	ControlType = "Button",	ButtonType = "Momentary",UserPin = true,PinStyle = "Both",Count = 17},
+		{Name = "LedMutedStateText",ControlType = "Indicator",	IndicatorType = "Text",	PinStyle = "Output",UserPin = true},
+		{Name = "LedStateMutedOn",ControlType = "Button",ButtonType = "Momentary",	UserPin = true,	PinStyle = "Both"},
+		{Name = "LedStateMutedFlashing",ControlType = "Button",	ButtonType = "Momentary",UserPin = true,PinStyle = "Both"},
+		{Name = "LedStateMutedOff",	ControlType = "Button",	ButtonType = "Momentary",UserPin = true,PinStyle = "Both"},
+		{Name = "LedUnmutedStateText",ControlType = "Indicator",IndicatorType = "Text",	PinStyle = "Output",UserPin = true},
+		{Name = "LedStateUnmutedOn",ControlType = "Button",	ButtonType = "Momentary",UserPin = true,PinStyle = "Both"},
+		{Name = "LedStateUnmutedFlashing",	ControlType = "Button",	ButtonType = "Momentary",UserPin = true,PinStyle = "Both"},
+		{Name = "LedStateUnmutedOff",ControlType = "Button",ButtonType = "Momentary",UserPin = true,PinStyle = "Both"},
+		{Name = "DevLedInStateOn",ControlType = "Button",ButtonType = "Momentary",UserPin = true,PinStyle = "Both"},
+		{Name = "DevLedInStateOff",ControlType = "Button",ButtonType = "Momentary",UserPin = true,PinStyle = "Both"},
+		{Name = "MuteButtonStatus",	ControlType = "Indicator",IndicatorType = "Led",PinStyle = "Output",UserPin = true},
+		{Name = "AudioMuteStatus",ControlType = "Indicator",IndicatorType = "Led",PinStyle = "Output",UserPin = true},
+		{Name = "MuteLEDStatus",ControlType = "Indicator",IndicatorType = "Led",PinStyle = "Output",UserPin = true},
+		{Name = "ExtSwitchState",ControlType = "Indicator",IndicatorType = "Led",PinStyle = "Output",UserPin = true},
+		{Name = "DevSwitchOutState",ControlType = "Indicator",IndicatorType = "Led",PinStyle = "Output",UserPin = true},
+		{Name = "MuteControlEnabled",ControlType = "Button",ButtonType = "Momentary",UserPin = true,PinStyle = "Both"},
+		{Name = "MuteControlDisabled",ControlType = "Button",ButtonType = "Momentary",UserPin = true,PinStyle = "Both"},
+		{Name = "MuteControlModeText",ControlType = "Indicator",IndicatorType = "Text",	PinStyle = "Output",UserPin = true},
+		{Name = "MuteControlToggle",ControlType = "Button",	ButtonType = "Momentary",UserPin = true,PinStyle = "Both"},
+		{Name = "MuteControlPushToTalk",ControlType = "Button",	ButtonType = "Momentary",UserPin = true,PinStyle = "Both"},
+		{Name = "MuteControlPushToMute",ControlType = "Button",	ButtonType = "Momentary",UserPin = true,PinStyle = "Both"},
+		{Name = "DefaultToggleStateText",ControlType = "Indicator",	IndicatorType = "Text",	PinStyle = "Output",UserPin = true},
+		{Name = "DefaultToggleStateMuted",ControlType = "Button",ButtonType = "Momentary",UserPin = true,PinStyle = "Both"},
+		{Name = "DefaultToggleStateUnmuted",ControlType = "Button",	ButtonType = "Momentary",UserPin = true,PinStyle = "Both"},
+	}
+	return ctls
+end
+
+local pagenames = {"System" , "Colors", "Settings", "Status"}
+function GetPages(props)
+	pages = {}
+	for ix,name in ipairs(pagenames) do
+		table.insert(pages, {name = pagenames[ix]})
+	end
+	return pages
+end
+
+function GetControlLayout(props)
+	local ActiveRemote = props["page_index"].Value
+	local layout = {}
+	local graphics = {}
+	local row_size = 6
+	local btn_size = {50, 30}
+	local title_size = {row_size * btn_size[1], btn_size[2]}
+	local txt_size = {2 * btn_size[1], btn_size[2]}
+	local CurrentPage = pagenames[props["page_index"].Value]
+
+	if CurrentPage=="System" then
+	graphics = {
+		{Type = "Header", Text = "Shure MXA-MUTE",HTextAlign = "Center",Color = Colors.Black.RGB,FontSize = 16,Position = {0, 0},Size = {400,30}},
+		{Type = "GroupBox", Text = "Hardware",HTextAlign = "Left",Fill = Colors.White.RGB,CornerRadius = 8,StrokeColor = Colors.Black.RGB,Color = Colors.Black.RGB,StrokeWidth = 2,Position = {0, title_size[2]},Size = {400,200}},
+		{Type = "Text", Text = "Online:",Font = "Roboto",FontSize = 12,FontStyle = "Bold",HTextAlign = "Right",Color = Colors.Black.RGB,	Position = {0, title_size[2] + (0.5 * btn_size[2])},Size = txt_size},
+		{Type = "Text",	Text = "Model:",Font = "Roboto",FontSize = 12,FontStyle = "Bold",HTextAlign = "Right",Color = Colors.Black.RGB,	Position = {0, title_size[2] + (1.5 * btn_size[2])},Size = txt_size},
+		{Type = "Text",	Text = "Serial Number:",Font = "Roboto",FontSize = 12,FontStyle = "Bold",HTextAlign = "Right",Color = Colors.Black.RGB,	Position = {0, title_size[2] + (2.5 * btn_size[2])},Size = txt_size},
+		{Type = "Text",	Text = "Firmware:",	Font = "Roboto",FontSize = 12,FontStyle = "Bold",HTextAlign = "Right",Color = Colors.Black.RGB,	Position = {0, title_size[2] + (3.5 * btn_size[2])},Size = txt_size	},
+		{Type = "Text", Text = "MAC:",Font = "Roboto",FontSize = 12,	FontStyle = "Bold",	HTextAlign = "Right",Color = Colors.Black.RGB,Position = {0, title_size[2] + (4.5 * btn_size[2])},Size = txt_size},
+		{Type = "Text",	Text = "Device ID:",Font = "Roboto",FontSize = 12,FontStyle = "Bold",HTextAlign = "Right",Color = Colors.Black.RGB,	Position = {0, title_size[2] + (5.5 * btn_size[2])},Size = txt_size},
+		{Type = "GroupBox",Text = "Presets",HTextAlign = "Left",Fill = Colors.White.RGB,CornerRadius = 8,StrokeColor = Colors.Black.RGB,Color = Colors.Black.RGB,StrokeWidth = 2,Position = {0, title_size[2] + 210},Size = {400,330}},
+	}
+	layout["Online"] = {PrettyName = "Device~Online",Style = "Indicator",Color = {0, 255, 0},OffColor = {200, 0, 0},UnlinkOffColor = true,Margin = 4,Position = {txt_size[1], title_size[2] + (0.5 * btn_size[2])},	Size = {btn_size[2], btn_size[2]}}
+	layout["ConnectionState"] = {PrettyName = "Device~Connection State",Style = "Text",	HTextAlign = "Left",FontSize = 14,Margin = 2,Padding = 0,StrokeColor = Colors.Black.RGB,StrokeWidth = 2,Position = {130,45},Size = {265,30}}
+	layout["Model"] = {PrettyName = "Device~Model Number",Style = "Text",HTextAlign = "Left",FontSize = 14,	Margin = 2,	Padding = 0,StrokeColor = Colors.Black.RGB,	StrokeWidth = 2,Position = {100,75},Size = {295,30}}
+	layout["SerialNumber"] = {PrettyName = "Device~Serial Number",Style = "Text",HTextAlign = "Left",FontSize = 14,	Margin = 2,	Padding = 0,StrokeColor = Colors.Black.RGB,	StrokeWidth = 2,Position = {100,105},Size = {295,30}}
+	layout["FirmwareVersion"] = {PrettyName = "Device~Firmware",Style = "Text",	HTextAlign = "Left",FontSize = 14,Margin = 2,Padding = 0,StrokeColor = Colors.Black.RGB,StrokeWidth = 2,Position = {100,135},Size = {295,30}}
+	layout["ControlMAC"] = {PrettyName = "Device~MAC",Style = "Text",HTextAlign = "Left",FontSize = 14,	Margin = 2,	Padding = 0,StrokeColor = Colors.Black.RGB,	StrokeWidth = 2,Position = {100,165},Size = {295,30}}
+	layout["DeviceID"] = {PrettyName = "Device~ID",Style = "Text",HTextAlign = "Left",FontSize = 14,Margin = 2,Padding = 0,	StrokeColor = Colors.Black.RGB,	StrokeWidth = 2,Position = {100,195},Size = {295,30}}
+
+	for i = 1, 10 do
+		layout["PresetRecall " .. i] = {PrettyName = "Preset~" .. i,Style = "Button",Color = Colors.Green.RGB,FontSize = 14,CornerRadius = 4,Legend = "Recall " .. i,Position = {5, title_size[2] + 230 + (i - 1)*30},Size = {70,30}}
+		layout["PresetName " .. i] = {PrettyName = "Preset~Text " .. i,Style = "Text",HTextAlign = "Left",FontSize = 14,CornerRadius = 4,Margin = 2,Padding = 0,StrokeColor = Colors.Black.RGB,StrokeWidth = 2,Position = {75, title_size[2] + 230 + (i - 1)*30},Size = {320,30}}
+	end
+
+	elseif CurrentPage == "Colors" then
+		graphics = {
+			{Type = "Header",Text = "Shure MXA-MUTE",HTextAlign = "Center",Color = Colors.Black.RGB,FontSize = 16,Position = {0, 0},Size = {400,30}},
+			{Type = "GroupBox",Text = "Color Control",HTextAlign = "Left",Fill = Colors.White.RGB,CornerRadius = 8,StrokeColor = Colors.Black.RGB,Color = Colors.Black.RGB,StrokeWidth = 2,Position = {0, title_size[2]},Size = {400,720}},
+			{Type = "Text",Text = "Unmute:",Font = "Roboto",FontSize = 12,FontStyle = "Bold",HTextAlign = "Right",Color = Colors.Black.RGB,Position = {0, 45},Size = txt_size},
+			{Type = "Text",Text = "Mute:",Font = "Roboto",FontSize = 12,FontStyle = "Bold",	HTextAlign = "Right",Color = Colors.Black.RGB,Position = {0, 75},Size = txt_size},
+			{Type = "Text",Text = "Brightness:",Font = "Roboto",FontSize = 12,FontStyle = "Bold",HTextAlign = "Right",Color = Colors.Black.RGB,Position = {0, 655},Size = txt_size},
+			{Type = "Header",Text = "Unmute",Position = {5,105},Size = {190,30}},
+			{Type = "Header",Text = "Mute",Position = {200,105},Size = {190,30}},
+		}
+		layout["LedColorUnmutedText"] = {PrettyName = "Unmuted~Text",Style = "Text",HTextAlign = "Left",FontSize = 14,Margin = 2,Padding = 0,StrokeColor = Colors.Black.RGB,StrokeWidth = 2,Position = {100,45},Size = {295,30}}
+		layout["LedColorMutedText"] = {PrettyName = "Muted~Text",Style = "Text",HTextAlign = "Left",FontSize = 14,Margin = 2,Padding = 0,StrokeColor = Colors.Black.RGB,StrokeWidth = 2,Position = {100,75},Size = {295,30}}
+		layout["LedColorUnmutedInt"] = {PrettyName = "Unmuted~Integer 1-17",Style = "Fader",Position = {85,140},Size = {40,500},}
+		layout["LedColorMutedInt"] = {PrettyName = "Muted~Integer 1-17",Style = "Fader",Position = {275,140},Size = {40,500},}
+		layout["BrightnessText"] = {PrettyName = "Brightness~Text",Style = "Text",HTextAlign = "Left",FontSize = 14,Margin = 2,Padding = 0,StrokeColor = Colors.Black.RGB,StrokeWidth = 2,Position = {100,655},Size = {295,30}}
+		layout["BrightnessInt"] = {PrettyName = "Brightness~Integer 0-5",Style = "Fader",Position = {37,715},Size = {325,30},}
+		i = 1
+		x = 17
+		while x > 0 do
+			table.insert(graphics,{Type = "Header",Text = indexColors[x].Friendly,Position = {0,105 + (i * 30)},Size = {400,30}})
+			layout["LedColorUnmuted " .. i] = {PrettyName = "Unmuted~Color~" .. indexColors[x].Friendly,Style = "Button",Color = indexColors[x].RGB,FontSize = 12,CornerRadius = 4,Legend = indexColors[x].Friendly,Position = {5, 105 + (i * 30)},Size = {80,30},}
+			layout["LedColorMuted " .. i] = {PrettyName = "Muted~Color~" .. indexColors[x].Friendly,Style = "Button",Color = indexColors[x].RGB,FontSize = 12,CornerRadius = 4,Legend = indexColors[x].Friendly,Position = {315, 105 + (i * 30)},Size = {80,30},}
+			x = x - 1
+			i = i + 1
+		end
+		layout["Brightness "..1] = {PrettyName = "Brightness~0% Off",Style = "Button",FontSize = 12,CornerRadius = 4,Legend = 'Off',Position = {5,685},Size = {65,30},}
+		layout["Brightness "..2] = {PrettyName = "Brightness~20%",Style = "Button",FontSize = 12,CornerRadius = 4,Legend = '20%',Position = {70,685},Size = {65,30},}
+		layout["Brightness "..3] = {PrettyName = "Brightness~40%",Style = "Button",FontSize = 12,CornerRadius = 4,Legend = '40%',Position = {135,685},Size = {65,30},}
+		layout["Brightness "..4] = {PrettyName = "Brightness~60%",Style = "Button",FontSize = 12,CornerRadius = 4,Legend = '60%',Position = {200,685},Size = {65,30},}
+		layout["Brightness "..5] = {PrettyName = "Brightness~80%",Style = "Button",FontSize = 12,CornerRadius = 4,Legend = '80%',Position = {265,685},Size = {65,30},}
+		layout["Brightness "..6] = {PrettyName = "Brightness~100%",Style = "Button",FontSize = 12,CornerRadius = 4,Legend = '100%',Position = {330,685},Size = {65,30},}
+	elseif CurrentPage == "Settings" then
+		graphics = {
+			{Type = "Header",Text = "Shure MXA-MUTE",HTextAlign = "Center",Color = Colors.Black.RGB,FontSize = 16,Position = {0, 0},Size = {400,30}},
+			{Type = "GroupBox",Text = "Button Status",HTextAlign = "Left",Fill = Colors.White.RGB,CornerRadius = 8,StrokeColor = Colors.Black.RGB,Color = Colors.Black.RGB,StrokeWidth = 2,Position = {0, title_size[2]},Size = {400,700}},
+			{Type = "Text",Text = "Mute State:",Font = "Roboto",FontSize = 12,FontStyle = "Bold",HTextAlign = "Right",Color = Colors.Black.RGB,Position = {0, 50},Size = txt_size},
+			{Type = "Text",Text = "Unmute State:",Font = "Roboto",FontSize = 12,FontStyle = "Bold",HTextAlign = "Right",Color = Colors.Black.RGB,Position = {0, 110},Size = txt_size},
+			{Type = "Text",Text = "LED In State",Font = "Roboto",FontSize = 12,FontStyle = "Bold",HTextAlign = "Left",Color = Colors.Black.RGB,Position = {0, 170},Size = txt_size},
+			{Type = "Text",Text = "Mute Control",Font = "Roboto",FontSize = 12,FontStyle = "Bold",HTextAlign = "Left",Color = Colors.Black.RGB,Position = {0, 230},Size = txt_size},
+			{Type = "Text",Text = "Mute Ctrl Mode:",Font = "Roboto",FontSize = 12,FontStyle = "Bold",HTextAlign = "Right",Color = Colors.Black.RGB,Position = {0, 290},Size = txt_size},
+			{Type = "Text",Text = "Default Toggle:",Font = "Roboto",FontSize = 12,FontStyle = "Bold",HTextAlign = "Right",Color = Colors.Black.RGB,Position = {0, 350},Size = txt_size},
+			{Type = "Text",Text = "Identify Mode",Font = "Roboto",FontSize = 12,FontStyle = "Bold",HTextAlign = "Left",Color = Colors.Black.RGB,Position = {0, 410},Size = txt_size},
+			{Type = "Text",Text = "Reboot",Font = "Roboto",FontSize = 12,FontStyle = "Bold",HTextAlign = "Left",Color = Colors.Black.RGB,Position = {0, 470},Size = txt_size},
+		}
+		layout["LedMutedStateText"] = {PrettyName = "Settings~Muted~Feedback",Style = "Text",HTextAlign = "Left",FontSize = 14,Margin = 2,Padding = 0,StrokeColor = Colors.Black.RGB,StrokeWidth = 2,Position = {100,50},Size = {295,30}}
+		layout["LedStateMutedOn"] = {PrettyName = "Settings~Muted~On",Style = "Button",FontSize = 12,CornerRadius = 4,Legend = "Muted On",Position = {5, 80},Size = {120,30},}
+		layout["LedStateMutedOff"] = {PrettyName = "Settings~Muted~Off",Style = "Button",FontSize = 12,CornerRadius = 4,Legend = "Muted Off",Position = {125, 80},Size = {120,30},}
+		layout["LedStateMutedFlashing"] = {PrettyName = "Settings~Muted~Flashing",Style = "Button",FontSize = 12,CornerRadius = 4,Legend = "Muted Flashing",Position = {245, 80},Size = {120,30},}
+		layout["LedUnmutedStateText"] = {PrettyName = "Settings~Unmuted~Feedback",Style = "Text",HTextAlign = "Left",FontSize = 14,Margin = 2,Padding = 0,StrokeColor = Colors.Black.RGB,StrokeWidth = 2,Position = {100,110},Size = {295,30}}
+		layout["LedStateUnmutedOn"] = {PrettyName = "Settings~Unmuted~On",Style = "Button",FontSize = 12,CornerRadius = 4,Legend = "Unmuted On",Position = {5, 140},Size = {120,30},}
+		layout["LedStateUnmutedOff"] = {PrettyName = "Settings~Unmuted~Off",Style = "Button",FontSize = 12,CornerRadius = 4,Legend = "Unmuted Off",Position = {125, 140},Size = {120,30},}
+		layout["LedStateUnmutedFlashing"] = {PrettyName = "Settings~Unmuted~Flashing",Style = "Button",FontSize = 12,CornerRadius = 4,Legend = "Unmuted Flashing",Position = {245, 140},Size = {120,30},}
+		layout["DevLedInStateOn"] = {PrettyName = "Settings~LED In~On",Style = "Button",FontSize = 12,CornerRadius = 4,Legend = "Force Unmute",Position = {5, 200},Size = {120,30},}
+		layout["DevLedInStateOff"] = {PrettyName = "Settings~LED In~Off",Style = "Button",FontSize = 12,CornerRadius = 4,Legend = "Force Mute",Position = {125, 200},Size = {120,30},}
+		layout["MuteControlEnabled"]= {PrettyName = "Settings~Mute Control~Enabled",Style = "Button",FontSize = 12,CornerRadius = 4,Legend = "Mute Enabled",Position = {5, 260},Size = {120,30},}
+		layout["MuteControlDisabled"]= {PrettyName = "Settings~Mute Control~Disabled",Style = "Button",FontSize = 12,CornerRadius = 4,Legend = "Mute Disabled",Position = {125, 260},Size = {120,30},}
+		layout["MuteControlModeText"] = {PrettyName = "Settings~Mute Mode~Feedback",Style = "Text",HTextAlign = "Left",FontSize = 14,Margin = 2,Padding = 0,StrokeColor = Colors.Black.RGB,StrokeWidth = 2,Position = {100,290},Size = {295,30}}
+		layout["MuteControlToggle"]= {PrettyName = "Settings~Mute Mode~Toggle",Style = "Button",FontSize = 12,CornerRadius = 4,Legend = "Toggle",Position = {5, 320},Size = {120,30},}
+		layout["MuteControlPushToTalk"]= {PrettyName = "Settings~Mute Mode~PTT",Style = "Button",FontSize = 12,CornerRadius = 4,Legend = "Push-to-talk",Position = {125, 320},Size = {120,30},}
+		layout["MuteControlPushToMute"]= {PrettyName = "Settings~Mute Mode~PTM",Style = "Button",FontSize = 12,CornerRadius = 4,Legend = "Push-to-mute",Position = {245, 320},Size = {120,30},}
+		layout["DefaultToggleStateText"] = {PrettyName = "Settings~Default State~Feedback",Style = "Text",HTextAlign = "Left",FontSize = 14,Margin = 2,Padding = 0,StrokeColor = Colors.Black.RGB,StrokeWidth = 2,Position = {100,350},Size = {295,30}}
+		layout["DefaultToggleStateMuted"]= {PrettyName = "Settings~Default State~Muted",Style = "Button",FontSize = 12,CornerRadius = 4,Legend = "Muted",Position = {5, 380},Size = {120,30},}
+		layout["DefaultToggleStateUnmuted"]= {PrettyName = "Settings~Default State~Unmuted",Style = "Button",FontSize = 12,CornerRadius = 4,Legend = "Unmuted",Position = {125, 380},Size = {120,30},}
+		layout["Flash-On"]= {PrettyName = "Settings~ID~Flash On",Style = "Button",FontSize = 12,CornerRadius = 4,Legend = "Flash On",Position = {5, 440},Size = {120,30},}
+		layout["Flash-Off"]= {PrettyName = "Settings~ID~Flash Off",Style = "Button",FontSize = 12,CornerRadius = 4,Legend = "Flash Off",Position = {125, 440},Size = {120,30},}
+		layout["Reboot"] = {PrettyName = "Settings~Reboot",Style = "Button",FontSize = 12,CornerRadius = 4,Legend = "Reboot",Position = {5, 500},Size = {120,30},}
+	elseif CurrentPage == "Status" then
+		graphics = {
+			{Type = "Header",Text = "Shure MXA-MUTE",HTextAlign = "Center",Color = Colors.Black.RGB,FontSize = 16,Position = {0, 0},Size = {400,30}},
+			{Type = "GroupBox",Text = "Button Status",HTextAlign = "Left",Fill = Colors.White.RGB,CornerRadius = 8,StrokeColor = Colors.Black.RGB,Color = Colors.Black.RGB,StrokeWidth = 2,Position = {0, title_size[2]},Size = {400,325}},
+			{Type = "Text",Text = "Mute Button:",Font = "Roboto",FontSize = 12,FontStyle = "Bold",HTextAlign = "Right",Color = Colors.Black.RGB,Position = {0, 45},Size = txt_size},
+			{Type = "Text",Text = "Audio Mute:",Font = "Roboto",FontSize = 12,FontStyle = "Bold",HTextAlign = "Right",Color = Colors.Black.RGB,Position = {0, 75},Size = txt_size},
+			{Type = "Text",Text = "LED Status:",Font = "Roboto",FontSize = 12,FontStyle = "Bold",HTextAlign = "Right",Color = Colors.Black.RGB,Position = {0, 105},Size = txt_size},
+			{Type = "Text",Text = "Ext Switch:",Font = "Roboto",FontSize = 12,FontStyle = "Bold",HTextAlign = "Right",Color = Colors.Black.RGB,Position = {0, 135},Size = txt_size},
+		}
+		layout["MuteButtonStatus"] = {PrettyName = "Status~Mute Button",Style = "Indicator",Color = {0, 255, 0},OffColor = {200, 0, 0},UnlinkOffColor = true,Margin = 4,Position = {100,45},Size = {btn_size[2], btn_size[2]}}
+		layout["AudioMuteStatus"] = {PrettyName = "Status~Audio Mute",Style = "Indicator",Color = {0, 255, 0},OffColor = {200, 0, 0},UnlinkOffColor = true,Margin = 4,Position = {100,75},Size = {btn_size[2], btn_size[2]}}
+		layout["MuteLEDStatus"] = {PrettyName = "Status~LED",Style = "Indicator",Color = {0, 255, 0},OffColor = {200, 0, 0},UnlinkOffColor = true,Margin = 4,Position = {100,105},Size = {btn_size[2], btn_size[2]}}
+		layout["ExtSwitchState"] = {PrettyName = "Status~Ext Switch",Style = "Indicator",Color = {0, 255, 0},OffColor = {200, 0, 0},UnlinkOffColor = true,Margin = 4,Position = {100,135},Size = {btn_size[2], btn_size[2]}}
+	end
+	return layout, graphics
+end
+
+function GetComponents(props)
+	return {}
+end
+
+if Controls then
+	port = 2202
+	sock = TcpSocket.New()
+	sock.ReadTimeout = 0
+	sock.WriteTimeout = 0
+	sock.ReconnectTimeout = 5
+	queryDelay = 0.100
+	Timer1 = Timer.New()
+	i = 1
+	GetCmds = {}
+	GetCmds[1] = '< GET MODEL >\x0D'
+	GetCmds[2] = '< GET SERIAL_NUM >\x0D'
+	GetCmds[3] = '< GET FW_VER >\x0D'
+	GetCmds[4] = '< GET CONTROL_MAC_ADDR >\x0D'
+	GetCmds[5] = '< GET DEVICE_ID >\x0D'
+	GetCmds[6] = '< GET PRESET_NAME 01 >\x0D'
+	GetCmds[7] = '< GET PRESET_NAME 02 >\x0D'
+	GetCmds[8] = '< GET PRESET_NAME 03 >\x0D'
+	GetCmds[9] = '< GET PRESET_NAME 04 >\x0D'
+	GetCmds[10] = '< GET PRESET_NAME 05 >\x0D'
+	GetCmds[11] = '< GET PRESET_NAME 06 >\x0D'
+	GetCmds[12] = '< GET PRESET_NAME 07 >\x0D'
+	GetCmds[13] = '< GET PRESET_NAME 08 >\x0D'
+	GetCmds[14] = '< GET PRESET_NAME 09 >\x0D'
+	GetCmds[15] = '< GET PRESET_NAME 10 >\x0D'
+	GetCmds[16] = '< GET LED_COLOR_MUTED >\x0D'
+	GetCmds[17] = '< GET LED_COLOR_UNMUTED >\x0D'
+	GetCmds[18] = '< GET LED_BRIGHTNESS >\x0D'
+	GetCmds[19] = '< GET LED_STATE_MUTED >\x0D'
+	GetCmds[20] = '< GET LED_STATE_UNMUTED >\x0D'
+	GetCmds[21] = '< GET MUTE_BUTTON_STATUS >\x0D'
+	GetCmds[22] = '< GET EXT_SWITCH_OUT_STATE >\x0D'
+	GetCmds[23] = '< GET MUTE_CONTROL_FUNC >\x0D'
+	GetCmds[24] = '< GET MUTE_CONTROL_MODE >\x0D'
+	GetCmds[25] = '< GET DEFAULT_TOGGLE_STATE >\x0D'
+	GetCmds[26] = '< GET DEV_MUTE_STATUS_LED_STATE >\x0D'
+	GetCmds[27] = '< GET FLASH >\x0D'
+
+	REP = {}
+	REP["MODEL"] = 						Controls["Model"]
+	REP["SERIAL_NUM"] = 				Controls["SerialNumber"]
+	REP["FW_VER"] = 					Controls["FirmwareVersion"]
+	REP["CONTROL_MAC_ADDR"] = 			Controls["ControlMAC"]
+	REP["DEVICE_ID"] = 					Controls["DeviceID"]
+	REP["PRESET_NAME 01"] = 			Controls["PresetName"][1]
+	REP["PRESET_NAME 02"] = 			Controls["PresetName"][2]
+	REP["PRESET_NAME 03"] = 			Controls["PresetName"][3]
+	REP["PRESET_NAME 04"] = 			Controls["PresetName"][4]
+	REP["PRESET_NAME 05"] = 			Controls["PresetName"][5]
+	REP["PRESET_NAME 06"] = 			Controls["PresetName"][6]
+	REP["PRESET_NAME 07"] = 			Controls["PresetName"][7]
+	REP["PRESET_NAME 08"] = 			Controls["PresetName"][8]
+	REP["PRESET_NAME 09"] = 			Controls["PresetName"][9]
+	REP["PRESET_NAME 10"] = 			Controls["PresetName"][10]
+	REP["MUTE_BUTTON_STATUS"] = 		Controls["MuteButtonStatus"]
+	REP["AUDIO_MUTE"] = 				Controls["AudioMuteStatus"]
+	REP["DEV_MUTE_STATUS_LED_STATE"] = 	Controls["MuteLEDStatus"]
+	REP["EXT_SWITCH_OUT_STATE"] = 		Controls["ExtSwitchState"]
+	REP["LED_BRIGHTNESS"] = 			Controls["BrightnessText"]
+
+	nUnmuteBase 		= Controls["LedColorUnmuted"][17].Index - 16
+	nMuteBase 			= Controls["LedColorMuted"][17].Index - 16
+	nRecallBase 		= Controls["PresetRecall"][1].Index - 1
+	nBrightnessBase 	= Controls["Brightness"][1].Index - 1
+
+	sock.EventHandler = function(sock, evt, err)
+		if evt == TcpSocket.Events.Connected then
+		  print( "socket 1 connected" )
+		  queryStart()
+		  Controls["Online"].Boolean = true
+		  Controls["ConnectionState"].String = 'Connected'
+		elseif evt == TcpSocket.Events.Reconnect then
+		  print( "socket 1 reconnecting..." )
+		  Controls["Online"].Boolean = false
+		  Controls["ConnectionState"].String = 'Reconnecting'
+		elseif evt == TcpSocket.Events.Data then
+		  message = sock:Read(sock.BufferLength)
+		  print("TCP socket has data:",message )
+		  parseRep( message )
+		elseif evt == TcpSocket.Events.Closed then
+		  print( "socket closed 1 by remote" )
+		  Controls["Online"].Boolean = false
+		  Controls["ConnectionState"].String = 'Closed By Remote'
+		elseif evt == TcpSocket.Events.Error then
+		  print( "socket 1 closed due to error", err )
+		  Controls["Online"].Boolean = false
+		  Controls["ConnectionState"].String = 'Closed Due To Error'
+		elseif evt == TcpSocket.Events.Timeout then
+		  print( "socket 1 closed due to timeout" )
+		  Controls["Online"].Boolean = false
+		  Controls["ConnectionState"].String = 'Closed Due To Timeout'
+		else
+		  print( "unknown socket 1 event", evt ) --should never happen
+		  Controls["Online"].Boolean = false
+		  Controls["ConnectionState"].String = 'Unknown Socket Error'
+		end
+	end
+
+	function parseRep( message )
+		_, _, f, d = string.find(message,"<%s*REP%s*([%w_]*)%s*[{]*([%w%s%-%.%+:]*)")
+		while string.byte(d,-1) == 32 do
+			d = string.sub(d,1,#d - 1)
+		end
+		if f =='ERR' then
+			return
+		end
+		if f == 'PRESET' then
+			return
+		end
+		if f == 'PRESET_NAME' then
+			_, _, f, d = string.find(message,"<%s*REP%s*([%w_]*%s*%d*)%s*[{]*([%w%s%-%.%+%(%):]*)")
+		end
+		if f ~= nil then
+			if f == 'LED_COLOR_UNMUTED' then
+				fnShowUnmutedColor(d)
+			elseif f == 'LED_COLOR_MUTED' then
+				fnShowMutedColor(d)
+			elseif f == 'LED_BRIGHTNESS' then
+				fnShowBrightness(d)
+				REP[f].String = d
+			elseif f == 'LED_STATE_UNMUTED' then
+				fnLedUnmutedState(d)
+			elseif f == 'LED_STATE_MUTED' then
+				fnLedMutedState(d)
+			elseif f == 'DEV_LED_IN_STATE' then
+				return
+			elseif f == 'MUTE_CONTROL_FUNC' then
+				fnMuteCtrlFunc(d)
+			elseif f == 'MUTE_CONTROL_MODE' then
+				fnMuteCtrlMode(d)
+			elseif f == 'DEFAULT_TOGGLE_STATE' then
+				fnDefaultToggle(d)
+			elseif f == 'FLASH' then
+				fnFlash(d)
+			elseif d == 'ON' then
+				REP[f].Boolean = true
+			elseif d == 'OFF' then
+				REP[f].Boolean = false
+			elseif REP[f] ~= nil then
+				REP[f].String = d
+			else
+				return
+			end
+		end
+	end
+
+	function fnFlash( state )
+		if state == 'ON' then
+			Controls["Flash-On"].Boolean = true
+			Controls["Flash-Off"].Boolean = false
+		elseif state == 'OFF' then
+			Controls["Flash-On"].Boolean = false
+			Controls["Flash-Off"].Boolean = true
+		end
+	end
+
+	function fnDefaultToggle( state )
+		Controls["DefaultToggleStateText"].String = state
+		if state == 'MUTED' then
+			Controls["DefaultToggleStateMuted"].Boolean = true
+			Controls["DefaultToggleStateUnmuted"].Boolean = false
+		elseif state == 'UNMUTED' then
+			Controls["DefaultToggleStateMuted"].Boolean = false
+			Controls["DefaultToggleStateUnmuted"].Boolean = true
+		end
+	end
+
+	function fnMuteCtrlMode( state )
+		if state == 'TOG' then
+			Controls["MuteControlModeText"].String = 'Toggle'
+			Controls["MuteControlToggle"].Boolean = true
+			Controls["MuteControlPushToTalk"].Boolean = false
+			Controls["MuteControlPushToMute"].Boolean = false
+		elseif state == 'PTT' then
+			Controls["MuteControlModeText"].String = 'Push-to-talk'
+			Controls["MuteControlToggle"].Boolean = false
+			Controls["MuteControlPushToTalk"].Boolean = true
+			Controls["MuteControlPushToMute"].Boolean = false
+		elseif state == 'PTM' then
+			Controls["MuteControlModeText"].String = 'Push-to-mute'
+			Controls["MuteControlToggle"].Boolean = false
+			Controls["MuteControlPushToTalk"].Boolean = false
+			Controls["MuteControlPushToMute"].Boolean = true
+		end
+	end
+
+	function fnMuteCtrlFunc( state )
+		if state == 'ENABLED' then
+			Controls["MuteControlEnabled"].Boolean = true
+			Controls["MuteControlDisabled"].Boolean = false
+		elseif state == 'DISABLED' then
+			Controls["MuteControlEnabled"].Boolean = false
+			Controls["MuteControlDisabled"].Boolean = true
+		end
+	end
+
+	function fnLedUnmutedState( state )
+		Controls["LedUnmutedStateText"].String = state
+		if state == 'OFF' then
+			Controls["LedStateUnmutedOn"].Boolean = false
+			Controls["LedStateUnmutedOff"].Boolean = true
+			Controls["LedStateUnmutedFlashing"].Boolean = false
+		elseif state == 'ON' then
+			Controls["LedStateUnmutedOn"].Boolean = true
+			Controls["LedStateUnmutedOff"].Boolean = false
+			Controls["LedStateUnmutedFlashing"].Boolean = false
+		elseif state == 'FLASHING' then
+			Controls["LedStateUnmutedOn"].Boolean = false
+			Controls["LedStateUnmutedOff"].Boolean = false
+			Controls["LedStateUnmutedFlashing"].Boolean = true
+		else
+			Controls["LedStateUnmutedOn"].Boolean = false
+			Controls["LedStateUnmutedOff"].Boolean = false
+			Controls["LedStateUnmutedFlashing"].Boolean = false
+		end
+	end
+
+	function fnLedMutedState( state )
+		Controls["LedMutedStateText"].String = state
+		if state == 'OFF' then
+			Controls["LedStateMutedOn"].Boolean = false
+			Controls["LedStateMutedOff"].Boolean = true
+			Controls["LedStateMutedFlashing"].Boolean = false
+		elseif state == 'ON' then
+			Controls["LedStateMutedOn"].Boolean = true
+			Controls["LedStateMutedOff"].Boolean = false
+			Controls["LedStateMutedFlashing"].Boolean = false
+		elseif state == 'FLASHING' then
+			Controls["LedStateMutedOn"].Boolean = false
+			Controls["LedStateMutedOff"].Boolean = false
+			Controls["LedStateMutedFlashing"].Boolean = true
+		else
+			Controls["LedStateMutedOn"].Boolean = false
+			Controls["LedStateMutedOff"].Boolean = false
+			Controls["LedStateMutedFlashing"].Boolean = false
+		end
+	end
+
+	function fnShowUnmutedColor ( colorName )
+		local x = indexShure[colorName].Num
+		Controls["LedColorUnmutedInt"].Value = x
+		Controls["LedColorUnmutedText"].String = indexShure[colorName].Friendly
+		x = math.abs(x - 18)
+		for i = 1,17 do
+			Controls["LedColorUnmuted"][i].Boolean = false
+		end
+		Controls["LedColorUnmuted"][x].Boolean = true
+	end
+
+	function fnShowMutedColor ( colorName )
+		local x = indexShure[colorName].Num
+		Controls["LedColorMutedInt"].Value = x
+		Controls["LedColorMutedText"].String = indexShure[colorName].Friendly
+		x = math.abs(x - 18)
+		for i = 1,17 do
+			Controls["LedColorMuted"][i].Boolean = false
+		end
+		Controls["LedColorMuted"][x].Boolean = true
+	end
+
+	function fnShowBrightness( brightLevel )
+		for i = 1,6 do
+			Controls["Brightness"][i].Boolean = false
+		end
+		Controls["Brightness"][ brightLevel + 1 ].Boolean = true
+		Controls["BrightnessInt"].Value = brightLevel
+	end
+
+	function fnSendCmd( cmdString )
+		if Controls["Online"].Boolean == false then
+			return
+		end
+		sock:Write(cmdString)
+	end
+
+	function queryStart( )
+		i = 1
+		Timer1:Start(queryDelay)
+	  end
+	  
+	  function queryAll( )
+		if i <= #GetCmds then
+		  fnSendCmd(GetCmds[i])
+		  i = i + 1
+		else
+		  Timer1:Stop()
+		  i = 1
+		end
+	  end
+	
+	function fnPreset( key )
+		if key.Value == 0 then
+			return
+		end
+		i = string.format("%02d",(key.Index - nRecallBase))
+		fnSendCmd('< SET PRESET ' .. i .. ' >\x0D')
+	end
+
+	function fnMutedColor( key )
+		local y
+		if key.Value == 0 then
+			key.Boolean = true
+			return
+		end
+		y = math.abs(key.Index - nMuteBase - 17)
+		fnSendCmd('< SET LED_COLOR_MUTED ' .. indexColors[y].ShureName .. ' >\x0D')
+	end
+
+	function fnUnmutedColor( key )
+		local y
+		if key.Value == 0 then
+			key.Boolean = true
+			print('index is: ' .. key.Index)
+			return
+		end
+		y = math.abs(key.Index - nUnmuteBase - 17)
+		fnSendCmd('< SET LED_COLOR_UNMUTED ' .. indexColors[y].ShureName .. ' >\x0D')
+	end
+
+	function fnUnmutedColorInt ( key )
+		fnSendCmd('< SET LED_COLOR_UNMUTED ' .. indexColors[key.Value].ShureName .. ' >\x0D')
+	end
+
+	function fnMutedColorInt ( key )
+		fnSendCmd('< SET LED_COLOR_MUTED ' .. indexColors[key.Value].ShureName .. ' >\x0D')
+	end
+
+	function fnBrightness ( key )
+		if key.Value == 0 then
+			fnShowBrightness( key.Index - nBrightnessBase - 1 )
+			return
+		end
+		fnSendCmd('< SET LED_BRIGHTNESS ' .. (key.Index - nBrightnessBase - 1) .. ' >\x0D')
+	end
+
+	function fnBrightnessInt ( key )
+		x = string.format("%1d",key.Value)
+		fnSendCmd('< SET LED_BRIGHTNESS ' .. x .. ' >\x0D')
+	end
+
+	function fnStateUnmuteOn ( key )
+		if key.Value == 0 then
+			key.Boolean = true
+			return
+		end
+		fnSendCmd('< SET LED_STATE_UNMUTED ON >\x0D')
+	end
+
+	function fnStateUnmuteOff ( key )
+		if key.Value == 0 then
+			key.Boolean = true
+			return
+		end
+		fnSendCmd('< SET LED_STATE_UNMUTED OFF >\x0D')
+	end
+
+	function fnStateUnmuteFlash ( key )
+		if key.Value == 0 then
+			key.Boolean = true
+			return
+		end
+		fnSendCmd('< SET LED_STATE_UNMUTED FLASHING >\x0D')
+	end
+
+	function fnStateMuteOn ( key )
+		if key.Value == 0 then
+			key.Boolean = true
+			return
+		end
+		fnSendCmd('< SET LED_STATE_MUTED ON >\x0D')
+	end
+
+	function fnStateMuteOff ( key )
+		if key.Value == 0 then
+			key.Boolean = true
+			return
+		end
+		fnSendCmd('< SET LED_STATE_MUTED OFF >\x0D')
+	end
+
+	function fnStateMuteFlash ( key )
+		if key.Value == 0 then
+			key.Boolean = true
+			return
+		end
+		fnSendCmd('< SET LED_STATE_MUTED FLASHING >\x0D')
+	end
+
+	function fnSetLedInSateOn ( key )
+		if key.Value == 0 then
+			return
+		end
+		fnSendCmd('< SET DEV_LED_IN_STATE ON >\x0D')
+	end
+
+	function fnSetLedInSateOff ( key )
+		if key.Value == 0 then
+			return
+		end
+		fnSendCmd('< SET DEV_LED_IN_STATE OFF >\x0D')
+	end
+
+	function fnEnableMuteCtrl ( key )
+		if key.Value == 0 then
+			key.Boolean = true
+			return
+		end
+		fnSendCmd('< SET MUTE_CONTROL_FUNC ENABLED >\x0D')
+	end
+
+	function fnDisableMuteCtrl ( key )
+		if key.Value == 0 then
+			key.Boolean = true
+			return
+		end
+		fnSendCmd('< SET MUTE_CONTROL_FUNC DISABLED >\x0D')
+	end
+
+	function fnToggle ( key )
+		if key.Value == 0 then
+			--key.Boolean = true
+			fnMuteCtrlMode( 'TOG' )
+			return
+		end
+		fnSendCmd('< SET MUTE_CONTROL_MODE TOG >\x0D')
+	end
+
+	function fnPTT ( key )
+		if key.Value == 0 then
+			--key.Boolean = true
+			fnMuteCtrlMode( 'PTT' )
+			return
+		end
+		fnSendCmd('< SET MUTE_CONTROL_MODE PTT >\x0D')
+	end
+
+	function fnPTM ( key )
+		if key.Value == 0 then
+			--key.Boolean = true
+			fnMuteCtrlMode( 'PTM' )
+			return
+		end
+		fnSendCmd('< SET MUTE_CONTROL_MODE PTM >\x0D')
+	end
+
+	function fnDefTogMute ( key )
+		if key.Value == 0 then
+			key.Boolean = true
+			return
+		end
+		fnSendCmd('< SET DEFAULT_TOGGLE_STATE MUTED >\x0D')
+	end
+
+	function fnDefTogUnmute ( key )
+		if key.Value == 0 then
+			key.Boolean = true
+			return
+		end
+		fnSendCmd('< SET DEFAULT_TOGGLE_STATE UNMUTED >\x0D')
+	end
+
+	function fnFlashOn ( key )
+		if key.Value == 0 then
+			fnFlash( 'ON' )
+			return
+		end
+		fnSendCmd('< SET FLASH ON >\x0D')
+	end
+
+	function fnFlashOff ( key )
+		if key.Value == 0 then
+			fnFlash( 'OFF' )
+			return
+		end
+		fnSendCmd('< SET FLASH OFF >\x0D')
+	end
+
+	function fnReboot ( key )
+		if key.Value == 0 then
+			return
+		end
+		fnSendCmd('< SET REBOOT >\x0D')
+	end
+
+	Timer1.EventHandler = queryAll
+
+	for i = 1, 10 do
+		Controls["PresetRecall"][i].EventHandler = fnPreset
+	end
+	for i = 1, 17 do
+		Controls["LedColorMuted"][i].EventHandler = fnMutedColor
+		Controls["LedColorUnmuted"][i].EventHandler = fnUnmutedColor
+	end
+	Controls["LedColorMutedInt"].EventHandler = fnMutedColorInt
+	Controls["LedColorUnmutedInt"].EventHandler = fnUnmutedColorInt
+	for i = 1, 6 do
+		Controls["Brightness"][i].EventHandler = fnBrightness
+	end
+	Controls["BrightnessInt"].EventHandler = fnBrightnessInt
+	Controls["LedStateUnmutedOn"].EventHandler = fnStateUnmuteOn
+	Controls["LedStateUnmutedOff"].EventHandler = fnStateUnmuteOff
+	Controls["LedStateUnmutedFlashing"].EventHandler = fnStateUnmuteFlash
+	Controls["LedStateMutedOn"].EventHandler = fnStateMuteOn
+	Controls["LedStateMutedOff"].EventHandler = fnStateMuteOff
+	Controls["LedStateMutedFlashing"].EventHandler = fnStateMuteFlash
+	Controls["DevLedInStateOn"].EventHandler = fnSetLedInSateOn
+	Controls["DevLedInStateOff"].EventHandler = fnSetLedInSateOff
+	Controls["MuteControlEnabled"].EventHandler = fnEnableMuteCtrl
+	Controls["MuteControlDisabled"].EventHandler = fnDisableMuteCtrl
+	Controls["MuteControlToggle"].EventHandler = fnToggle
+	Controls["MuteControlPushToTalk"].EventHandler = fnPTT
+	Controls["MuteControlPushToMute"].EventHandler = fnPTM
+	Controls["DefaultToggleStateMuted"].EventHandler = fnDefTogMute
+	Controls["DefaultToggleStateUnmuted"].EventHandler = fnDefTogUnmute
+	Controls["Flash-On"].EventHandler = fnFlashOn
+	Controls["Flash-Off"].EventHandler = fnFlashOff
+	Controls["Reboot"].EventHandler = fnReboot
+	
+	sock:Connect(Properties["IP Address"].Value, port)
+end
