@@ -1,0 +1,633 @@
+-- Information block for the plugin
+--[[
+Plugin Core Design Info
+Created by - Felipe Henrique
+Releases: v0.1- Beta[Script] 21/12/2023
+v0.1.3 - 16/08/2024 
+v0.1.4 - 19/02/2025
+    -build in plugin compiler
+]]
+-- Information block for the plugin
+PluginInfo = {
+ 
+  Version = "0.1.4",
+  BuildVersion = "0.0.0.0",
+  Id = "c2c12cc9-ec70-4761-9b12-e549b0cdd084",
+  Author = "FHS",
+  Description = "Plugin for Design and Core Informations",
+  Name = "FHS Plugins~System~QSYS Core Audit"  
+}
+
+-- Define the color of the plugin object in the design
+function GetColor(props)
+  return { 102, 102, 102 }
+end
+
+-- The name that will initially display when dragged into a design
+function GetPrettyName(props)
+  return "QSYS Audit Core, version " .. PluginInfo.Version
+end
+
+-- Optional function used if plugin has multiple pages
+PageNames = {"Info","About"}  --List the pages within the plugin
+function GetPages(props)
+  local pages = {}
+  local pages = {}
+  for ix,name in ipairs(PageNames) do
+    table.insert(pages, {name = PageNames[ix]})
+  end
+  return pages
+end
+
+-- Optional function to define model if plugin supports more than one model
+function GetModel(props)
+  local model = {}
+  --[[if props.Model ~= nil and props.Model.Value ~= "" then
+    table.insert(model, { props.Model.Value } )
+  else
+    table.insert(model, { "Base Model" } )
+  end]]
+ return model
+end
+
+-- Define User configurable Properties of the plugin
+function GetProperties()
+  local props = {}
+  --[[table.insert(props, {
+    Name = "Debug Print",
+    Type = "enum",
+    Choices = {"None", "Tx/Rx", "Tx", "Rx", "Function Calls", "All"},
+    Value = "None"
+  })]]
+  return props
+end
+
+-- Optional function to define pins on the plugin that are not connected to a Control
+function GetPins(props)
+  local pins = {}
+  --[[table.insert(pins,{
+    Name = "Audio Output",
+    Direction = "output",
+  })]]
+  return pins
+end
+
+-- Optional function to update available properties when properties are altered by the user
+function RectifyProperties(props)
+  --[[if props.plugin_show_debug.Value == false then 
+    props["Debug Print"].IsHidden = true 
+  end]]
+  return props
+end
+
+-- Optional function to define components used within the plugin
+function GetComponents(props)
+  local components = {}
+  local ctrls = {
+  	{
+  	Name 			= "Q-SYSVersion",
+  	ControlType 	= "Text",
+  	UserPin 	    = true,
+  	PinStyle 	    = "Output",
+  	Count 			= 1
+  	},
+  	{
+  	Name 			= "Platform",
+  	ControlType 	= "Text",
+  	UserPin 	    = true,
+  	PinStyle 	    = "Output",
+  	Count 			= 1
+  	},
+  	{
+  	Name 			= "DesignName",
+  	ControlType 	= "Text",
+  	UserPin 	    = true,
+  	PinStyle 	    = "Output",
+  	Count 			= 1
+  	},
+  	{
+  	Name 			= "DesignCode",
+  	ControlType 	= "Text",
+  	UserPin 	    = true,
+  	PinStyle 	    = "Output",
+  	Count 			= 1
+  	},
+  	{
+  	Name 			= "TimeStampDownload",
+  	ControlType 	= "Text",
+  	UserPin 	    = true,
+  	PinStyle 	    = "Output",
+  	Count 			= 1
+  	},
+  	{
+  	Name 			= "LastBoot",
+  	ControlType 	= "Text",
+  	UserPin 	    = true,
+  	PinStyle 	    = "Output",
+  	Count 			= 1
+  	},
+  	{
+  	Name 			= "Network_LAN_A",
+  	ControlType 	= "Text",
+  	UserPin 	    = true,
+  	PinStyle 	    = "Output",
+  	Count 			= 3
+  	},
+  	{
+  	Name 			= "Network_LAN_B",
+  	ControlType 	= "Text",
+  	UserPin 	    = true,
+  	PinStyle 	    = "Output",
+  	Count 			= 3
+  	},
+  	{
+  	Name 			= "RefreshNetworkInfo",
+  	ControlType 	= "Button",
+  	ButtonType     = "Trigger",
+  	UserPin 	    = true,
+  	PinStyle 	    = "Input",
+  	Count 			= 1
+  	}}
+  
+  return components
+end
+
+-- Optional function to define wiring of components used within the plugin
+function GetWiring(props)
+  local wiring = {}
+  --[[table.insert( wiring, { "Audio Output", "main_mixer Output 1" } )]]
+  return wiring
+end
+
+-- Defines the Controls used within the plugin
+function GetControls(props)
+  local ctrls = {}
+  local ctrls = {
+  	{
+  	Name 			= "Q-SYSVersion",
+  	ControlType 	= "Text",
+  	UserPin 	    = true,
+  	PinStyle 	    = "Output",
+  	Count 			= 1
+  	},
+  	{
+  	Name 			= "Platform",
+  	ControlType 	= "Text",
+  	UserPin 	    = true,
+  	PinStyle 	    = "Output",
+  	Count 			= 1
+  	},
+  	{
+  	Name 			= "DesignName",
+  	ControlType 	= "Text",
+  	UserPin 	    = true,
+  	PinStyle 	    = "Output",
+  	Count 			= 1
+  	},
+  	{
+  	Name 			= "DesignCode",
+  	ControlType 	= "Text",
+  	UserPin 	    = true,
+  	PinStyle 	    = "Output",
+  	Count 			= 1
+  	},
+  	{
+  	Name 			= "TimeStampDownload",
+  	ControlType 	= "Text",
+  	UserPin 	    = true,
+  	PinStyle 	    = "Output",
+  	Count 			= 1
+  	},
+  	{
+  	Name 			= "LastBoot",
+  	ControlType 	= "Text",
+  	UserPin 	    = true,
+  	PinStyle 	    = "Output",
+  	Count 			= 1
+  	},
+  	{
+  	Name 			= "Network_LAN_A",
+  	ControlType 	= "Text",
+  	UserPin 	    = true,
+  	PinStyle 	    = "Output",
+  	Count 			= 3
+  	},
+  	{
+  	Name 			= "Network_LAN_B",
+  	ControlType 	= "Text",
+  	UserPin 	    = true,
+  	PinStyle 	    = "Output",
+  	Count 			= 3
+  	},
+  	{
+  	Name 			= "RefreshNetworkInfo",
+  	ControlType 	= "Button",
+  	ButtonType     = "Trigger",
+  	UserPin 	    = true,
+  	PinStyle 	    = "Input",
+  	Count 			= 1
+  	}}
+  
+  return ctrls
+end
+
+--Layout of controls and graphics for the plugin UI to display
+function GetControlLayout(props)
+  local layout = {}
+  local graphics = {}
+  local layout = {}
+  local graphics = {}
+  local CurrentPage = PageNames[props["page_index"].Value]
+  if CurrentPage == "Info" then  
+  --Only Text Block---------------------------------------------------
+   table.insert(graphics,{
+      Type = "GroupBox",
+  --Text = "Control",
+      Fill = {200,200,200},
+      StrokeWidth = 0,
+      Position = {0,0},
+      Size = {360,290}
+    })
+  table.insert(graphics,{
+      Type = "Text",
+      Text = "Design Info",
+      Position = {12,8},
+      Size = {157,65},
+    Font="Roboto",
+      FontSize = 25,
+    FontStyle="Bold",
+      HTextAlign = "Left"
+    })
+    table.insert(graphics,{
+      Type = "Text",
+      Text = "Q-SYS Version",
+      Position = {12,83},
+      Size = {128,16},
+      FontSize = 11,
+      HTextAlign = "Left"
+    })
+    table.insert(graphics,{
+      Type = "Text",
+      Text = "Platform",
+      Position = {12,99},
+      Size = {128,16},
+      FontSize = 11,
+      HTextAlign = "Left"
+    })
+    table.insert(graphics,{
+      Type = "Text",
+      Text = "Design Name",
+      Position = {12,115},
+      Size = {128,16},
+      FontSize = 11,
+      HTextAlign = "Left"
+    })	
+    table.insert(graphics,{
+      Type = "Text",
+      Text = "Design Code(ID)",
+      Position = {12,131},
+      Size = {128,16},
+      FontSize = 11,
+      HTextAlign = "Left"
+    })			
+    table.insert(graphics,{
+      Type = "Text",
+      Text = "Lastest Design Download",
+      Position = {12,147},
+      Size = {140,16},
+      FontSize = 11,
+      HTextAlign = "Left"
+    })			
+    table.insert(graphics,{
+      Type = "Text",
+      Text = "Lastest Core Boot",
+      Position = {12,163},
+      Size = {128,16},
+      FontSize = 11,
+      HTextAlign = "Left"
+    })		
+    table.insert(graphics,{
+      Type = "Text",
+      Text = "IP",
+      Position = {138,201},
+      Size = {118,16},
+      FontSize = 11,
+      HTextAlign = "Center"
+    })			
+    table.insert(graphics,{
+      Type = "Text",
+      Text = "Mac Address",
+      Position = {256,201},
+      Size = {88,16},
+      FontSize = 11,
+      HTextAlign = "Center"
+    })
+    table.insert(graphics,{
+    Type = "Text",
+    Text = "Refresh Network Info",
+    Position = {10,249},
+    Size = {128,16},
+    FontSize = 11,
+    HTextAlign = "Left"
+    })			
+  --Only Text Inputs---------------------------------------------------
+  layout["Q-SYSVersion"]={
+    Position={140,83},
+    Size={204,16},
+    PrettyName="Qsys Version",
+    Style="Text",
+    IsReadOnly=true, 
+    TextColor={0,0,0},
+    TextBoxStyle="Meter Background",
+    FontSize=9,
+    HTextAlign="Left"
+  }
+  layout["Platform"]={
+    Position={140,99},
+    Size={204,16},
+    PrettyName="Platform",
+    Style="Text",
+    IsReadOnly=true, 
+    TextColor={0,0,0},
+    TextBoxStyle="Meter Background",
+    FontSize=9,
+    HTextAlign="Left"
+  }
+  layout["DesignName"]={
+    Position={140,115},
+    Size={204,16},
+    PrettyName="Design Name",
+    Style="Text",
+    IsReadOnly=true, 
+    TextColor={0,0,0},
+    TextBoxStyle="Meter Background",
+    FontSize=9,
+    HTextAlign="Left"
+  }
+  layout["DesignCode"]={
+    Position={140,131},
+    Size={204,16},
+    PrettyName="Design Code",
+    Style="Text",
+    IsReadOnly=true, 
+    TextColor={0,0,0},
+    TextBoxStyle="Meter Background",
+    FontSize=9,
+    HTextAlign="Left"
+  }
+  layout["TimeStampDownload"]={
+    Position={140,147},
+    Size={204,16},
+    PrettyName="Last Design Download",
+    Style="Text",
+    IsReadOnly=true, 
+    TextColor={0,0,0},
+    TextBoxStyle="Meter Background",
+    FontSize=9,
+    HTextAlign="Left"
+  }
+  layout["LastBoot"]={
+    Position={140,163},
+    Size={204,16},
+    PrettyName="Last Core Boot",
+    Style="Text",
+    IsReadOnly=true, 
+    TextColor={0,0,0},
+    TextBoxStyle="Meter Background",
+    FontSize=9,
+    HTextAlign="Left"
+  }
+  layout["Network_LAN_A 1"]={
+    Position={12,218},
+    Size={126,16},
+    PrettyName="Network A Name",
+    Style="Text",
+    IsReadOnly=true, 
+    TextColor={0,0,0},
+    TextBoxStyle="NoBackground",
+    FontSize=11,
+    HTextAlign="Left"
+  }
+  layout["Network_LAN_A 2"]={
+    Position={140,217},
+    Size={116,16},
+    PrettyName="Network A IP",
+    Style="Text",
+    IsReadOnly=true, 
+    TextColor={0,0,0},
+    TextBoxStyle="Meter Background",
+    FontSize=9,
+    HTextAlign="Center"
+  }
+  layout["Network_LAN_A 3"]={
+    Position={256,217},
+    Size={88,16},
+    PrettyName="Network A Macaddress",
+    Style="Text",
+    IsReadOnly=true, 
+    TextColor={0,0,0},
+    TextBoxStyle="Meter Background",
+    FontSize=9,
+    HTextAlign="Center"
+  }
+  layout["Network_LAN_B 1"]={
+    Position={12,233},
+    Size={126,16},
+    PrettyName="Network B Name",
+    Style="Text",
+    IsReadOnly=true, 
+    TextColor={0,0,0},
+    TextBoxStyle="NoBackground",
+    FontSize=11,
+    HTextAlign="Left"
+  }
+  layout["Network_LAN_B 2"]={
+    Position={140,233},
+    Size={116,16},
+    PrettyName="Network B IP",
+    Style="Text",
+    IsReadOnly=true, 
+    TextColor={0,0,0},
+    TextBoxStyle="Meter Background",
+    FontSize=9,
+    HTextAlign="Center"
+  }
+  layout["Network_LAN_B 3"]={
+    Position={256,233},
+    Size={88,16},
+    PrettyName="Network B Macaddress",
+    Style="Text",
+    IsReadOnly=true, 
+    TextColor={0,0,0},
+    TextBoxStyle="Meter Background",
+    FontSize=9,
+    HTextAlign="Center"
+  }
+  --Only Buttons---------------------------------------------------
+  layout["RefreshNetworkInfo"] = {
+    PrettyName = "Refresh Net Info",
+    Style = "Button",
+    --Legend ="RefreshNetworkInfo",
+    Position = {138,249},
+    Size = {36,16},
+    --Color = {0,0,0}
+  }
+  elseif CurrentPage == "About" then
+      table.insert(graphics,{
+      Type = "GroupBox",
+  --Text = "Control",
+      Fill = {200,200,200},
+      StrokeWidth = 0,
+      Position = {0,0},
+      Size = {360,290}
+    })
+    table.insert(graphics,{
+      Type = "Text",
+      Text = "documentation on github",
+      Position = {13,115},
+      Size = {128,16},
+      FontSize = 11,
+    Font="Roboto",
+    FontStyle="Regular",
+      HTextAlign = "Left"
+    })
+  
+    table.insert(graphics,{
+      Type = "Text",
+      Text = "https://github.com/felipehsantos",
+      Position = {13,131},
+      Size = {255,16},
+      FontSize = 11,
+    Font="Roboto",
+    FontStyle="Regular",
+      HTextAlign = "Left"
+    })
+  end
+  return layout, graphics
+end
+
+--Start event based logic
+if Controls then
+  
+  rapidjson = require("rapidjson")
+  
+  qsysVersion                 =Controls["Q-SYSVersion"]
+  qscPlatform                 =Controls.Platform
+  designName                  =Controls.DesignName
+  designCode                  =Controls.DesignCode
+  downloadTimestamp           =Controls.TimeStampDownload
+  lastBootTimeStamp           =Controls.LastBoot
+  refreshnet                  =Controls.RefreshNetworkInfo
+  networkInterfaceA           =Controls.Network_LAN_A[1]
+  networkIPA                  =Controls.Network_LAN_A[2]
+  networkMACA                 =Controls.Network_LAN_A[3]
+  networkInterfaceB           =Controls.Network_LAN_B[1]
+  networkIPB                  =Controls.Network_LAN_B[2]
+  networkMACB                 =Controls.Network_LAN_B[3]
+  
+  designStatus                =Design.GetStatus()
+  
+  
+  function fnFileExist(filename,directory)
+  temp = dir.get(directory)
+    for i,v in ipairs(temp) do
+     if(v.name == filename) then
+      return true
+    end
+    end
+    return false
+  end
+  
+  function qtyInterface()
+  
+  networkInterfaces           =Network.Interfaces()
+  
+  local qty
+    for key,value in pairs(networkInterfaces) do
+    qty=key    
+    end
+    print("Found "..qty.." Interface(s)")
+    return qty
+  end 
+  
+  function fnShowNetwork()
+  networkInterfaces           =Network.Interfaces()
+    networkInterfaceA.String    =networkInterfaces[1]["Interface"]
+    networkIPA.String           =networkInterfaces[1]["Address"]
+    networkMACA.String          =networkInterfaces[1]["MACAddress"]
+    if qtyInterface()>1 then
+      networkInterfaceB.String    =networkInterfaces[2]["Interface"]
+      networkIPB.String           =networkInterfaces[2]["Address"]
+      networkMACB.String          =networkInterfaces[2]["MACAddress"]
+    else
+      networkInterfaceB.String    ="**"
+      networkIPB.String           ="**"
+      networkMACB.String          ="**"
+    end
+    print("Network Info Update")
+  end
+  
+  function fnShowFirstData()
+    qscPlatform.String          =designStatus.Platform
+    designName.String           =designStatus.DesignName
+    designCode.String           =designStatus.DesignCode
+    downloadTimestamp.String    =os.date()
+  end
+  
+  function fnShowOldData()
+    qscPlatform.String          =oldData.Platform
+    designName.String           =oldData.DesignName
+    designCode.String           =oldData.DesignCode
+    downloadTimestamp.String    =oldData.downloadTimestamp
+  end
+  
+  
+  function fnCreateFile(filename,directory)
+    local firstData=designStatus
+    local f = assert(io.open((directory..filename), "w"))
+    firstData.downloadTimestamp=os.date()
+    f:write(rapidjson.encode(firstData,{ pretty=true}))
+    f:close()
+  end
+  
+  function fnCompareId(newId,oldId)
+    if newId == oldId then
+    print("dbg-> It's the same design!!")
+    fnShowOldData()  
+    else
+    fnShowFirstData()
+    fnCreateFile("audit.json","design/")
+    print("dbg-> It's a new design!")
+    end
+  end
+  
+  function fnReadFile(filename,directory)
+    file=directory..filename
+    local f = assert(io.open(file, "r"))
+    oldData= rapidjson.decode(f:read("*all"))
+    f:close()
+  end
+  
+  function fnInitialize()
+    if fnFileExist("audit.json","design/") then --check if a file was created
+    print("dbg-> Reading File...")
+    fnReadFile("audit.json","design/")
+    fnCompareId(designStatus.DesignCode,oldData.DesignCode)
+    else
+    print("dbg-> Creating File...")
+    fnCreateFile("audit.json","design/")
+    fnShowFirstData()
+    print("dbg-> OK, It's a new Design\n First Plugin Execution!")
+  
+    end
+  fnShowNetwork()
+  end
+  
+  refreshnet.EventHandler = function ()
+    fnShowNetwork()
+  end
+  
+  fnInitialize()
+  lastBootTimeStamp.String = os.date()
+  qsysVersion.String          =System.Version
+end

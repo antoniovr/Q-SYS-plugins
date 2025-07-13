@@ -1,0 +1,2482 @@
+-- LEA Amplifier
+-- Mike Matthews, Martin Velez
+-- 21 June 2019
+--
+
+PluginInfo = {
+    Name = "LEA Amplifier",
+    Version = "1.4.1.0",
+    Id = "ec24adbd-6dee-4326-bce3-5662bd5c0724",
+    Description = "Compiled from Visual Studio Code",
+    ShowDebug = true
+}
+
+function GetColor(props)
+  return { 0, 0, 0 }
+end
+
+function GetPrettyName(props)
+  return "LEA Amplifier v" .. PluginInfo.Version
+end
+
+local amplifierModels = {"352", "352D", "354", "354D",
+			 "702", "702D", "704", "704D",
+       "34", "34D", "64", "64D",
+			 "84", "84D", "88", "88D", "124", "124D", "164",
+			 "164D", "168", "168D", "1504", "1504D"}
+
+local modelsWith8Gpio = {"84", "84D", "88", "88D", "164",
+			 "164D", "168", "168D"}
+
+local modelsWithLineInput = {"34", "34D", "64", "64D", "124", "124D"}
+
+local modelsWith8DanteChannels = {"352D", "354D", "702D", "704D", "84D", "88D", "164D", "168D", "1504D"}
+
+function GetProperties()
+  local props = {
+    {
+      Name = "Amplifier Model",
+      Type = "enum",
+      Choices = amplifierModels,
+      Value = "352"
+    },
+    -- {
+    --   Name = "Amplifier Type",
+    --   Type = "enum",
+    --   Choices = {"No Dante", "Dante Enabled"},
+    --   Value = "No Dante"
+    -- },
+    -- {
+    --   Name = "Channel Count",
+    --   Type = "enum",
+    --   Choices = {"2", "4", "8"},
+    --   Value = "8"
+    -- }
+  }
+  
+  return props
+end
+
+function GetControls(props)
+  local danteEnabled, numChannels, numGpio = setupParameters(props)
+  if numChannels == nil then numChannels = 8 end
+  
+  local ctrls = {
+    {
+      Name = "IP Address",
+      ControlType = "Text",
+      Count = 1,
+      UserPin = true,
+      PinStyle = "Both"
+    },
+    {
+      Name = "Status",
+      ControlType = "Indicator",
+      IndicatorType = "Status",
+      Count = 1,
+      UserPin = true,
+      PinStyle = "Output"
+    },
+    {
+      Name = "Device Name",
+      ControlType = "Text",
+      Count = 1,
+      UserPin = true,
+      PinStyle = "Output"
+    },
+    {
+      Name = "Device Type",
+      ControlType = "Text",
+      Count = 1,
+      UserPin = true,
+      PinStyle = "Output"
+    },
+    {
+      Name = "MAC Address",
+      ControlType = "Text",
+      Count = 1,
+      UserPin = true,
+      PinStyle = "Both"
+    },
+    {
+      Name = "Connection Type",
+      ControlType = "Text",
+      Count = 1,
+      UserPin = true,
+      PinStyle = "Output"
+    },
+    {
+      Name = "Power Status",
+      ControlType = "Indicator",
+      IndicatorType = "Led",
+      Count = 1,
+      UserPin = true,
+      PinStyle = "Output"
+    },
+    {
+      Name = "Connection Status",
+      ControlType = "Indicator",
+      IndicatorType = "Led",
+      Count = 1,
+      UserPin = true,
+      PinStyle = "Output"
+    },
+    {
+      Name = "Amp Fault",
+      ControlType = "Indicator",
+      IndicatorType = "Led",
+      Count = 1,
+      UserPin = true,
+      PinStyle = "Output"
+    },
+    {
+      Name = "Amp Temperature Fault",
+      ControlType = "Indicator",
+      IndicatorType = "Led",
+      Count = 1,
+      UserPin = true,
+      PinStyle = "Output"
+    },
+    {
+      Name = "Remote On",
+      ControlType = "Button",
+      ButtonType = "Toggle",
+      Count = 1,
+      UserPin = true,
+      PinStyle = "Both"
+    },
+    {
+      Name = "Remote Off",
+      ControlType = "Button",
+      ButtonType = "Toggle",
+      Count = 1,
+      UserPin = true,
+      PinStyle = "Both"
+    },
+    {
+      Name = "Load Monitor Testing",
+      ControlType = "Indicator",
+      IndicatorType = "Led",
+      Count = numChannels,
+      UserPin = true,
+      PinStyle = "Output"
+    },
+    {
+      Name = "Load Monitor Ok",
+      ControlType = "Indicator",
+      IndicatorType = "Led",
+      Count = numChannels,
+      UserPin = true,
+      PinStyle = "Output"
+    },
+    {
+      Name = "Load Monitor Impedance",
+      ControlType = "Text",
+      Count = numChannels,
+      UserPin = true,
+      PinStyle = "Output"
+    },
+    {
+      Name = "Pilot Tone Primary",
+      ControlType = "Indicator",
+      IndicatorType = "Led",
+      Count = numChannels,
+      UserPin = true,
+      PinStyle = "Output"
+    },
+    {
+      Name = "Pilot Tone Secondary",
+      ControlType = "Indicator",
+      IndicatorType = "Led",
+      Count = numChannels,
+      UserPin = true,
+      PinStyle = "Output"
+    },
+    {
+      Name = "Pilot Tone Ok",
+      ControlType = "Indicator",
+      IndicatorType = "Led",
+      Count = numChannels,
+      UserPin = true,
+      PinStyle = "Output"
+    },
+    {
+      Name = "Pilot Tone Impedance",
+      ControlType = "Text",
+      Count = numChannels,
+      UserPin = true,
+      PinStyle = "Output"
+    },
+    {
+      Name = "Output Fault",
+      ControlType = "Indicator",
+      IndicatorType = "Led",
+      Count = numChannels,
+      UserPin = true,
+      PinStyle = "Output"
+    },
+    {
+      Name = "Output Clip",
+      ControlType = "Indicator",
+      IndicatorType = "Led",
+      Count = numChannels,
+      UserPin = true,
+      PinStyle = "Output"
+    },
+    {
+      Name = "Output Limiting",
+      ControlType = "Indicator",
+      IndicatorType = "Led",
+      Count = numChannels,
+      UserPin = true,
+      PinStyle = "Output"
+    },
+    {
+      Name = "Output Level",
+      ControlType = "Knob",
+      ControlUnit = "dB",
+      Min = -80,
+      Max = 0,
+      Count = numChannels,
+      UserPin = true,
+      PinStyle = "Both"
+    },
+    {
+      Name = "Output Fader",
+      ControlType = "Knob",
+      ControlUnit = "dB",
+      Min = -80,
+      Max = 0,
+      Count = numChannels,
+      UserPin = true,
+      PinStyle = "Both"
+    },
+    {
+      Name = "Output Mute",
+      ControlType = "Button",
+      ButtonType = "Toggle",
+      Count = numChannels,
+      UserPin = true,
+      PinStyle = "Both"
+    },
+    {
+      Name = "Input Detect",
+      ControlType = "Indicator",
+      IndicatorType = "Led",
+      Count = numChannels,
+      UserPin = true,
+      PinStyle = "Output"
+    },
+    {
+      Name = "Output Ready",
+      ControlType = "Indicator",
+      IndicatorType = "Led",
+      Count = numChannels,
+      UserPin = true,
+      PinStyle = "Output"
+    },
+    {
+      Name = "Input Meter Clip",
+      ControlType = "Indicator",
+      IndicatorType = "Led",
+      Count = numChannels,
+      UserPin = true,
+      PinStyle = "Output"
+    },
+    {
+      Name = "Input Meter Level",
+      ControlType = "Indicator",
+      IndicatorType = "Meter",
+      Count = numChannels,
+      Min = -80,
+      Max = 0,
+      UserPin = true,
+      PinStyle = "Output"
+    },
+    {
+      Name = "Output Meter Clip",
+      ControlType = "Indicator",
+      IndicatorType = "Led",
+      Count = numChannels,
+      UserPin = true,
+      PinStyle = "Output"
+    },
+    {
+      Name = "Output Meter Level",
+      ControlType = "Indicator",
+      IndicatorType = "Meter",
+      ShowTextBox = false,
+      Count = numChannels,
+      UserPin = true,
+      PinStyle = "Output"
+    },
+    {
+      Name = "GPIO Input",
+      ControlType = "Indicator",
+      IndicatorType = "Led",
+      Count = numGpio,
+      UserPin = true,
+      PinStyle = "Output"
+    },
+    {
+      Name = "Primary Input Source",
+      ControlType = "Text",
+      Count = numChannels,
+      UserPin = true,
+      PinStyle = "Both"
+    },
+    {
+      Name = "Secondary Input Source",
+      ControlType = "Text",
+      Count = numChannels,
+      UserPin = true,
+      PinStyle = "Both"
+    },
+    {
+      Name = "Line Input 1",
+      ControlType = "Button",
+      ButtonType = "Toggle",
+      Count = numChannels,
+      UserPin = true,
+      PinStyle = "Both"
+    },
+    {
+      Name = "Mic Input 1",
+      ControlType = "Button",
+      ButtonType = "Toggle",
+      Count = numChannels,
+      UserPin = true,
+      PinStyle = "Both"
+    },
+    {
+      Name = "Line Input 2",
+      ControlType = "Button",
+      ButtonType = "Toggle",
+      Count = numChannels,
+      UserPin = true,
+      PinStyle = "Both"
+    },
+    {
+      Name = "Mic Input 2",
+      ControlType = "Button",
+      ButtonType = "Toggle",
+      Count = numChannels,
+      UserPin = true,
+      PinStyle = "Both"
+    },
+    {
+      Name = "Stereo Line Input 1",
+      ControlType = "Button",
+      ButtonType = "Toggle",
+      Count = numChannels,
+      UserPin = true,
+      PinStyle = "Both"
+    },
+    {
+      Name = "Stereo Mic Input 1",
+      ControlType = "Button",
+      ButtonType = "Toggle",
+      Count = numChannels,
+      UserPin = true,
+      PinStyle = "Both"
+    },
+    {
+      Name = "Stereo Line Input 2",
+      ControlType = "Button",
+      ButtonType = "Toggle",
+      Count = numChannels,
+      UserPin = true,
+      PinStyle = "Both"
+    },
+    {
+      Name = "Stereo Mic Input 2",
+      ControlType = "Button",
+      ButtonType = "Toggle",
+      Count = numChannels,
+      UserPin = true,
+      PinStyle = "Both"
+    },
+  }
+  
+  return ctrls
+end
+
+function GetControlLayout(props)
+  local layout = {}
+  local graphics = {}
+  
+  local margin = 2
+  local marginSpace = 10
+  local fontSize = 12
+  local textBoxSize = {115,20}
+  local smallTextBoxSize = {33, 17}
+  local ledSize = {16, 16}
+  local faderSize = {35, 140}
+  local meterSize = {35, 120}
+  local labelSize = {120, 20}
+  local grey = {195, 195, 195}
+  local white = {255,255,255}
+  local offButtonColor = {200, 200, 200}
+  local firstColumn = 90	
+  local firstRow = 50
+  local muteRow = 560
+  
+  local firstElement = 80
+  local firstOuputRow = 300
+  local space = 40
+  local outputSpacer = 62
+  local smallButtonSize = {30, 20}
+  local buttonSize = {37, 20}
+  local numChannels = 8
+  local numGpio = 8
+  
+  
+  layout["IP Address"] = {
+    TextBoxStyle = "Normal",
+    HTextAlign = "Center",
+    VTextAlign = "Center",
+    TextFontSize = fontSize,
+    Size = textBoxSize,
+    Color = white,
+    Position = {firstColumn, firstElement}
+  }
+  
+  layout["MAC Address"] = {
+    TextBoxStyle = "Normal",
+    HTextAlign = "Center",
+    VTextAlign = "Center",
+    TextFontSize = fontSize,
+    Size = textBoxSize,
+    Color = white,
+    Position = { firstColumn, firstElement + 32}
+  }
+  
+  layout["Device Name"] = {
+    TextBoxStyle = "Normal",
+    HTextAlign = "Center",
+    VTextAlign = "Center",
+    TextFontSize = fontSize,
+    Size = textBoxSize,
+    Color = grey,
+    Position = {firstColumn, firstElement + (2*32)}
+  }
+  
+  layout["Device Type"] = {
+    TextBoxStyle = "Normal",
+    HTextAlign = "Center",
+    VTextAlign = "Center",
+    TextFontSize = fontSize,
+    Size = textBoxSize,
+    Color = grey,
+    Position = {firstColumn, firstElement + (3*32)}
+  }
+  
+  layout["Connection Type"] = {
+    TextBoxStyle = "Normal",
+    HTextAlign = "Center",
+    VTextAlign = "Center",
+    TextFontSize = fontSize,
+    Size = textBoxSize,
+    Color = grey,
+    Position = {firstColumn, firstElement + (4*32)}
+  }
+  
+  layout["Connection Status"] = {
+    Size = ledSize,
+    Position = {360, firstElement + 60},
+    Color = {0, 255, 0},
+    UnlinkOffColor = true,
+    OffColor = offButtonColor
+  }
+  
+  layout["Amp Fault"] = {
+    Size = ledSize,
+    Position = {460, firstElement+ 30},
+    Color = {255, 0, 0},
+  }
+  
+  layout["Power Status"] = {
+    Size = ledSize,
+    Position = {360, firstElement + 30},
+    Color = {0, 255, 0},	
+    UnlinkOffColor = true,
+    OffColor = offButtonColor
+  }
+  
+  layout["Amp Temperature Fault"] = {
+    Size = ledSize,
+    Position = {460, firstElement + 60},
+    Color = {255, 0, 0},
+    UnlinkOffColor = true,
+    OffColor = {0, 255, 0}
+  }
+  
+  layout["Remote On"] = {
+    Size = smallButtonSize,
+    Position = {442, firstElement},
+    Style = "Button",
+    ButtonStyle = "Toggle",
+    Legend = "On",
+    TextFontSize = fontSize,
+    Color = {0, 255, 0}
+  }
+  
+  layout["Remote Off"] = {
+    Size = smallButtonSize,
+    Position = {472, firstElement},
+    Style = "Button",
+    ButtonStyle = "Toggle",
+    Legend = "Off",
+    TextFontSize = fontSize,
+    Color = {155, 155, 155}
+  }
+  
+  layout["Status"] = {
+    Size = {254, 45},
+    Position = {250, 50 + marginSpace + 134},
+    Style = "Status",
+  }
+  
+  -- Monitoring, Pilot Tone section
+  for i = 1, numChannels, 1 do
+    local ledPos = 630 + (i * space)
+  
+    layout["Load Monitor Testing " .. i] = {
+      Size = ledSize,
+      Position = {ledPos, firstElement},
+      Color = {0, 255, 0},
+      IsReadOnly = true,
+      OffColor = offButtonColor,
+      UnlinkOffColor = true
+    }
+  
+    layout["Load Monitor Ok " .. i] = {
+      Size = ledSize,
+      Position = {ledPos, firstElement + 20},
+      Color = {0, 255, 0},
+      IsReadOnly = true,
+      OffColor = offButtonColor,
+      UnlinkOffColor = true
+    }
+  
+    layout["Load Monitor Impedance " .. i] = {
+      Size = smallTextBoxSize,
+      Position = {ledPos - 5, firstElement + 40},
+      Color = white,
+      StrokeWidth = 0,
+      TextBoxStyle = "No Background",
+      HTextAlign = "Center",
+      IsReadOnly = true
+    }
+  
+    layout["Pilot Tone Primary " .. i] = {
+      Size = ledSize,
+      Position = {ledPos, firstElement + 85},
+      Color = {0, 255, 0},
+      IsReadOnly = true,
+      OffColor = offButtonColor,
+      UnlinkOffColor = true
+    }
+  
+    layout["Pilot Tone Secondary " .. i] = {
+      Size = ledSize,
+      Position = {ledPos, firstElement + 107},
+      Color = {0, 255, 0},
+      IsReadOnly = true,
+      OffColor = offButtonColor,
+      UnlinkOffColor = true
+    }
+  
+    layout["Pilot Tone Ok " .. i] = {
+      Size = ledSize,
+      Position = {ledPos, firstElement + 130},
+      Color = {0, 255, 0},
+      IsReadOnly = true,
+      OffColor = offButtonColor,
+      UnlinkOffColor = true
+    }
+  
+    layout["Pilot Tone Impedance " .. i] = {
+      Size = smallTextBoxSize,
+      Position = {ledPos - 6, firstElement + 150},
+      HTextAlign = "Center",
+      Color = white,
+      StrokeWidth = 0,
+      TextBoxStyle = "No Background",
+      IsReadOnly = true
+    }
+  end
+  
+  -- Output section
+  for i = 1, numChannels, 1 do
+    local ledPos = 20 + (i * outputSpacer)
+  
+    layout["Output Fault " .. i] = {
+      Size = ledSize,
+      Position = {ledPos + 3, firstOuputRow},
+      Color = {255, 0, 0},
+      IsReadOnly = true,
+    }
+  
+    layout["Output Clip " .. i] = {
+      Size = ledSize,
+      Position = {ledPos + 3, firstOuputRow + 30},
+      Color = {255, 0, 0},
+      IsReadOnly = true,
+    }
+  
+    layout["Output Limiting " .. i] = {
+      Size = ledSize,
+      Position = {ledPos + 3, firstOuputRow + 60},
+      Color = {255, 255, 0},
+      IsReadOnly = true,
+    }
+  
+    layout["Output Level " .. i] = {
+      Size = smallTextBoxSize,
+      Position = {ledPos - 4, firstOuputRow + 90},
+      HTextAlign = "Center",
+      Color = white,
+      IsReadOnly = true,
+    }
+  
+    layout["Output Fader " .. i] = {
+      Style = "Fader",
+      FaderStyle = "Custom",
+      CapRadius = 0,
+      Size = faderSize,
+      Position = {ledPos - 6, firstOuputRow + 120},
+      Color = {0, 0, 0}
+    }
+  
+    layout["Output Mute " .. i] = {
+      ButtonStyle = "Toggle",
+      Size = buttonSize,
+      Position = {ledPos - 6, muteRow},
+      Color = {223, 0, 36},
+      UnlinkOffColor = false,
+      Legend = "Mute",
+      TextFontSize = fontSize
+    }
+  
+    layout["Input Detect " .. i] = {
+      Size = ledSize,
+      Position = {ledPos + 3, muteRow + 22},
+      Color = {0, 255, 0},
+      IsReadOnly = true,
+    }
+  
+    layout["Output Ready " .. i] = {
+      Size = ledSize,
+      Position = {ledPos + 3, muteRow + 45},
+      Color = {0, 255, 0},
+      IsReadOnly = true,
+    }
+  
+    layout["Primary Input Source " .. i] = {
+      Style = "ComboBox",
+      Size = {50, 17},
+      Position = {ledPos - 10, muteRow + 75},
+      HTextAlign = "Center",
+      Color = white
+    }
+  
+    layout["Secondary Input Source " .. i] = {
+      Style = "ComboBox",
+      Size = {50, 17},
+      Position = {ledPos - 10, muteRow + 137},
+      HTextAlign = "Center",
+      Color = white
+    }
+  end
+  
+  --Input Meters
+  for i = 1, numChannels, 1 do
+    local ledPos = 570 + (i * 45)
+  
+    layout["Input Meter Clip " .. i] = {
+      Size = ledSize,
+      Position = {ledPos, firstOuputRow},
+      Color = {255, 0, 0},
+    }
+  
+    layout["Input Meter Level " .. i] = {
+      Size = meterSize,
+      Position = {ledPos - 7, firstOuputRow + 20},
+      CornerRadius = 0,
+      TextBoxStyle = "No Background",
+      StrokeWidth = 0,
+    }
+  
+    --Output Meters
+    layout["Output Meter Clip " .. i] = {
+      Size = ledSize,
+      Position = {ledPos, 500},
+      Color = {255, 0, 0},
+    }
+  
+    layout["Output Meter Level " .. i] = {
+      Size = meterSize,
+      Position = {ledPos - 7, 520},
+      MeterStyle = "Level",
+      ShowTextBox = false,
+      TextBoxStyle = "No Background",
+      StrokeWidth = 0,
+      CornerRadius = 0,
+      Color = {0, 0, 255}
+    }
+  end
+  
+  graphics = {
+    {
+      Type = "GroupBox",
+      Fill = {0, 0, 0},
+      Position = {0, 0},
+      Size = {976, 50},
+      CornerRadius = 0
+    },
+    {
+      Type = "Text",
+      Text = "LEA Professional Connect Series",
+      Font = "Roboto",
+      Color = {255, 255, 255},
+      FontSize = 30,
+      HTextAlign = "Left",
+      Position = {280, 15},
+      Size = {600, 30}
+    },
+    {
+      Type = "GroupBox",
+      Fill = {255, 255, 255},
+      Position = {0, 50+ marginSpace},
+      Size = {227, 192},
+      CornerRadius = 0
+    },
+    {
+      Type = "Label",
+      Text = "Amp information",
+      HTextAlign = "Left",
+      Position = {0, 50 + marginSpace},
+      IsBold = true,
+      TextFontSize = fontSize,
+      Size = labelSize,
+      Color = {0, 0, 0}
+    },
+    {
+      Type = "Label",
+      Text = "IP Address",
+      HTextAlign = "Right",
+      Position = {margin, firstElement},
+      TextFontSize = fontSize,
+      Size = {80,20},
+      Color = {150, 150, 150}
+    },
+    {
+      Type = "Label",
+      Text = "MAC Address",
+      HTextAlign = "Right",
+      Position = {margin, firstElement + 32},
+      TextFontSize = fontSize,
+      Size = {80,20},
+      Color = {150, 150, 150}
+    },
+    {
+      Type = "Label",
+      Text = "Device Name",
+      HTextAlign = "Right",
+      Position = {margin, firstElement + (2*32)},
+      TextFontSize = fontSize,
+      Size = {80,20},
+      Color = {150, 150, 150}
+    },
+    {
+      Type = "Label",
+      Text = "Device Type",
+      HTextAlign = "Right",
+      Position = {margin, firstElement + (3*32)},
+      TextFontSize = fontSize,
+      Size = {80,20},
+      Color = {150, 150, 150}
+    },
+    {
+      Type = "Label",
+      Text = "Network",
+      HTextAlign = "Right",
+      Position = {margin, firstElement + (4*32)},
+      TextFontSize = fontSize,
+      Size = {80,20},
+      Color = {150, 150, 150}
+    },
+    {
+      Type = "GroupBox",
+      Fill = {255, 255, 255},
+      Position = {237, 50 + marginSpace},
+      Size = {280, 192},
+      CornerRadius = 0
+    },
+    {
+      Type = "Label",
+      Text = "Amp Status",
+      HTextAlign = "Left",
+      Position = {237, 50 + marginSpace},
+      TextFontSize = fontSize,
+      IsBold = true,
+      Size = labelSize,
+      Color = {0, 0, 0}
+    },
+    {
+      Type = "Label",
+      Text = "Outputs On/Off",
+      HTextAlign = "Left",
+      Position = {355, firstElement},
+      TextFontSize = fontSize,
+      Size = labelSize,
+      Color = {150, 150, 150}
+    },
+    {
+      Type = "Label",
+      Text = "Power",
+      HTextAlign = "Left",
+      Position = {315, firstElement + 30},
+      TextFontSize = fontSize,
+      Size = labelSize,
+      Color = {150, 150, 150}
+    },
+    {
+      Type = "Label",
+      Text = "Network Connection",
+      HTextAlign = "Left",
+      Position = {250, firstElement + 55},
+      TextFontSize = fontSize,
+      Size = labelSize,
+      Color = {150, 150, 150}
+    },
+    {
+      Type = "Label",
+      Text = "Amp Faults",
+      HTextAlign = "Left",
+      Position = {400, firstElement + 30},
+      TextFontSize = fontSize,
+      Size = labelSize,
+      Color = {150, 150, 150}
+    },
+    {
+      Type = "Label",
+      Text = "Amp Temp",
+      HTextAlign = "Left",
+      Position = {400, firstElement + 55},
+      TextFontSize = fontSize,
+      Size = labelSize,
+      Color = {150, 150, 150}
+    },
+    {
+      Type = "Label",
+      Text = "Status",
+      HTextAlign = "Left",
+      Position = {250, 50 + marginSpace + 114},
+      TextFontSize = fontSize,
+      Size = labelSize,
+      Color = {150, 150, 150}
+    },
+    {
+      Type = "GroupBox",
+      Fill = {255, 255, 255},
+      Position = {527, 50 + marginSpace},
+      Size = {450, 192},
+      CornerRadius = 0
+    },
+    {
+      Type = "Label",
+      Text = "Load Monitoring",
+      HTextAlign = "Left",
+      Position = {527, 50 + marginSpace},
+      TextFontSize = fontSize,
+      IsBold = true,
+      Size = labelSize,
+      Color = {0, 0, 0}
+    },
+    {
+      Type = "Label",
+      Text = "Input Present",
+      HTextAlign = "Right",
+      Position = {530, firstElement},
+      TextFontSize = fontSize,
+      Size = labelSize,
+      Color = {150, 150, 150}
+    },
+    {
+      Type = "Label",
+      Text = "Within Thresholds",
+      HTextAlign = "Right",
+      Position = {530, firstElement + 20},
+      TextFontSize = fontSize,
+      Size = labelSize,
+      Color = {150, 150, 150}
+    },
+    {
+      Type = "Label",
+      Text = "Measured Level",
+      HTextAlign = "Right",
+      Position = {530, firstElement + 40},
+      TextFontSize = fontSize,
+      Size = labelSize,
+      Color = {150, 150, 150}
+    },
+    {
+      Type = "Label",
+      Text = "Input Present Primary",
+      HTextAlign = "Right",
+      Position = {530, firstElement + 85},
+      TextFontSize = fontSize,
+      Size = labelSize,
+      Color = {150, 150, 150}
+    },
+    {
+      Type = "Label",
+      Text = "Input Present Secondary",
+      HTextAlign = "Right",
+      Position = {530, firstElement + 107},
+      TextFontSize = fontSize,
+      Size = {125, 20},
+      Color = {150, 150, 150}
+    },
+    {
+      Type = "Label",
+      Text = "Within Thresholds",
+      HTextAlign = "Right",
+      Position = {530, firstElement + 130},
+      TextFontSize = fontSize,
+      Size = labelSize,
+      Color = {150, 150, 150}
+    },
+    {
+      Type = "Label",
+      Text = "Measured Level",
+      HTextAlign = "Right",
+      Position = {530, firstElement + 150},
+      TextFontSize = fontSize,
+      Size = labelSize,
+      Color = {150, 150, 150}
+    },
+    {
+      Type = "Label",
+      Text = "Pilot Tone",
+      HTextAlign = "Left",
+      Position = {527, 148},
+      TextFontSize = fontSize,
+      IsBold = true,
+      Size = labelSize,
+      Color = {0, 0, 0}
+    },
+    {
+      Type = "GroupBox",
+      Fill = {255, 255, 255},
+      Position = {0, 260},
+      Size = {572, 500},
+      CornerRadius = 0
+    },
+    {
+      Type = "Label",
+      Text = "Outputs",
+      HTextAlign = "Left",
+      Position = {0, 262},
+      TextFontSize = fontSize,
+      IsBold = true,
+      Size = labelSize,
+      Color = {0, 0, 0}
+    },
+    {
+      Type = "Label",
+      Text = "CH Fault",
+      HTextAlign = "Right",
+      Position = {0, firstOuputRow-2},
+      TextFontSize = fontSize,
+      Size = {65, 20},
+      Color = {150, 150, 150}
+    },
+    {
+      Type = "Label",
+      Text = "Output Clip",
+      HTextAlign = "Right",
+      Position = {0, firstOuputRow + 28},
+      TextFontSize = fontSize,
+      Size = {65, 20},
+      Color = {150, 150, 150}
+    },
+    {
+      Type = "Label",
+      Text = "Limiting",
+      HTextAlign = "Right",
+      Position = {0, firstOuputRow + 58},
+      TextFontSize = fontSize,
+      Size = {65, 20},
+      Color = {150, 150, 150}
+    },
+    {
+      Type = "Label",
+      Text = "Input Signal",
+      HTextAlign = "Right",
+      Position = {0, muteRow + 20},
+      TextFontSize = fontSize,
+      Size = {65, 20},
+      Color = {150, 150, 150}
+    },
+    {
+      Type = "Label",
+      Text = "Ready",
+      HTextAlign = "Right",
+      Position = {0, muteRow + 44},
+      TextFontSize = fontSize,
+      Size = {65, 20},
+      Color = {150, 150, 150}
+    },
+    {
+      Type = "Label",
+      Text = "Primary Source",
+      HTextAlign = "Right",
+      Position = {0, muteRow + 68},
+      TextFontSize = fontSize,
+      Size = {65, 30},
+      Color = {150, 150, 150}
+    },
+    {
+      Type = "Label",
+      Text = "Secondary Source",
+      HTextAlign = "Right",
+      Position = {0, muteRow +130},
+      TextFontSize = fontSize,
+      Size = {65, 30},
+      Color = {150, 150, 150}
+    },
+    {
+      Type = "GroupBox",
+      Fill = {255, 255, 255},
+      Position = {580, 260},
+      Size = {396, 190},
+      CornerRadius = 0
+    },
+    {
+      Type = "Label",
+      Text = "Input Meters",
+      HTextAlign = "Left",
+      Position = {580, 262},
+      TextFontSize = fontSize,
+      IsBold = true,
+      Size = labelSize,
+      Color = {0, 0, 0}
+    },
+    {
+      Type = "GroupBox",
+      Fill = {255, 255, 255},
+      Position = {580, 459},
+      Size = {396, 196},
+      CornerRadius = 0
+    },
+    {
+      Type = "Label",
+      Text = "Output Meters",
+      HTextAlign = "Left",
+      Position = {580, 462},
+      TextFontSize = fontSize,
+      IsBold = true,
+      Size = labelSize,
+      Color = {0, 0, 0}
+    },
+    {
+      Type = "GroupBox",
+      Fill = {255, 255, 255},
+      Position = {580, 660},
+      Size = {396, 100},
+      CornerRadius = 0
+    },
+    {
+      Type = "Label",
+      Text = "GPIO Inputs",
+      HTextAlign = "Left",
+      Position = {580, 662},
+      TextFontSize = fontSize,
+      IsBold = true,
+      Size = labelSize,
+      Color = {0, 0, 0}
+    },
+    {
+      Type = "Svg",
+      Image = "PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjwhLS0gQ3JlYXRlZCB3aXRoIElua3NjYXBlIChodHRwOi8vd3d3Lmlua3NjYXBlLm9yZy8pIC0tPgoKPHN2ZwogICB4bWxuczpkYz0iaHR0cDovL3B1cmwub3JnL2RjL2VsZW1lbnRzLzEuMS8iCiAgIHhtbG5zOmNjPSJodHRwOi8vY3JlYXRpdmVjb21tb25zLm9yZy9ucyMiCiAgIHhtbG5zOnJkZj0iaHR0cDovL3d3dy53My5vcmcvMTk5OS8wMi8yMi1yZGYtc3ludGF4LW5zIyIKICAgeG1sbnM6c3ZnPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIKICAgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIgogICB4bWxuczpzb2RpcG9kaT0iaHR0cDovL3NvZGlwb2RpLnNvdXJjZWZvcmdlLm5ldC9EVEQvc29kaXBvZGktMC5kdGQiCiAgIHhtbG5zOmlua3NjYXBlPSJodHRwOi8vd3d3Lmlua3NjYXBlLm9yZy9uYW1lc3BhY2VzL2lua3NjYXBlIgogICBpZD0ic3ZnMiIKICAgdmVyc2lvbj0iMS4xIgogICBpbmtzY2FwZTp2ZXJzaW9uPSIwLjkxIHIxMzcyNSIKICAgeG1sOnNwYWNlPSJwcmVzZXJ2ZSIKICAgd2lkdGg9IjI1MDAiCiAgIGhlaWdodD0iMjUwMCIKICAgdmlld0JveD0iMCAwIDI1MDAgMjUwMCIKICAgc29kaXBvZGk6ZG9jbmFtZT0iTEVBX1NZTUJfUi1UTS5zdmciPjxtZXRhZGF0YQogICAgIGlkPSJtZXRhZGF0YTgiPjxyZGY6UkRGPjxjYzpXb3JrCiAgICAgICAgIHJkZjphYm91dD0iIj48ZGM6Zm9ybWF0PmltYWdlL3N2Zyt4bWw8L2RjOmZvcm1hdD48ZGM6dHlwZQogICAgICAgICAgIHJkZjpyZXNvdXJjZT0iaHR0cDovL3B1cmwub3JnL2RjL2RjbWl0eXBlL1N0aWxsSW1hZ2UiIC8+PGRjOnRpdGxlIC8+PC9jYzpXb3JrPjwvcmRmOlJERj48L21ldGFkYXRhPjxkZWZzCiAgICAgaWQ9ImRlZnM2Ij48Y2xpcFBhdGgKICAgICAgIGNsaXBQYXRoVW5pdHM9InVzZXJTcGFjZU9uVXNlIgogICAgICAgaWQ9ImNsaXBQYXRoMTYiPjxwYXRoCiAgICAgICAgIGQ9Im0gMCwyMDAwIDIwMDAsMCBMIDIwMDAsMCAwLDAgMCwyMDAwIFoiCiAgICAgICAgIGlkPSJwYXRoMTgiCiAgICAgICAgIGlua3NjYXBlOmNvbm5lY3Rvci1jdXJ2YXR1cmU9IjAiIC8+PC9jbGlwUGF0aD48L2RlZnM+PHNvZGlwb2RpOm5hbWVkdmlldwogICAgIHBhZ2Vjb2xvcj0iI2ZmZmZmZiIKICAgICBib3JkZXJjb2xvcj0iIzY2NjY2NiIKICAgICBib3JkZXJvcGFjaXR5PSIxIgogICAgIG9iamVjdHRvbGVyYW5jZT0iMTAiCiAgICAgZ3JpZHRvbGVyYW5jZT0iMTAiCiAgICAgZ3VpZGV0b2xlcmFuY2U9IjEwIgogICAgIGlua3NjYXBlOnBhZ2VvcGFjaXR5PSIwIgogICAgIGlua3NjYXBlOnBhZ2VzaGFkb3c9IjIiCiAgICAgaW5rc2NhcGU6d2luZG93LXdpZHRoPSIxNTk4IgogICAgIGlua3NjYXBlOndpbmRvdy1oZWlnaHQ9Ijk0OSIKICAgICBpZD0ibmFtZWR2aWV3NCIKICAgICBzaG93Z3JpZD0iZmFsc2UiCiAgICAgaW5rc2NhcGU6em9vbT0iMC4zMTMyIgogICAgIGlua3NjYXBlOmN4PSI3ODcuMDM3MDQiCiAgICAgaW5rc2NhcGU6Y3k9IjEyNTAiCiAgICAgaW5rc2NhcGU6d2luZG93LXg9IjEzMyIKICAgICBpbmtzY2FwZTp3aW5kb3cteT0iMzI1IgogICAgIGlua3NjYXBlOndpbmRvdy1tYXhpbWl6ZWQ9IjAiCiAgICAgaW5rc2NhcGU6Y3VycmVudC1sYXllcj0iZzEwIiAvPjxnCiAgICAgaWQ9ImcxMCIKICAgICBpbmtzY2FwZTpncm91cG1vZGU9ImxheWVyIgogICAgIGlua3NjYXBlOmxhYmVsPSJMRUFfU1lNQl9SLVRNIgogICAgIHRyYW5zZm9ybT0ibWF0cml4KDEuMjUsMCwwLC0xLjI1LDAsMjUwMCkiPjxnCiAgICAgICBpZD0iZzEyIgogICAgICAgc3R5bGU9ImZpbGw6I2ZmZmZmZiIKICAgICAgIHRyYW5zZm9ybT0ibWF0cml4KDIuNjE0NTQ3MiwwLDAsMi42MTc5NDksLTE1MDQuMzI0OSwtMTYxNi41ODI1KSI+PGcKICAgICAgICAgaWQ9ImcxNCIKICAgICAgICAgY2xpcC1wYXRoPSJ1cmwoI2NsaXBQYXRoMTYpIgogICAgICAgICBzdHlsZT0iZmlsbDojZmZmZmZmIj48ZwogICAgICAgICAgIGlkPSJnMjAiCiAgICAgICAgICAgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMTE5NC44Nzk5LDg4Ny4wMzUyKSIKICAgICAgICAgICBzdHlsZT0iZmlsbDojZmZmZmZmIj48cGF0aAogICAgICAgICAgICAgZD0ibSAwLDAgYyAtMjUuMTQsMTE3LjE0MSAtMTQ2Ljg3LDI3Ni4wMDcgLTM1MC43MDgsMjgyLjI2NyA0NS4yMTEsLTExMy4yMzcgOC4zMTUsLTI0OS4zMjMgLTEwMi43MjMsLTMyMC4yNjEgbCAwLC0wLjAwNCBjIC0zMC4wMjgsNDIuNzcgLTQ3LjcyNSw5NC43OTYgLTQ3LjcyNSwxNTAuOTA3IDAsMTQ1LjE5NiAxMTguMTI4LDI2My4zMjEgMjYzLjMyMiwyNjMuMzIxIDE0NS4xOTUsMCAyNjMuMzE4LC0xMTguMTI1IDI2My4zMTgsLTI2My4zMjEgQyAyNS40ODQsNzIuNTIxIDE2LjMyMSwzNC4yNCAwLDAgbSAtMzY5LjA3MiwtMTE1LjIyOSAwLDAgYyA4NS4yNCw2Ni40MzIgMTMxLjIzOCwxNDkuNTk4IDE0NS4yNzMsMjQ1Ljk4IDYxLjcxOSwtMzkuNDg2IDEzMC4zOTcsLTExOS42MTMgMTIyLjkwNiwtMjQyLjY2MyAtMzkuOTI0LC0yNC40MDkgLTg2LjgxOCwtMzguNDk5IC0xMzYuOTQxLC0zOC40OTkgLTQ3Ljc3MiwwIC05Mi41NzEsMTIuODUxIC0xMzEuMjM4LDM1LjE4MiBtIDEzMS4yMzgsNjAzLjA4MyBjIC0yMDcuMDc3LDAgLTM3NC45NDUsLTE2Ny44NjggLTM3NC45NDUsLTM3NC45NDUgMCwtMjA3LjA3NiAxNjcuODY4LC0zNzQuOTQ0IDM3NC45NDUsLTM3NC45NDQgMjA3LjA3NCwwIDM3NC45NDIsMTY3Ljg2OCAzNzQuOTQyLDM3NC45NDQgMCwyMDcuMDc3IC0xNjcuODY4LDM3NC45NDUgLTM3NC45NDIsMzc0Ljk0NSIKICAgICAgICAgICAgIHN0eWxlPSJmaWxsOiNmZmZmZmY7ZmlsbC1vcGFjaXR5OjE7ZmlsbC1ydWxlOm5vbnplcm87c3Ryb2tlOm5vbmUiCiAgICAgICAgICAgICBpZD0icGF0aDIyIgogICAgICAgICAgICAgaW5rc2NhcGU6Y29ubmVjdG9yLWN1cnZhdHVyZT0iMCIgLz48L2c+PGcKICAgICAgICAgICBpZD0iZzI0IgogICAgICAgICAgIHRyYW5zZm9ybT0idHJhbnNsYXRlKDEyOTUuMjQyMiw3MTAuOTMxNikiCiAgICAgICAgICAgc3R5bGU9ImZpbGw6I2ZmZmZmZiI+PHBhdGgKICAgICAgICAgICAgIGQ9Im0gMCwwIGMgLTEuNzQ2LDAuOTc2IC00LjU0MywxLjQ2NCAtOC4zOTIsMS40NjQgbCAtNS45MiwwIDAsLTE0LjI0NiA2LjI2MywwIGMgMi45MzYsMCA1LjEzOCwwLjI5MyA2LjYwNiwwLjg3OCAyLjcwNywxLjA3MyA0LjA2LDMuMTIzIDQuMDYsNi4xNDcgQyAyLjYxNywtMi44OTYgMS43NDUsLTAuOTc2IDAsMCBtIC03LjQ4MSw2LjE5NiBjIDQuODc4LDAgOC40NTYsLTAuNDczIDEwLjczMywtMS40MTcgNC4wNjUsLTEuNjkyIDYuMDk5LC01LjAxMyA2LjA5OSwtOS45NjMgMCwtMy41MTUgLTEuMjgsLTYuMTA0IC0zLjgzNywtNy43NjMgLTEuMzYsLTAuODggLTMuMjU1LC0xLjUxNSAtNS42ODMsLTEuOTA2IDMuMDc0LC0wLjQ4NyA1LjMyNCwtMS43NzEgNi43NDgsLTMuODQ5IDEuNDI0LC0yLjA4IDIuMTM3LC00LjExIDIuMTM3LC02LjA5MSBsIDAsLTIuODc2IGMgMCwtMC45MSAwLjAzMiwtMS44ODUgMC4wOTcsLTIuOTI1IDAuMDY1LC0xLjAzOSAwLjE3OSwtMS43MjEgMC4zNDIsLTIuMDQ2IGwgMC4yNDQsLTAuNDg3IC02LjQ4OSwwIGMgLTAuMDMzLDAuMTMgLTAuMDY1LDAuMjU5IC0wLjA5NywwLjM4OSAtMC4wMzMsMC4xMjkgLTAuMDY2LDAuMjc1IC0wLjA5OCwwLjQzOSBsIC0wLjE0NywxLjI2MyAwLDMuMTEzIGMgMCw0LjUzOCAtMS4yMzYsNy41MzggLTMuNzA3LDguOTk3IC0xLjQ2NCwwLjg0MyAtNC4wMzQsMS4yNjUgLTcuNzA5LDEuMjY1IGwgLTUuNDY0LDAgMCwtMTUuNDY2IC02LjkyNywwIDAsMzkuMzIzIDEzLjc1OCwwIHogbSAtMjEuMDc3LDIgYyAtNS45ODUsLTYuMDE3IC04Ljk3NiwtMTMuMjg3IC04Ljk3NiwtMjEuODA3IDAsLTguNTg3IDIuOTc1LC0xNS45MDYgOC45MjgsLTIxLjk1NCA1Ljk4NCwtNi4wNSAxMy4yNTIsLTkuMDc2IDIxLjgwNywtOS4wNzYgOC41NTQsMCAxNS44MjMsMy4wMjYgMjEuODA5LDkuMDc2IDUuOTgzLDYuMDQ4IDguOTc2LDEzLjM2NyA4Ljk3NiwyMS45NTQgMCw4LjUyIC0yLjk5MywxNS43OSAtOC45NzYsMjEuODA3IC02LjAxOCw2LjA1IC0xMy4yODcsOS4wNzUgLTIxLjgwOSw5LjA3NSAtOC40ODgsMCAtMTUuNzQyLC0zLjAyNSAtMjEuNzU5LC05LjA3NSBtIDQ3LjEyOSwtNDcuMTc3IGMgLTYuOTk0LC03LjAyNiAtMTUuNDUsLTEwLjUzOSAtMjUuMzcsLTEwLjUzOSAtOS45MiwwIC0xOC4zNiwzLjUxMyAtMjUuMzIsMTAuNTM5IC02LjkyOCw2Ljk5MiAtMTAuMzkyLDE1LjQ2NSAtMTAuMzkyLDI1LjQxOCAwLDkuODU1IDMuNDk2LDE4LjI3OSAxMC40OSwyNS4yNzIgNi45NTksNi45NiAxNS4zNjgsMTAuNDQgMjUuMjIyLDEwLjQ0IDkuOTIsMCAxOC4zNzYsLTMuNDggMjUuMzcsLTEwLjQ0IDYuOTkyLC02Ljk2MiAxMC40OSwtMTUuMzg1IDEwLjQ5LC0yNS4yNzIgMCwtOS45MiAtMy40OTgsLTE4LjM5MyAtMTAuNDksLTI1LjQxOCIKICAgICAgICAgICAgIHN0eWxlPSJmaWxsOiNmZmZmZmY7ZmlsbC1vcGFjaXR5OjE7ZmlsbC1ydWxlOm5vbnplcm87c3Ryb2tlOm5vbmUiCiAgICAgICAgICAgICBpZD0icGF0aDI2IgogICAgICAgICAgICAgaW5rc2NhcGU6Y29ubmVjdG9yLWN1cnZhdHVyZT0iMCIgLz48L2c+PC9nPjwvZz48L2c+PC9zdmc+",
+      Position = {225, 5},
+      Size = {40, 40}
+    }
+  }
+  for i=1, numChannels, 1 do
+    local labelPos = (i *62) + 5
+    local meterLabel = 555 + (i * 45)
+    local monitoringLabel = (i * space) + 615
+    table.insert(graphics,
+  	{
+  		 Type = "Text",
+  		 Text = string.format("CH%i", i),
+  		 Font = "Roboto",
+  		 FontSize = 10,
+  		 Color = {155, 155, 155},
+  		 HTextAlign = "Center",
+  		 Position = {monitoringLabel, firstElement - 20},
+  		 Size = {40, 20}
+    }) 
+    table.insert(graphics,
+  	{
+  		 Type = "Text",
+  		 Text = string.format("CH%i", i),
+  		 Font = "Roboto",
+  		 IsBold = true,
+  		 FontSize = fontSize,
+  		 HTextAlign = "Center",
+  		 Position = {labelPos + 3, firstOuputRow - 20},
+  		 Size = {40, 20}
+    })
+    table.insert(graphics,
+  	{
+  		 Type = "Text",
+  		 Text = string.format("CH%i", i),
+  		 Font = "Roboto",
+  		 IsBold = true,
+  		 FontSize = fontSize,
+  		 HTextAlign = "Center",
+  		 Position = {meterLabel, firstOuputRow - 20},
+  		 Size = {40, 20}
+    })
+    table.insert(graphics,
+  	{
+  		 Type = "Text",
+  		 Text = string.format("CH%i", i),
+  		 Font = "Roboto",
+  		 IsBold = true,
+  		 FontSize = fontSize,
+  		 HTextAlign = "Center",
+  		 Position = {meterLabel, 480},
+  		 Size = {40, 20}
+    })
+  end
+  
+  for i = 1, numGpio, 1 do
+    local gpioLabel = 555 + (i * 45)
+    local gpioLedPos = 567 + (i * 45)
+    layout["GPIO Input " .. i] = {
+      Size = ledSize,
+      Position = {gpioLedPos, 708},
+      Color = {0, 255, 0},
+      IsReadOnly = true,
+      OffColor = offButtonColor,
+      UnlinkOffColor = true
+    }
+    table.insert(graphics,
+  	{
+  		 Type = "Text",
+  		 Text = tostring(i),
+  		 Font = "Roboto",
+  		 IsBold = true,
+  		 FontSize = fontSize,
+  		 HTextAlign = "Center",
+  		 Position = {gpioLabel, 683},
+  		 Size = {40, 20}
+    })
+  end
+  
+  -- return layout, graphics
+  for _, model in ipairs(modelsWithLineInput) do
+    if props['Amplifier Model'].Value == model then 
+      for i = 1, numChannels, 1 do 
+        local ledPos = 20 + (i * outputSpacer)
+      
+        layout["Line Input 1 " .. i ] = {
+          Size = smallButtonSize,
+          Position = {ledPos + 13, muteRow + 95},
+          Style = "Button",
+          ButtonStyle = "Toggle",
+          Legend = "Line",
+          TextFontSize = fontSize,
+        }
+      
+        layout["Mic Input 1 " .. i ] = {
+          Size = smallButtonSize,
+          Position = {ledPos - 14, muteRow + 95},
+          Style = "Button",
+          ButtonStyle = "Toggle",
+          Legend = "Mic",
+          TextFontSize = fontSize,
+        }
+      
+        layout["Stereo Line Input 1 " .. i ] = {
+          Size = smallButtonSize,
+          Position = {ledPos + 13, muteRow + 115},
+          Style = "Button",
+          ButtonStyle = "Toggle",
+          Legend = "Line",
+          TextFontSize = fontSize,
+        }
+      
+        layout["Stereo Mic Input 1 " .. i ] = {
+          Size = smallButtonSize,
+          Position = {ledPos - 14, muteRow + 115},
+          Style = "Button",
+          ButtonStyle = "Toggle",
+          Legend = "Mic",
+          TextFontSize = fontSize,
+        }
+      
+        layout["Line Input 2 " .. i ] = {
+          Size = smallButtonSize,
+          Position = {ledPos + 13, muteRow + 155},
+          Style = "Button",
+          ButtonStyle = "Toggle",
+          Legend = "Line",
+          TextFontSize = fontSize,
+        }
+      
+        layout["Mic Input 2 " .. i ] = {
+          Size = smallButtonSize,
+          Position = {ledPos - 14, muteRow + 155},
+          Style = "Button",
+          ButtonStyle = "Toggle",
+          Legend = "Mic",
+          TextFontSize = fontSize,
+        }
+      
+        layout["Stereo Line Input 2 " .. i ] = {
+          Size = smallButtonSize,
+          Position = {ledPos + 13, muteRow + 175},
+          Style = "Button",
+          ButtonStyle = "Toggle",
+          Legend = "Line",
+          TextFontSize = fontSize,
+        }
+      
+        layout["Stereo Mic Input 2 " .. i ] = {
+          Size = smallButtonSize,
+          Position = {ledPos - 14, muteRow + 175},
+          Style = "Button",
+          ButtonStyle = "Toggle",
+          Legend = "Mic",
+          TextFontSize = fontSize,
+        }
+      end
+      
+      -- return layout
+      break
+    end
+  end
+  return layout, graphics
+end
+
+-- Define Helper Functions
+
+local analogSources = {"Analog 1", "Analog 2", "Analog 1+2"}
+
+local danteSources = {"Dante 1", "Dante 2", "Dante 1+2", "Dante 3",
+      "Dante 4", "Dante 3+4"}
+
+function tableConcat(t1,t2)
+   for i=1,#t2 do
+      t1[#t1+1] = t2[i]
+   end
+   return t1
+end
+
+function setupParameters(props)
+  local ampModel = props['Amplifier Model'].Value
+  local danteEnabled = string.sub(ampModel, -1, -1) == 'D'
+  local numChannels
+
+  if danteEnabled then
+    numChannels = tonumber(string.sub(ampModel, -2, -2))
+  else
+    numChannels = tonumber(string.sub(ampModel, -1, -1))
+  end
+
+  if numChannels >= 4 then
+    table.insert(analogSources, "Analog 3")
+    table.insert(analogSources, "Analog 4")
+    table.insert(analogSources, "Analog 3+4")
+  end
+  if numChannels == 8 then
+    table.insert(analogSources, "Analog 5")
+    table.insert(analogSources, "Analog 6")
+    table.insert(analogSources, "Analog 5+6")
+    table.insert(analogSources, "Analog 7")
+    table.insert(analogSources, "Analog 8")
+    table.insert(analogSources, "Analog 7+8")
+  end
+
+  local numGpio = 4
+
+  for _, model in ipairs(modelsWith8Gpio) do
+    if ampModel == model then
+      numGpio = 8
+      break
+    end
+  end
+
+  for _, model in ipairs(modelsWith8DanteChannels) do
+    if ampModel == model then
+      table.insert(danteSources, "Dante 5")
+      table.insert(danteSources, "Dante 6")
+      table.insert(danteSources, "Dante 5+6")
+      table.insert(danteSources, "Dante 7")
+      table.insert(danteSources, "Dante 8")
+      table.insert(danteSources, "Dante 7+8")
+      break
+    end
+  end
+
+  return danteEnabled, numChannels, numGpio
+end
+
+function checkAddress(ipAddress)
+  --creates a table to store bytes
+  bytes = {}
+  -- iterates through all the bytes of the ipAddress
+  for byte in string.gmatch(ipAddress, "[0-9]+") do
+    if byte == nil or tonumber(byte)  < 0 and tonumber(byte) > 255 then
+      return false
+    end
+    bytes[#bytes + 1] = byte
+  end
+
+  --checks if IP address has 4 bytes
+  if #bytes ~= 4 then
+    return false
+  end
+
+  return true
+end
+
+function urlCreator(params)
+  for k, v in pairs(params) do
+    --print(k, v)
+    if type(v) == "table" then
+      return string.format("/%s%s", k, urlCreator(v))
+    end
+    return string.format("/%s", k)
+  end
+end
+
+function retrieveValue(params)
+  for k, v in pairs(params) do
+    --print(k, v)
+    if type(v) == "table" then
+      return retrieveValue(v)
+    else
+      return v
+    end  
+  end
+end
+
+function printByteString(str)
+  local byteString = ""
+  for i = 1, #str, 1 do 
+    byteString = byteString .. string.byte(string.sub(data, i, i)) .. " "
+  end
+  print(byteString)
+end
+
+
+function getUrlAndValues(params)
+  local t = {}
+  for k, v in pairs(params) do
+    if type(v) == "table" then
+      local subt = getUrlAndValues(v)
+      for key, value in pairs(subt) do
+        t[string.format("/%s%s", k, key)] = value
+      end   
+    else
+      t[string.format("/%s", k)] = v
+    end
+  end
+  return t
+end
+
+-- WebSocket Utility Functions
+
+-- Randomly generates and returns a 4-byte masking code for client-to-server WebSocket comms
+function generateMaskCode()
+  local mask = ""
+  for i = 1, 4 do
+    mask = mask .. string.char(math.random(256) - 1)
+  end
+  return mask
+end
+
+-- Function wrapper for XOR operation.  I originally thought this would be more complicated...
+function xor(byte1, byte2)
+  return byte1 ~ byte2
+end
+
+-- Given a 4-byte mask and the data for a WebSocket, generates the masked data based on the
+-- WebSocket spec (RFC 6455) and returns the masked data
+function maskData(mask, data)
+  local maskedData = ""
+  local maskIdx = 1
+  
+  for i = 1, string.len(data) do
+    local dataByte = string.byte(string.sub(data, i, i))
+    local maskByte = string.byte(string.sub(mask, maskIdx, maskIdx))
+    maskIdx = (maskIdx % 4) + 1
+    maskedData = maskedData .. string.char(xor(dataByte, maskByte))
+  end
+  
+  return maskedData
+end
+
+-- Given data to be sent of a WebSocket, this generates and returns the WebSocket frame to be sent
+function createWebSocketPayload(data)
+  local payload = ""
+  
+  local finAndTextOp = '\x81'
+  
+  local payloadLength = string.len(data)
+  local payloadLenBytes = ''
+    
+  if payloadLength < 126 then
+    payloadLenBytes = string.char(128 + payloadLength)
+  elseif payloadLength < 65536 then
+    payloadLenBytes = '\xFE' .. string.char(math.floor(payloadLength / 256)) .. string.char(payloadLength % 256)
+  else
+    payloadLenBytes = '\xFF'
+  end
+  
+  local mask = generateMaskCode()
+  local maskedMsg = maskData(mask, data)
+  
+  payload = finAndTextOp .. payloadLenBytes .. mask .. maskedMsg
+  
+  return payload
+end
+
+function createWebSocketPong(appData)
+  local payload = ""
+
+  local finAndPongOp = '\x8A'
+
+  local payloadLength = string.len(appData)
+  local payloadLenBytes = ''
+  
+  if payloadLength < 126 then
+    payloadLenBytes = string.char(128 + payloadLength)
+  elseif payloadLength < 65536 then
+    payloadLenBytes = '\xFE' .. string.char(math.floor(payloadLength / 256)) .. string.char(payloadLength % 256)
+  else
+    payloadLenBytes = '\xFF'
+  end
+  
+  local mask = generateMaskCode()
+  local maskedMsg = maskData(mask, data)
+  
+  payload = finAndPongOp .. payloadLenBytes .. mask .. maskedMsg
+
+  return payload
+end
+
+-- Given a TCP client socket, sends a WebSocket initiation handshake.  This function
+-- assumes the TCP socket is open.
+function initiateHandshake(tcpSocket, ipAddress, portNumber)
+  local msg = "GET / HTTP/1.1\r\n" ..
+    string.format("Host: %s:%d\r\n", ipAddress, portNumber) ..
+    "Upgrade: websocket\r\n" ..
+    "Connection: Upgrade\r\n" ..
+    "Sec-WebSocket-Key: dGh1IHNhbXBsZSBub25jZQ==\r\n" ..
+    "Origin: \r\n" ..
+    "Sec-WebSocket-Version: 13\r\n\r\n"
+    
+  tcpSocket:Write(msg)
+end
+
+-- Given a TCP client socket and data to be sent, the will wrap the data in a WebSocket
+-- frame and send it over the TCP connection.  This function assumes the TCP socket is
+-- open and that a WebSocket handshake has already been initiated and confirmed by the
+-- server.
+function sendWebSocketData(tcpSocket, data)
+  local wsPayload = createWebSocketPayload(data)
+  tcpSocket:Write(wsPayload)
+end
+
+function sendWebSocketPong(tcpSocket, appData)
+  local pongPayload = createWebSocketPong(appData)
+  tcpSocket:Write(pongPayload)
+end
+
+
+function parseWebSocketPayload(websocket)
+  local readByte = websocket:Read(1)
+  
+  local firstByte = string.byte(readByte)
+  local secondByte = string.byte(websocket:Read(1))
+  local fin = (firstByte & 128) == 128
+  local opCode = firstByte & 15 
+  local mask = (secondByte & 128) == 128
+  local payload = secondByte & 127
+  local dataLength
+  local data
+
+  -- print(string.format("Payload: %d", payload))
+  if payload == 126 then
+    dataLength = byteStringToDecimal(websocket:Read(2))
+    -- print(string.format("Calculating data length 126: %d", dataLength))
+  elseif payload == 127 then
+    dataLength = byteStringToDecimal(websocket:Read(8))
+    -- print(string.format("Calculating data length 127: %d", dataLength))
+  else
+    dataLength = payload
+    -- print(string.format("Calculating data length normal: %d", dataLength))
+  end
+
+  -- Don't need to worry about the WebSocket mask for this plugin
+  -- if mask then end
+  
+  data = websocket:Read(dataLength)
+  if data == nil then data = "" end
+  -- print(string.format("Bytes read: %d, %d", #data, string.len(data)))
+  local bytesRemaining = dataLength - string.len(data)
+  
+  return fin, opCode, data, bytesRemaining
+end
+
+
+function byteStringToDecimal(byteString)
+  local decimal = 0
+  local powerOf = 0
+  
+  for i = #byteString, 1, -1 do
+    local byte = string.byte(byteString, i)
+    -- print(string.format("Byte %d: %d", i, byte))
+    local power = math.pow(256, powerOf)
+    decimal = decimal + (byte * power)
+    -- print(string.format("Decimal value: %d", decimal))
+    powerOf = powerOf + 1 
+  end
+  
+  return decimal
+end
+
+--Start event based logic
+if Controls then
+
+  --[[ Runtime File Contents ]]
+  
+  local json = require("rapidjson")
+  local ipAddress
+  local PORT = 1234
+  local isConnected = false
+  local danteEnabled
+  local numChannels
+  local numGpio
+  local urlSwitch = {}
+  local isSubscribed = false
+  local subscribing = false
+  local isFaderMoving
+  local readings = {}
+  local average = 0
+  
+  local analogChannels = { "line input", "line input", "line input", "line input"}
+  
+  
+  local tcpSocket = TcpSocket.New()
+  tcpSocket.ReadTimeout = 0
+  tcpSocket.WriteTimeout = 0
+  tcpSocket.ReconnectTimeout = 5
+  
+  local timer = Timer.New()
+  
+  t = Timer.New()
+  local subscribeProgress = 0
+  
+  local STATUS = {
+    OK           = 0,
+    COMPROMISED  = 1,
+    FAULT        = 2,
+    NOTPRESENT   = 3,
+    MISSING      = 4,
+    INITIALIZING = 5
+  }
+  
+  
+  function ReportStatus(status, message)
+    Controls["Status"].Value = status
+    Controls["Status"].String = message ~= nil and message or ""
+  end
+  
+  function smooth(value, variance)
+    local numReadings = 10
+    for i = 1, numReadings, 1 do
+      average = (value * i)/numReadings
+    end
+    if isFaderMoving then
+      return
+    end
+    return average
+  end
+  
+  function tcpConnect(ipAddress, port, tcpSocket)
+    notConnected()
+    if tcpSocket.IsConnected then
+      tcpSocket:Disconnect()
+    end
+  
+    if ipAddress == nil or ipAddress == "" then
+      ReportStatus(STATUS.MISSING, "No IP Address entered.")
+      return
+    end
+  
+    if checkAddress(ipAddress) then
+      ReportStatus(STATUS.MISSING, "Connecting...")
+      tcpSocket:Connect(ipAddress, port)
+    else
+      ReportStatus(STATUS.MISSING, "Invalid IP Address.")
+    end
+  end
+  
+  function checkForFaults()
+    local faultMsg = ""
+    local statusVal = STATUS.OK
+  
+    print("Checking for faults")
+  
+    if Controls["Connection Status"].Value == 0 then
+      statusVal = STATUS.FAULT
+      faultMsg = faultMsg .. "; No Connection"
+    end
+    if Controls["Amp Fault"].Value == 1 then
+      statusVal = STATUS.FAULT
+      faultMsg = faultMsg .. "; Amplifier Fault"
+    end
+    if Controls["Amp Temperature Fault"].Value == 1 then
+      statusVal = statusVal < STATUS.COMPROMISED and STATUS.COMPROMISED or statusVal
+      faultMsg = faultMsg .. "; Amp Temperature Fault"
+    end
+    if Controls["Power Status"].Value == 0 then
+      statusVal = STATUS.FAULT
+      faultMsg = faultMsg .. "; Power Fault"
+    end
+  
+    for i = 1, numChannels do
+      if Controls["Output Fault"][i].Value == 1 then
+        statusVal = statusVal < STATUS.COMPROMISED and STATUS.COMPROMISED or statusVal
+        faultMsg = faultMsg .. string.format("; Output %d Fault", i)
+      end
+    end
+  
+    faultMsg = string.sub(faultMsg, 3, -1)
+    ReportStatus(statusVal, faultMsg)
+  end
+  
+  function parseAmpInfo(data)
+    Controls["Device Name"].String = data.deviceName
+    Controls["Device Type"].String = data.modelID
+  end
+  
+  function parseMisc(data)
+    Controls["Connection Type"].String = data.connectionType
+    if data.connectionType == "None" then
+      Controls["Connection Status"].Value = 0.0
+      Controls["Connection Status"].Color = "#FF0000"
+    else 
+      Controls["Connection Status"].Value = 1.0
+      Controls["Connection Status"].Color = "#00FF00" 
+    end
+  
+    checkForFaults()
+  end
+  
+  function parsePowerSupply(data)
+    Controls["Amp Fault"].Value = data.fault
+    Controls["Amp Temperature Fault"].Value = data.thermal
+    Controls["Power Status"].Value = data.powerOk
+  
+    checkForFaults()
+  end
+  
+  function loadMonitor(data, chanNum)
+    Controls["Load Monitor Impedance"][chanNum].String = tostring(data.measuredImpedance)
+    Controls["Load Monitor Testing"][chanNum].Value = data.testing
+  end
+  
+  function loadMonitorImpedance(value, chanNum)
+    Controls["Load Monitor Impedance"][chanNum].String = tostring(math.floor(value)) .. utf8.char(937)
+  end
+  
+  function loadMonitorTesting(value, chanNum)
+    Controls["Load Monitor Testing"][chanNum].Value = value  
+  end
+  
+  function loadMonitorStatus(value, chanNum)
+    if value == "No Signal" then 
+      Controls["Load Monitor Ok"][chanNum].Value = 0.0
+      Controls["Load Monitor Ok"][chanNum].Color = "#C8C8C8"
+    elseif value == "Ok" then 
+      Controls["Load Monitor Ok"][chanNum].Value = 1.0
+      Controls["Load Monitor Ok"][chanNum].Color = "#00FF00"
+    else
+      Controls["Load Monitor Ok"][chanNum].Value = 0.0
+      Controls["Load Monitor Ok"][chanNum].Color = "#FF0000"
+    end
+  end
+  
+  
+  function pilotToneImpedance(data, chanNum)
+    Controls["Pilot Tone Impedance"][chanNum].String = string.format("%.1fmA", data)
+  end
+  
+  function pilotToneStatus(value, chanNum)
+    if value == "No Signal" then 
+      Controls["Pilot Tone Ok"][chanNum].Value = 0.0
+      Controls["Pilot Tone Ok"][chanNum].Color = "#C8C8C8"
+    elseif value == "Ok" then 
+      Controls["Pilot Tone Ok"][chanNum].Value = 1.0
+      Controls["Pilot Tone Ok"][chanNum].Color = "#00FF00"
+    else
+      Controls["Pilot Tone Ok"][chanNum].Value = 0.0
+      Controls["Pilot Tone Ok"][chanNum].Color = "#FF0000"
+    end
+  end
+  
+  function pilotTonePrimary(data, chanNum)
+    Controls["Pilot Tone Primary"][chanNum].Value = data
+  end
+  
+  function pilotToneSecondary(data, chanNum)
+    Controls["Pilot Tone Secondary"][chanNum].Value = data
+  end
+  
+  function parseInputSelector(data, chanNum)
+    Controls["Input Detect"][chanNum].Value = data.primarySignalDetect
+    Controls["Input Meter Clip"][chanNum].Value = data.primaryClip
+  end
+  
+  function parseInputSelectorPrimary(data, chanNum)
+    local inputType
+    local inputType2
+    local inChan1
+    local inChan2
+    local isStereo = string.find(data, "+")
+  
+  
+    if string.find(data, "Analog") == nil then
+      Controls["Line Input 1"][chanNum].IsInvisible = true
+      Controls["Mic Input 1"][chanNum].IsInvisible = true
+      Controls["Stereo Line Input 1"][chanNum].IsInvisible = true
+      Controls["Stereo Mic Input 1"][chanNum].IsInvisible = true
+    else
+     Controls["Line Input 1"][chanNum].IsInvisible = false
+      Controls["Mic Input 1"][chanNum].IsInvisible = false
+      if isStereo ~= nil then
+        Controls["Stereo Line Input 1"][chanNum].IsInvisible = false
+        Controls["Stereo Mic Input 1"][chanNum].IsInvisible = false
+        inChan1 = tonumber(string.sub(data, -3, -3))
+        inChan2 = tonumber(string.sub(data, -1, -1))
+        inputType = analogChannels[inChan1]
+        inputType2 = analogChannels[inChan2]
+        inputSelection(inputType, inChan1)
+        inputSelection(inputType2, inChan2)
+      else
+        Controls["Stereo Line Input 1"][chanNum].IsInvisible = true
+        Controls["Stereo Mic Input 1"][chanNum].IsInvisible = true
+        inChan1 = tonumber(string.sub(data, -1, -1))
+        inputType = analogChannels[inChan1]
+        inputSelection(inputType, inChan1)
+      end
+    end
+  
+    Controls["Primary Input Source"][chanNum].String = data
+  
+  end
+  
+  function parseInputSelectorSecondary(data, chanNum)
+    local inputType
+    local inputType2
+    local inChan1
+    local inChan2
+    local isStereo = string.find(data, "+")
+  
+    if string.find(data, "Analog") == nil then
+      Controls["Line Input 2"][chanNum].IsInvisible = true
+      Controls["Mic Input 2"][chanNum].IsInvisible = true
+      Controls["Stereo Line Input 2"][chanNum].IsInvisible = true
+      Controls["Stereo Mic Input 2"][chanNum].IsInvisible = true
+    else
+      Controls["Line Input 2"][chanNum].IsInvisible = false
+      Controls["Mic Input 2"][chanNum].IsInvisible = false
+      if isStereo ~= nil then
+        Controls["Stereo Line Input 2"][chanNum].IsInvisible = false
+        Controls["Stereo Mic Input 2"][chanNum].IsInvisible = false
+        inChan1 = tonumber(string.sub(data, -3, -3))
+        inChan2 = tonumber(string.sub(data, -1, -1))
+        inputType = analogChannels[inChan1]
+        inputType2 = analogChannels[inChan2]
+        inputSelection(inputType, inChan1)
+        inputSelection(inputType2, inChan2)
+      else
+        Controls["Stereo Line Input 2"][chanNum].IsInvisible = true
+        Controls["Stereo Mic Input 2"][chanNum].IsInvisible = true
+        inChan1 = tonumber(string.sub(data, -1, -1))
+        inputType = analogChannels[inChan1]
+        inputSelection(inputType, inChan1)
+      end
+    end
+  
+    Controls["Secondary Input Source"][chanNum].String = data  
+  end
+  
+  function inputSignal(value, chanNum)
+    Controls["Input Detect"][chanNum].Value = value
+  end
+  
+  function inputLevel(value, chanNum)
+    Controls["Input Meter Level"][chanNum].Value = value
+  end
+  
+  function inputClip(value, chanNum)
+    Controls["Input Meter Clip"][chanNum].Value = value
+  end
+  
+  function outputReady(data, chanNum)
+    Controls["Output Ready"][chanNum].Value = data.ready
+    Controls["Output Fader"][chanNum].Value = data.fader
+    Controls["Output Level"][chanNum].Value = data.fader
+    --Controls["Output Limiting"][chanNum].Value = data.limiting
+  end
+  
+  function outputFader(value, chanNum)
+    local fader = value
+    -- fader = smooth(value)
+    Controls["Output Fader"][chanNum].Value = fader
+    Controls["Output Level"][chanNum].Value = fader
+  end 
+  
+  function outputMute(value, chanNum)
+    Controls["Output Mute"][chanNum].Value = value
+  end
+  
+  function outputClip(value, chanNum)
+    Controls["Output Clip"][chanNum].Value = value
+    Controls["Output Meter Clip"][chanNum].Value = value
+  end
+  
+  function outputFault(value, chanNum)
+    Controls["Output Fault"][chanNum].Value = value
+    checkForFaults()
+  end
+  
+  function outputLimiting(value, chanNum)
+    Controls["Output Limiting"][chanNum].Value = value
+  end
+  
+  function levelsDB(value, chanNum)
+    Controls["Output Meter Level"][chanNum].Value = value
+  end
+  
+  function parseLevelsDB(data, chanNum)
+    Controls["Output Meter Level"][chanNum].Value = data.level_db
+  end
+  
+  function enableChannels(value, chanNum)
+    Controls["Output Ready"][chanNum].Value = value
+  end
+  
+  function gpioInputIndicator(gpioInput, gpioNum)
+    Controls["GPIO Input"][gpioNum].Boolean = gpioInput
+  end
+  
+  function inputSelection(data, chanNum)
+    local primarySources = {}
+    local secondarySources = {}
+    local inputsPrimary = {}
+    local inputsSecondary = {}
+  
+    analogChannels[chanNum] = data
+  
+    print(data, chanNum, analogChannels[chanNum])
+  
+    for i = 1, numChannels, 1 do
+  
+      primarySources[i] = Controls["Primary Input Source"][i].String
+      secondarySources[i] = Controls["Secondary Input Source"][i].String
+  
+      if string.find(primarySources[i], "Analog") ~= nil or string.find(secondarySources[i], "Analog") ~= nil then --look for analog sources
+        if string.find(primarySources[i], "+") ~= nil then -- loop through primary stereo sources
+          local chan1 = {}
+          local chan2 = {}
+          chan1[i] = tonumber(string.sub(primarySources[i], -3, -3))
+          chan2[i] = tonumber(string.sub(primarySources[i], -1, -1))
+  
+          if chanNum == chan1[i] then --handle Stereo primary channels
+            if data == "mic input" then
+              Controls["Mic Input 1"][i].Boolean = true
+              Controls["Line Input 1"][i].Boolean = false
+            else
+              Controls["Mic Input 1"][i].Boolean = false
+              Controls["Line Input 1"][i].Boolean = true
+            end
+          elseif chanNum == chan2[i] then
+            if data == "mic input" then
+              Controls["Stereo Mic Input 1"][i].Boolean = true
+              Controls["Stereo Line Input 1"][i].Boolean = false
+            else
+              Controls["Stereo Mic Input 1"][i].Boolean = false
+              Controls["Stereo Line Input 1"][i].Boolean = true
+            end
+          end
+        else -- handle Mono primary channels
+          inputsPrimary[i] = tonumber(string.sub(primarySources[i], -1, -1))
+          if chanNum == inputsPrimary[i] then
+            if data == "mic input" then 
+              Controls["Mic Input 1"][i].Boolean = true
+              Controls["Line Input 1"][i].Boolean = false
+            else
+              Controls["Mic Input 1"][i].Boolean = false
+              Controls["Line Input 1"][i].Boolean = true
+            end
+          end
+        end
+  
+        if string.find(secondarySources[i], "+") ~= nil then -- loop through secondary stereo sources
+          local chan1 = {}
+          local chan2 = {}
+          chan1[i] = tonumber(string.sub(secondarySources[i], -3, -3))
+          chan2[i] = tonumber(string.sub(secondarySources[i], -1, -1))
+  
+          if chanNum == chan1[i] then  --handle Stereo secondary channels
+            if data == "mic input" then
+              Controls["Mic Input 2"][i].Boolean = true
+              Controls["Line Input 2"][i].Boolean = false
+            else
+              Controls["Mic Input 2"][i].Boolean = false
+              Controls["Line Input 2"][i].Boolean = true
+            end
+          elseif chanNum == chan2[i] then
+            if data == "mic input" then
+              Controls["Stereo Mic Input 2"][i].Boolean = true
+              Controls["Stereo Line Input 2"][i].Boolean = false
+            else
+              Controls["Stereo Mic Input 2"][i].Boolean = false
+              Controls["Stereo Line Input 2"][i].Boolean = true
+            end
+          end
+        else --handle mono secondary channels
+          inputsSecondary[i] = tonumber(string.sub(secondarySources[i], -1, -1))
+          if chanNum == inputsSecondary[i] then
+            if data == "mic input" then 
+              Controls["Mic Input 2"][i].Boolean = true
+              Controls["Line Input 2"][i].Boolean = false
+            else
+              Controls["Mic Input 2"][i].Boolean = false
+              Controls["Line Input 2"][i].Boolean = true
+            end
+          end
+        end
+      end
+    end
+  
+  end
+  
+  function createUrlSwitch()
+    urlSwitch = {
+      ["/amp/deviceInfo"] = parseAmpInfo,
+      ["/misc"] = parseMisc,
+      ["/amp/powerSupply"] = parsePowerSupply,
+    }
+    for i = 1, numChannels, 1 do
+      urlSwitch[string.format("/amp/channels/%d/loadMonitor", i)] = function(data) loadMonitor (data, i) end
+      urlSwitch[string.format("/amp/channels/%d/loadMonitor/measuredImpedance", i)] = function(data) loadMonitorImpedance(data, i) end
+      urlSwitch[string.format("/amp/channels/%d/loadMonitor/testing", i)] = function(data) loadMonitorTesting(data, i) end
+      urlSwitch[string.format("/amp/channels/%d/loadMonitor/status", i)] = function(data) loadMonitorStatus(data, i) end
+      urlSwitch[string.format("/amp/channels/%d/pilotToneDetector/measuredLevel", i)] = function(data) pilotToneImpedance (data, i) end
+      urlSwitch[string.format("/amp/channels/%d/pilotToneDetector/status", i)] = function(data) pilotToneStatus (data, i) end
+      urlSwitch[string.format("/amp/channels/%d/pilotToneDetector/inputPresentPrimary", i)] = function(data) pilotTonePrimary (data, i) end
+      urlSwitch[string.format("/amp/channels/%d/pilotToneDetector/inputPresentSecondary", i)] = function(data) pilotToneSecondary (data, i) end
+      urlSwitch[string.format("/amp/channels/%d/inputSelector", i)] = function(data) parseInputSelector (data, i) end
+      urlSwitch[string.format("/amp/channels/%d/inputSelector/primary", i)] = function(data) parseInputSelectorPrimary (data, i) end
+      urlSwitch[string.format("/amp/channels/%d/inputSelector/secondary", i)] = function(data) parseInputSelectorSecondary (data, i) end
+      urlSwitch[string.format("/amp/channels/%d/inputSelector/primarySignalDetect", i)] = function(data) inputSignal (data, i) end
+      urlSwitch[string.format("/amp/channels/%d/inputSelector/primaryLevel", i)] = function(data) inputLevel (data, i) end
+      urlSwitch[string.format("/amp/channels/%d/inputSelector/primaryClip", i)] = function(data) inputClip (data, i) end
+      urlSwitch[string.format("/amp/channels/%d/output", i)] = function(data) outputReady(data, i) end
+      urlSwitch[string.format("/amp/channels/%d/output/fader", i)] = function(data) outputFader(data, i) end
+      urlSwitch[string.format("/amp/channels/%d/output/mute", i)] = function(data) outputMute(data, i) end
+      urlSwitch[string.format("/amp/channels/%d/output/clip", i)] = function(data) outputClip(data, i) end
+      urlSwitch[string.format("/amp/channels/%d/output/fault", i)] = function(data) outputFault(data, i) end
+      urlSwitch[string.format("/amp/channels/%d/output/limiting", i)] = function(data) outputLimiting(data, i) end
+      urlSwitch[string.format("/amp/channels/%d/output/level", i)] = function(data) levelsDB(data, i) end
+      urlSwitch[string.format("/amp/channels/%d/levels/level_db", i)] = function(data) levelsDB(data, i) end
+      urlSwitch[string.format("/amp/channels/%d/levels", i)] = function(data) parseLevelsDB(data, i) end
+      urlSwitch[string.format("/amp/channels/%d/output/enable", i)] = function(data) enableChannels(data, i) end
+      urlSwitch[string.format("/amp/inputs/analog/%d/micGain", i)] = function(data) inputSelection(data, i) end
+    end
+  
+    for i = 1, numGpio, 1 do
+      urlSwitch[string.format("/GPIO/%d/inputIndicator", i)] = function(data) gpioInputIndicator(data, i) end
+    end
+  end
+  
+  function initialize()
+    danteEnabled, numChannels, numGpio = setupParameters(Properties)
+    createUrlSwitch()
+    ipAddress = Controls["IP Address"].String
+    tcpConnect(ipAddress, PORT, tcpSocket)
+  
+    local choices = analogSources
+  
+    if danteEnabled then 
+      choices = tableConcat(analogSources, danteSources)
+    end
+  
+    table.insert(choices, "Mixer")
+  
+    for i = 1, numChannels, 1 do
+      analogChannels[i] = Controls[""] 
+      Controls["Primary Input Source"][i].Choices = choices
+      Controls["Stereo Line Input 1"][i].IsInvisible = true
+      Controls["Stereo Mic Input 1"][i].IsInvisible = true
+      Controls["Stereo Line Input 2"][i].IsInvisible = true
+      Controls["Stereo Mic Input 2"][i].IsInvisible = true
+    end
+  
+    table.remove(choices)
+    table.insert(choices, "None")
+  
+    for i = 1, numChannels, 1 do
+      Controls["Secondary Input Source"][i].Choices = choices
+    end
+  
+  end
+  
+  function isProperHandshakeResponse(tcpData)
+    -- TODO Check for proper websocket handshake
+    return true
+  end
+  
+  function handleLeaApi(leaJson)
+    local value
+    local url
+    local parsed, dataTable = pcall(json.decode, leaJson)
+  
+    if not parsed then
+      print("Error parsing JSON: " .. dataTable)
+      return
+    elseif dataTable == nil then
+      print("Parsed empty table.")
+      return
+    end
+  
+    -- print("Parsing: " .. leaJson)
+  
+    if dataTable.method == "notify" then
+      local urlTable = {}
+      urlTable = getUrlAndValues(dataTable.params)
+      for k, v in pairs(urlTable) do
+        if urlSwitch[k] == nil then
+          -- print("Unknown url: ", k)
+        else
+      	-- print("URLTable Key & Value: ", k, v)
+          urlSwitch[k](v)
+        end
+      end
+      --urlSwitch[url](value)
+    elseif dataTable.result == "OK" then
+      timer:Stop()
+      timer:Start(0.2)
+      return
+    elseif type(dataTable.result) == "table" then 
+      if urlSwitch[dataTable.url] == nil then
+      else
+        urlSwitch[dataTable.url](dataTable.result)
+      end
+    end
+  end
+  
+  local storedBufferData, bytesToRead, lastPacket = "", 0, false
+  
+  function onTcpData()
+    -- print(string.format("Socket has data: %d bytes", tcpSocket.BufferLength))
+    -- print(string.format("Is Subscribed: %s, Subscribing: %s", isSubscribed, subscribing))
+  
+    if not isSubscribed and not subscribing then
+      subscribing = true
+  
+      local data = tcpSocket:Read(tcpSocket.BufferLength)
+      -- print("Unsubscribed data:", data)
+      if not isProperHandshakeResponse(data) then return end
+  
+      subscribeProgress = 0
+      t:Start(0.1)
+    end
+  
+    while tcpSocket.BufferLength > 1 do
+      if bytesToRead > 0 then
+        -- print(string.format("More bytes needed: %s", bytesToRead))
+        local bytesRead = tcpSocket:Read(bytesToRead)
+        bytesToRead = bytesToRead - #bytesRead
+        -- print(string.format("Bytes read:%s - %s", #bytesRead, bytesRead))
+        storedBufferData = storedBufferData .. bytesRead
+      end
+  
+      -- print(string.format("Bytes missing: %s, Stored data: %s", bytesToRead, storedBufferData))
+      if bytesToRead == 0 and storedBufferData ~= "" and lastPacket then
+        -- print("Handling final LEA message")
+        handleLeaApi(storedBufferData)
+        storedBufferData = ""
+        lastPacket = false
+      elseif bytesToRead == 0 and not lastPacket and tcpSocket.BufferLength > 1 then
+        local fin, opCode, dataString, bytesRemaining = parseWebSocketPayload(tcpSocket)
+        -- print(fin, opCode, dataString, bytesRemaining)
+        storedBufferData = storedBufferData .. dataString
+        -- print(string.format("Stored data: %s", storedBufferData))
+        bytesToRead = bytesRemaining
+        lastPacket = fin
+        -- print(string.format("Waiting for bytes: %s", bytesRemaining))
+  
+        if opCode == 9 then
+        	-- print("Ping Stored buffer data: ", storedBufferData)
+        	-- sendWebSocketPong(tcpSocket, storedBufferData)
+        	storedBufferData = ""
+        	bytesToRead = 0
+        	lastPacket = false
+        elseif bytesToRead == 0 and lastPacket then
+      	-- print("Handling complete LEA message")
+          handleLeaApi(storedBufferData)
+        	storedBufferData = ""
+        	lastPacket = false
+        end
+      end
+    end
+  end
+  
+  
+  -------subscription functions
+  function subscribeAmpInfo()
+    subscribeMessage("/amp/deviceInfo", 1)
+  end
+  
+  function subscribeMisc()
+    subscribeMessage("/misc", 1)
+  end
+  
+  function subscribePowerSupply()
+    subscribeMessage("/amp/powerSupply", 1)
+  end
+  
+  function subscribeLoadMon()
+    subscribeMessage("/amp/channels/%d/loadMonitor", numChannels)
+  end
+  
+  function subscribePilotTone()
+    subscribeMessage("/amp/channels/%d/pilotToneDetector", numChannels)
+  end
+  
+  function subscribeOutputs()
+    subscribeMessage("/amp/channels/%d/output", numChannels)
+  end
+  
+  function subscribeInputSelector()
+    subscribeMessage("/amp/channels/%d/inputSelector", numChannels)
+  end
+  
+  function subscribeInputSelectorPrimary()
+    subscribeMessage("/amp/channels/%d/inputSelector/primary", numChannels)
+  end
+  
+  function subscribeInputSelectorSecondary()
+    subscribeMessage("/amp/channels/%d/inputSelector/secondary", numChannels)
+  end
+  
+  function subscribeLevels()
+    subscribeMessage("/amp/channels/%d/levels", numChannels)
+  end
+  
+  function subscribeGpio()
+    -- print("Subscribing GPIO, total: " .. tostring(numGpio))
+    subscribeMessage("/GPIO/%d", numGpio)
+  end
+  
+  function subscribeInputs()
+    subscribeMessage("/amp/inputs/analog/%d",numChannels)
+  end
+  
+  function subscribeMessage(url, numChan)
+    -- print("Subscribe to " .. url .. ": " .. tostring(numChan))
+    for i = 1, numChan, 1 do
+      local msg = {}
+      msg.leaApi = "1.0"
+      msg.url = string.format(url, i)
+      msg.method = "subscribe"
+      msg.params = {}
+      msg.id = 1
+      msg = json.encode(msg)
+      -- print("Subscribing: " .. msg)
+      print(i)
+      msg = createWebSocketPayload(msg)
+      tcpSocket:Write(msg)
+    end
+    print("loop done")
+  end
+  
+  local subscribeAll = {
+    subscribeMisc,
+    subscribePowerSupply,
+    subscribePilotTone,
+    subscribeLoadMon,
+    subscribeAmpInfo,
+    subscribeLevels,
+    subscribeOutputs,
+    subscribeInputSelector,
+    subscribeInputSelectorPrimary,
+    subscribeInputSelectorSecondary,
+    subscribeGpio,
+    subscribeInputs,
+  }
+  
+  function subscribePacing()
+    t:Stop()
+    subscribeProgress = subscribeProgress + 1
+    if subscribeAll[subscribeProgress] then
+      subscribeAll[subscribeProgress]()
+      t:Start(0.1)
+    else
+      isSubscribed = true
+    end
+  end
+  t.EventHandler = subscribePacing
+  
+  
+  function notConnected()
+    local dataTable = {}
+    Controls["Power Status"].Value = 0
+    dataTable.connectionType = "None"
+    parseMisc(dataTable)
+    storedBufferData = ""
+    lastPacket = false
+    isSubscribed = false
+    subscribing = false
+    print("Not Connected")
+  end
+  
+  --~--~--~--~--TCP Socket Switch
+  local socketSwitch = {
+    [TcpSocket.Events.Connected] = function()
+      print("Socket connected.")
+      ReportStatus(STATUS.OK)
+      initiateHandshake(tcpSocket, Controls["IP Address"].String, PORT)
+    end,
+    [TcpSocket.Events.Reconnect] = function()
+      notConnected()
+      print("Attempting to Reconnect.")
+    end,
+    [TcpSocket.Events.Data] = function()
+      onTcpData()
+    end,
+    [TcpSocket.Events.Closed] = function()
+      notConnected()
+      ReportStatus(STATUS.MISSING, "Connection closed.")
+      print("Socket closed.")
+    end,
+    [TcpSocket.Events.Error] = function(err)
+      notConnected()
+      ReportStatus(STATUS.MISSING, string.format("Connection Error: %s", err))
+      print(string.format("Socket Error: %s", err))
+    end,
+    [TcpSocket.Events.Timeout] = function()
+      notConnected()
+      ReportStatus(STATUS.MISSING, "Connection timed out.")
+      print("Connection closed due to timeout.")
+    end
+  }
+  
+  function timerCheck()
+    timer:Stop()
+    isFaderMoving = false
+  end
+  
+  Controls["IP Address"].EventHandler = function(control)
+    local ip = control.String
+    tcpConnect(ip, PORT, tcpSocket)
+  end
+  
+  Controls["Remote On"].EventHandler = function(control)
+    for i = 1, numChannels, 1 do
+      local msg = {}
+      local params = {}
+      params.enable = true
+      msg.leaApi = "1.0"
+      msg.url = string.format("/amp/channels/%d/output", i)
+      msg.method = "set"
+      msg.params = params
+      msg.id = 1
+      msg = json.encode(msg)
+      msg = createWebSocketPayload(msg)
+      tcpSocket:Write(msg)
+    end
+    control.Value = 1.0
+    Controls["Remote Off"].Value = 0.0
+  end
+  
+  Controls["Remote Off"].EventHandler = function(control)
+    for i = 1, numChannels, 1 do  
+      local msg = {}
+      local params = {} 
+      params.enable = false 
+      msg.leaApi = "1.0"
+      msg.url = string.format("/amp/channels/%d/output", i)
+      msg.method = "set"
+      msg.params = params
+      msg.id = 1
+      msg = json.encode(msg)
+      msg = createWebSocketPayload(msg)
+      tcpSocket:Write(msg)
+    end
+    control.Value = 1.0
+    Controls["Remote On"].Value = 0.0
+  end
+  
+  timer.EventHandler = timerCheck
+  
+  tcpSocket.EventHandler = function(socket, event, err)
+    -- print(event)
+    socketSwitch[event](err)
+  end
+  
+  initialize()
+  
+  function tcpWrite(value, channel, control, url)
+    local msg = {}
+    local params = {}
+    params[control] = value
+    msg.leaApi = "1.0"
+    msg.method = "set"
+    msg.id = 1
+    msg.url = string.format(url, channel)
+    msg.params = params
+    msg = json.encode(msg)
+    msg = createWebSocketPayload(msg)
+    isFaderMoving = true
+    tcpSocket:Write(msg)
+  end 
+  
+  
+  for i=1, numChannels, 1 do
+    Controls["Output Fader"][i].EventHandler = function(control)
+      tcpWrite(control.Value, i, "fader", "/amp/channels/%d/output")
+    end
+  
+    Controls["Output Mute"][i].EventHandler = function(control)
+      local mute = control.Value == 1
+      tcpWrite(mute, i, "mute", "/amp/channels/%d/output")
+    end
+  
+    Controls["Primary Input Source"][i].EventHandler = function(control)    
+      tcpWrite(control.String, i, "primary", "/amp/channels/%d/inputSelector")
+    end
+  
+    Controls["Secondary Input Source"][i].EventHandler = function(control)
+      tcpWrite(control.String, i, "secondary", "/amp/channels/%d/inputSelector")
+    end
+  
+    function sendMono(source, inputType)
+      local isStereo = string.find(source, "+")
+  
+      if isStereo ~= nil then
+        local chan1 = string.sub(source, -3, -3)
+        tcpWrite(inputType, chan1, "micGain", "/amp/inputs/analog/%d")
+      else
+        local monoChannel = string.sub(source, -1, -1)
+        tcpWrite(inputType, monoChannel, "micGain", "/amp/inputs/analog/%d")
+      end
+    end
+  
+    function sendStereo(source, inputType)
+      local chan = string.sub(source, -1, -1)
+      tcpWrite(inputType, chan, "micGain", "/amp/inputs/analog/%d")
+    end
+  
+    Controls["Line Input 1"][i].EventHandler = function(control)
+      local source = Controls["Primary Input Source"][i].String
+      control.Boolean = true
+  
+      if control.Boolean then 
+        sendMono(source, "line input")      
+        Controls["Mic Input 1"][i].Boolean = false 
+      end
+    end
+  
+    Controls["Mic Input 1"][i].EventHandler = function(control)
+      local source = Controls["Primary Input Source"][i].String
+      control.Boolean = true
+  
+      if control.Boolean then 
+        sendMono(source, "mic input")
+        Controls["Line Input 1"][i].Boolean = false
+      end
+    end
+  
+    Controls["Line Input 2"][i].EventHandler = function(control)
+      local source = Controls["Secondary Input Source"][i].String
+      control.Boolean = true
+  
+      if control.Boolean then 
+        sendMono(source, "line input")
+        Controls["Mic Input 2"][i].Boolean = false 
+      end
+  
+    end
+  
+    Controls["Mic Input 2"][i].EventHandler = function(control)
+      local source = Controls["Secondary Input Source"][i].String
+      control.Boolean = true
+  
+      if control.Boolean then 
+        sendMono(source, "mic input")
+        Controls["Line Input 2"][i].Boolean = false
+      end
+    end
+  
+    Controls['Stereo Line Input 1'][i].EventHandler = function(control)
+      local source = Controls["Primary Input Source"][i].String
+      control.Boolean = true
+  
+      if control.Boolean then 
+        sendStereo(source, "line input")
+        Controls["Stereo Mic Input 1"][i].Boolean = false
+      end
+  
+    end
+  
+    Controls['Stereo Mic Input 1'][i].EventHandler = function(control)
+      local source = Controls["Primary Input Source"][i].String
+      control.Boolean = true
+  
+      if control.Boolean then 
+        sendStereo(source, "mic input")
+        Controls["Stereo Line Input 1"][i].Boolean = false
+      end
+  
+    end
+  
+    Controls["Stereo Line Input 2"][i].EventHandler = function(control)
+      local source = Controls["Secondary Input Source"][i].String
+      control.Boolean = true
+  
+      if control.Boolean then 
+        sendStereo(source, "line input")
+        Controls["Stereo Mic Input 2"][i].Boolean = false 
+      end
+  
+    end
+  
+    Controls["Stereo Mic Input 2"][i].EventHandler = function(control)
+      local source = Controls["Secondary Input Source"][i].String
+      control.Boolean = true
+  
+      if control.Boolean then 
+        sendStereo(source, "mic input")
+        Controls["Stereo Line Input 2"][i].Boolean = false
+      end
+    end
+  
+  end
+  
+end
