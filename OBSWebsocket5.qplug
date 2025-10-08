@@ -1,0 +1,1370 @@
+-- Information block for the plugin
+PluginInfo = {
+    Name = "OBS~Websocket 5.x.x Protocol", -- Name of the plugin
+    Version = "1.3", -- Current plugin version
+    Id = "qsysc.OBS.Websocket 5 Protocol", -- Unique identifier for the plugin. Must not conflict with other installed plugins
+    Description = "Plugin for control of OBS software using the OBS Websocket 5.x.x Protocol.", -- A brief description of the plugin
+    BuildVersion = "0.0.0.0", -- Current code iteration tracking
+    Author = "Glen Gorton", -- Name or Contact Info of the author
+    Manufacturer = "OBS", -- Name of manufacturer the product the plugin integrates
+    -- Model = "", -- Model name of the product the plugin integrates
+    -- IsManaged = true, -- Add the plugin to the managed inventory of the design
+    -- Type = "", -- Reflect reporting type
+    ShowDebug = true,
+  }
+  
+  width = 350 -- scalable plugin width
+  control_depth = 16 -- scalable control depth
+  control_gap = 3 -- vertical space between controls
+  
+  Colors = {
+      none = {0, 0, 0, 0},
+      primary = {212, 202, 226},
+      secondary = {51, 51, 51},
+      heading = {50, 50, 50},
+      label = {50, 50, 50},
+      stroke = {51, 51, 51},
+      black = {51, 51, 51},
+      navy = {15, 63, 106},
+      lightblue = {143, 197, 247},
+      darkgrey = {58,58,58},
+      lightgrey = {204,204,204}
+  }
+  
+  Sizes = {
+      ["Button"] = {36, control_depth},
+      ["Text"] = {(width - 30) / 2, control_depth},
+      ["Status"] = {width - 30, (control_depth * 2) + (control_gap * 1)},
+      ["LED"] = {16, control_depth},
+      ["ListBox"] = {width - 30, (control_depth * 8) + (control_gap * 9)},
+      ["Image"] = {width - 30, (control_depth * 6) + (control_gap * 5)}
+  }
+  
+  Master_Object = {{
+  
+      ["PageName"] = "Dashboard",
+  
+      ["Groupings"] = {{
+          ["Name"] = "Status",
+          ["Depth"] = 11,
+          ["Controls"] = {{
+              Name = "Status",
+              PrettyName = "Dashboard~Status",
+              Label = "Status",
+              ControlType = "Indicator",
+              IndicatorType = "Status",
+              PinStyle = "Output",
+              UserPin = true,
+              Size = Sizes.Status,
+              GridPos = 1
+          }, {
+              Name = "OBS Version",
+              PrettyName = "Dashboard~OBS Version",
+              Label = "OBS Version",
+              ControlType = "Indicator",
+              IndicatorType = "Text",
+              PinStyle = "Output",
+              UserPin = true,
+              Size = Sizes.Text,
+              GridPos = 3
+          }, {
+              Name = "OBS Websocket Version",
+              PrettyName = "Dashboard~OBS Websocket Version",
+              Label = "OBS Websocket Version",
+              ControlType = "Indicator",
+              IndicatorType = "Text",
+              PinStyle = "Output",
+              UserPin = true,
+              Size = Sizes.Text,
+              GridPos = 4
+          }, {
+              Name = "OBS RPC Version",
+              PrettyName = "Dashboard~OBS RPC Version",
+              Label = "OBS RPC Version",
+              ControlType = "Indicator",
+              IndicatorType = "Text",
+              PinStyle = "Output",
+              UserPin = true,
+              Size = Sizes.Text,
+              GridPos = 5
+          }, {
+              Name = "OBS Platform",
+              PrettyName = "Dashboard~OBS Platform",
+              Label = "OBS Platform",
+              ControlType = "Indicator",
+              IndicatorType = "Text",
+              PinStyle = "Output",
+              UserPin = true,
+              Size = Sizes.Text,
+              GridPos = 6
+          }, {
+              Name = "OBS Platform Description",
+              PrettyName = "Dashboard~OBS Platform Description",
+              Label = "OBS Platform Description",
+              ControlType = "Indicator",
+              IndicatorType = "Text",
+              PinStyle = "Output",
+              UserPin = true,
+              Size = Sizes.Text,
+              GridPos = 7
+          }, {
+              Name = "CPU Usage",
+              PrettyName = "Dashboard~CPU Usage",
+              Label = "CPU Usage",
+              ControlType = "Indicator",
+              IndicatorType = "Text",
+              PinStyle = "Output",
+              UserPin = true,
+              Size = Sizes.Text,
+              GridPos = 8
+          }, {
+              Name = "Memory Usage",
+              PrettyName = "Dashboard~Memory Usage",
+              Label = "Memory Usage",
+              ControlType = "Indicator",
+              IndicatorType = "Text",
+              PinStyle = "Output",
+              UserPin = true,
+              Size = Sizes.Text,
+              GridPos = 9
+          }, {
+              Name = "Disk Space",
+              PrettyName = "Dashboard~Disk Space",
+              Label = "Disk Space",
+              ControlType = "Indicator",
+              IndicatorType = "Text",
+              PinStyle = "Output",
+              UserPin = true,
+              Size = Sizes.Text,
+              GridPos = 10
+          }, {
+              Name = "FPS",
+              PrettyName = "Dashboard~FPS",
+              Label = "FPS",
+              ControlType = "Indicator",
+              IndicatorType = "Text",
+              PinStyle = "Output",
+              UserPin = true,
+              Size = Sizes.Text,
+              GridPos = 11
+          }}
+        }, {
+          ["Name"] = "Streaming",
+          ["Depth"] = 3,
+          ["Controls"] = {{
+              Name = "Streaming Active",
+              PrettyName = "Controls~Streaming Active",
+              Label = "Streaming Active",
+              ControlType = "Indicator",
+              IndicatorType = "LED",
+              PinStyle = "Output",
+              UserPin = true,
+              Size = Sizes.LED,
+              GridPos = 1
+          }, {
+              Name = "Start Streaming",
+              PrettyName = "Controls~Start Streaming",
+              Label = "Start Streaming",
+              ControlType = "Button",
+              ButtonType = "Trigger",
+              PinStyle = "Both",
+              UserPin = true,
+              Size = Sizes.Button,
+              GridPos = 2
+          }, {
+              Name = "Stop Streaming",
+              PrettyName = "Controls~Stop Streaming",
+              Label = "Stop Streaming",
+              ControlType = "Button",
+              ButtonType = "Trigger",
+              PinStyle = "Both",
+              UserPin = true,
+              Size = Sizes.Button,
+              GridPos = 3
+        }}
+        }, {
+          ["Name"] = "Recording",
+          ["Depth"] = 6,
+          ["Controls"] = {{
+              Name = "Recording Active",
+              PrettyName = "Controls~Recording Active",
+              Label = "Recording Active",
+              ControlType = "Indicator",
+              IndicatorType = "LED",
+              PinStyle = "Output",
+              UserPin = true,
+              Size = Sizes.LED,
+              GridPos = 1
+          }, {
+              Name = "Recording Paused",
+              PrettyName = "Controls~Recording Paused",
+              Label = "Recording Paused",
+              ControlType = "Indicator",
+              IndicatorType = "LED",
+              PinStyle = "Output",
+              UserPin = true,
+              Size = Sizes.LED,
+              GridPos = 2
+          }, {
+              Name = "Start Recording",
+              PrettyName = "Controls~Start Recording",
+              Label = "Start Recording",
+              ControlType = "Button",
+              ButtonType = "Trigger",
+              PinStyle = "Both",
+              UserPin = true,
+              Size = Sizes.Button,
+              GridPos = 3
+          }, {
+              Name = "Pause Recording",
+              PrettyName = "Controls~Pause Recording",
+              Label = "Pause Recording",
+              ControlType = "Button",
+              ButtonType = "Trigger",
+              PinStyle = "Both",
+              UserPin = true,
+              Size = Sizes.Button,
+              GridPos = 4
+          }, {
+              Name = "Resume Recording",
+              PrettyName = "Controls~Resume Recording",
+              Label = "Resume Recording",
+              ControlType = "Button",
+              ButtonType = "Trigger",
+              PinStyle = "Both",
+              UserPin = true,
+              Size = Sizes.Button,
+              GridPos = 5
+          }, {
+              Name = "Stop Recording",
+              PrettyName = "Controls~Stop Recording",
+              Label = "Stop Recording",
+              ControlType = "Button",
+              ButtonType = "Trigger",
+              PinStyle = "Both",
+              UserPin = true,
+              Size = Sizes.Button,
+              GridPos = 6
+          }}
+        }, {
+          ["Name"] = "Replay Buffer",
+          ["Depth"] = 3,
+          ["Controls"] = {{
+              Name = "Replay Buffer Active",
+              PrettyName = "Controls~Replay Buffer Active",
+              Label = "Replay Buffer Active",
+              ControlType = "Indicator",
+              IndicatorType = "LED",
+              PinStyle = "Output",
+              UserPin = true,
+              Size = Sizes.LED,
+              GridPos = 1
+          }, {
+              Name = "Start Replay Buffer",
+              PrettyName = "Controls~Start Replay Buffer",
+              Label = "Start Replay Buffer",
+              ControlType = "Button",
+              ButtonType = "Trigger",
+              PinStyle = "Both",
+              UserPin = true,
+              Size = Sizes.Button,
+              GridPos = 2
+          }, {
+              Name = "Stop Replay Buffer",
+              PrettyName = "Controls~Stop Replay Buffer",
+              Label = "Stop Replay Buffer",
+              ControlType = "Button",
+              ButtonType = "Trigger",
+              PinStyle = "Both",
+              UserPin = true,
+              Size = Sizes.Button,
+              GridPos = 3
+          }}
+        }, {
+          ["Name"] = "Virtual Camera",
+          ["Depth"] = 3,
+          ["Controls"] = {{
+              Name = "Virtual Camera Active",
+              PrettyName = "Controls~Virtual Camera Active",
+              Label = "Virtual Camera Active",
+              ControlType = "Indicator",
+              IndicatorType = "LED",
+              PinStyle = "Output",
+              UserPin = true,
+              Size = Sizes.LED,
+              GridPos = 1
+          }, {
+              Name = "Start Virtual Camera",
+              PrettyName = "Controls~Start Virtual Camera",
+              Label = "Start Virtual Camera",
+              ControlType = "Button",
+              ButtonType = "Trigger",
+              PinStyle = "Both",
+              UserPin = true,
+              Size = Sizes.Button,
+              GridPos = 2
+          }, {
+              Name = "Stop Virtual Camera",
+              PrettyName = "Controls~Stop Virtual Camera",
+              Label = "Stop Virtual Camera",
+              ControlType = "Button",
+              ButtonType = "Trigger",
+              PinStyle = "Both",
+              UserPin = true,
+              Size = Sizes.Button,
+              GridPos = 3
+          }}
+      }}
+  },{
+      ["PageName"] = "Scenes",
+  
+      ["Groupings"] = {{
+          ["Name"] = "Scenes",
+          ["Depth"] = 10,
+          ["Controls"] = {{
+              Name = "Scenes",
+              PrettyName = "Controls~Scenes",
+              Label = "Scenes",
+              ControlType = "Text",
+              PinStyle = "Both",
+              UserPin = true,
+              Style = "ListBox",
+              Width = "Full",
+              Size = Sizes.ListBox,
+              GridPos = 1
+          }}
+        }, {
+        ["Name"] = "Sources",
+        ["Depth"] = 12,
+        ["Controls"] = {{
+              Name = "Sources",
+              PrettyName = "Controls~Sources",
+              Label = "Sources",
+              ControlType = "Text",
+              PinStyle = "Both",
+              UserPin = true,
+              Style = "ListBox",
+              Width = "Full",
+              Size = Sizes.ListBox,
+              GridPos = 1
+          }, {
+              Name = "Source Enabled",
+              PrettyName = "Controls~Source Enabled",
+              Label = "Source Enabled",
+              ControlType = "Button",
+              ButtonType = "Toggle",
+              PinStyle = "Both",
+              UserPin = true,
+              Size = Sizes.Button,
+              GridPos = 11
+          }, {
+              Name = "Source Locked",
+              PrettyName = "Controls~Source Locked",
+              Label = "Source Locked",
+              ControlType = "Button",
+              ButtonType = "Toggle",
+              PinStyle = "Both",
+              UserPin = true,
+              Size = Sizes.Button,
+              GridPos = 12
+        }}
+      }, {
+        ["Name"] = "Audio Mixer",
+        ["Depth"] = 12,
+        ["Controls"] = {{
+              Name = "Audio Mixer",
+              PrettyName = "Controls~Audio Mixer",
+              Label = "Audio Mixer",
+              ControlType = "Text",
+              PinStyle = "Both",
+              UserPin = true,
+              Style = "ListBox",
+              Width = "Full",
+              Size = Sizes.ListBox,
+              GridPos = 1
+          }, {
+              Name = "Audio Mixer Volume",
+              PrettyName = "Controls~Audio Mixer Volume",
+              Label = "Audio Mixer Volume",
+              ControlType = "Knob",
+              ControlUnit = "Integer",
+              Style = "Fader",
+              FaderStyle = "Round",
+              Max = 20,
+              Min = -100,
+              PinStyle = "Both",
+              UserPin = true,
+              Size = Sizes.Text,
+              GridPos = 11
+          }, {
+              Name = "Audio Mixer Mute",
+              PrettyName = "Controls~Audio Mixer Mute",
+              Label = "Audio Mixer Mute",
+              ControlType = "Button",
+              ButtonType = "Toggle",
+              PinStyle = "Both",
+              UserPin = true,
+              Size = Sizes.Button,
+              GridPos = 12
+        }}
+      }, {
+        ["Name"] = "Scene Transitions",
+        ["Depth"] = 2,
+        ["Controls"] = {{
+              Name = "Transition Type",
+              PrettyName = "Controls~Transition Type",
+              Label = "Type",
+              ControlType = "Text",
+              Style = "ComboBox",
+              PinStyle = "Both",
+              UserPin = true,
+              Size = Sizes.Text,
+              GridPos = 1
+          }, {
+              Name = "Transition Duration",
+              PrettyName = "Controls~Transition Duration",
+              Label = "Duration (ms)",
+              ControlType = "Knob",
+              ControlUnit = "Integer",
+              Style = "Text",
+              Max = 20000,
+              Min = 50,
+              PinStyle = "Both",
+              UserPin = true,
+              Size = Sizes.Text,
+              GridPos = 2
+        }}
+    }}
+  },{
+       ["PageName"] = "Setup",
+  
+      ["Groupings"] = {{
+          ["Name"] = "Setup",
+          ["Depth"] = 7,
+          ["Controls"] = {{
+              Name = "Connect",
+              PrettyName = "Setup~Connect",
+              Label = "Connect",
+              ControlType = "Button",
+              ButtonType = "Toggle",
+              PinStyle = "Both",
+              UserPin = true,
+              Size = Sizes.Button,
+              GridPos = 1
+          }, {
+              Name = "IP Address",
+              PrettyName = "Setup~IP Address",
+              Label = "IP Address",
+              ControlType = "Text",
+              PinStyle = "Both",
+              UserPin = true,
+              Size = Sizes.Text,
+              GridPos = 2
+          }, {
+              Name = "Password",
+              PrettyName = "Setup~Password",
+              Label = "Password",
+              ControlType = "Text",
+              PinStyle = "Both",
+              UserPin = true,
+              Size = Sizes.Text,
+              GridPos = 3
+          }, {
+              Name = "Event Log Prefix",
+              PrettyName = "Setup~Event Log Prefix",
+              Label = "Event Log Prefix",
+              ControlType = "Text",
+              PinStyle = "Both",
+              UserPin = true,
+              Size = Sizes.Text,
+              GridPos = 4
+          }, {
+              Name = "Log Entry",
+              PrettyName = "Setup~Log Entry",
+              Label = "Log Entry",
+              ControlType = "Text",
+              PinStyle = "Both",
+              UserPin = true,
+              Size = Sizes.Text,
+              GridPos = 5
+          }, {
+              Name = "Log Severity",
+              PrettyName = "Setup~Log Severity",
+              Label = "Log Severity",
+              ControlType = "Text",
+              PinStyle = "Both",
+              UserPin = true,
+              Size = Sizes.Text,
+              GridPos = 6
+          }, {
+              Name = "Log Trigger",
+              PrettyName = "Setup~Log Trigger",
+              Label = "Log Trigger",
+              ControlType = "Button", 
+              ButtonType = "Trigger",
+              PinStyle = "Both",
+              UserPin = true,
+              Size = Sizes.Button,
+              GridPos = 7
+        }}
+      }}
+  }}
+  
+  
+  -- Define the color of the plugin object when dragged into the design
+  function GetColor(props)
+      return Colors.black
+  end
+  
+  -- The name that will initially display when dragged into a design
+  function GetPrettyName(props)
+    return string.format("OBS\nWebsocket\n5.x.x\n[%s]", PluginInfo.Version)
+  end
+  
+  -- Define User configurable Properties of the plugin
+  function GetProperties()
+      local props = {}
+      return props
+  end
+  
+  -- Optional function used if plugin has multiple pages
+  function GetPages(props)
+      local pages = {}
+      for i, tbl in ipairs(Master_Object) do
+        table.insert(pages, {name = tbl.PageName})
+      end
+      return pages
+  end
+  
+  -- Optional function to define pins on the plugin that are not connected to a Control
+  function GetPins(props)
+      local pins = {}
+      return pins
+  end
+  
+  -- Optional function to update available properties when properties are altered by the user
+  function RectifyProperties(props)
+      return props
+  end
+  
+  -- Optional function to define components used within the plugin
+  function GetComponents(props)
+      local components = {}
+      return components
+  end
+  
+  -- Optional function to define wiring of components used within the plugin
+  function GetWiring(props)
+      local wiring = {}
+      return wiring
+  end
+  
+  -- Defines the Controls used within the plugin
+  function GetControls(props)
+      local ctls = {}
+      for i, page in ipairs(Master_Object) do
+        for i, grouping in ipairs(page.Groupings) do
+            for i, control in ipairs(grouping.Controls) do
+                table.insert(ctls, control)
+            end
+        end
+      end
+      return ctls
+  end
+  
+  -- Layout of controls and graphics for the plugin UI to display
+  function GetControlLayout(props)
+      local graphics, layout, control_slots = {}, {}, {}
+      
+      local page_index = props["page_index"].Value
+      
+      -- starting depth
+      local total_depth = 0
+      
+      -- dynamically create graphics boxes
+      for i, grouping in ipairs(Master_Object[page_index].Groupings) do
+      
+          total_depth = total_depth + control_depth
+      
+          depth = grouping.Depth
+      
+          len = string.len(grouping.Name)
+      
+          table.insert(graphics, {
+              Type = "GroupBox",
+              Fill = Colors.darkgrey,
+              StrokeColor = Colors.stroke,
+              StrokeWidth = 2,
+              CornerRadius = 8,
+              HTextAlign = "Left",
+              Position = {
+                  0,
+                  total_depth
+              },
+              Size = {
+                  width,
+                  40 + (depth * control_depth) + ((depth - 1) * control_gap)
+              }
+          })
+      
+          -- generate control slots per group box depth and control_depth requirement
+      
+          grouping["Control_Slots"] = {}
+      
+          for n = 1, grouping.Depth do
+      
+              grouping["Control_Slots"][n] = ((total_depth + 25) + (control_depth * (n - 1)) + ((n - 1) * control_gap))
+      
+          end
+      
+          -- dynamically create groupbox labels
+          table.insert(graphics, {
+              Type = "Label",
+              Text = Master_Object[page_index].Groupings[i].Name,
+              -- Size = 11,
+              Color = {
+                  255,
+                  255,
+                  255
+              },
+              Fill = Colors.heading,
+              StrokeWidth = 0,
+              CornerRadius = 4,
+              Position = {
+                  15,
+                  total_depth - 8
+              },
+              Size = {
+                  len <= 12 and 90 or len <= 20 and 140 or len <= 30 and 170,
+                  18
+              },
+              Font = "Montserrat",
+              FontStyle = "Medium"
+          })
+      
+          total_depth = total_depth + 40 + ((depth * control_depth) + ((depth - 1) * control_gap))
+      
+      end
+      
+      -- width of the group box minus borders
+      local box_width = (width - 60)
+      
+      for i, grouping in ipairs(Master_Object[page_index].Groupings) do
+      
+          local Slots = grouping.Control_Slots
+      
+          for _, ctl in ipairs(grouping.Controls) do
+      
+              local pos_x = nil
+              local pos_y = nil
+      
+              if (ctl.Width and (ctl.Width == "Full")) then
+                  pos_x = 15
+                  pos_y = (Slots[ctl.GridPos] + control_depth + control_gap)
+              else
+                  if (ctl.Position) then
+                      pos_x = ctl.Position
+                  else
+                      pos_x = (width - 15) - ctl.Size[1]
+                  end
+                  pos_y = Slots[ctl.GridPos]
+              end
+      
+              layout[ctl.Name] = {
+                  PrettyName = ctl.PrettyName,
+                  Legend = ctl.Legend,
+                  Style = ctl.Style,
+                  Position = {
+                      pos_x,
+                      pos_y
+                  },
+                  Size = ctl.Size,
+                  Font = "Droid Sans",
+                  FontSize = 10
+              }
+      
+              if ctl.Label then
+                  table.insert(graphics, {
+                      Type = "Label",
+                      Text = ctl.Label,
+                      HTextAlign = "Left",
+                      Color = Colors.lightgrey,
+                      Font = "Droid Sans",
+                      Position = {
+                          15,
+                          (Slots[ctl.GridPos] ~= nil) and Slots[ctl.GridPos] or Slots[#Slots]
+                      },
+                      Size = {
+                          (ctl.Width == "Full") and (width - 30) or (width - 30) - ctl.Size[1],
+                          control_depth
+                      }
+                  })
+              end
+      
+          end
+      
+      end
+      return layout, graphics
+  end
+  
+  
+  
+  ------------------------ USER COMPONENT Runtime Code is below wrapped inside of 'if Controls then...user script...end'
+  --Start event based logic
+  if Controls then
+
+--[[
+
+# Q-SYS-OBS-Websocket-5
+
+- OBS Websocket 5.x.x Q-Sys User Component (obs-websocket 5.x.x Protocol)
+- OBS Protocol URL: https://github.com/obsproject/obs-websocket/blob/master/docs/generated/protocol.md
+- Written by Glen Gorton
+- Built with OBS Version: 30.1.2
+- Developed and tested using Q-SYS Designer v9.10.0
+
+## NOTES:
+-- A Recording cannot be paused if the recording quality is set to "Same as stream" in OBS.
+-- Reply Buffer needs to be enabled in OBS (Settings->Output->Reply Buffer) and a recording needs to be active in order to use Reply Buffer controls.
+
+### 17th October 2024 (v1.3)
+-- Tested with OBS Studio v30.2.3
+-- During ws.Error event, if err == "closed before established" the script would set the Status to a Fault and return end. Updated this to attempt a reconnect (Connect() function) after 30secs.
+
+### 29th July 2024 (v1.2)
+-- Tested with OBS Studio v30.2.2
+-- IP Address field was not changing to Red when IP address was empty. Updated Initialize() function.
+-- Added further check for a valid IP address during Connect() function.
+-- Added further details for status when err == "conn fail: errno 10014" is received -> this can also be a result of OBS being closed on the PC.
+-- Within the ws.Closed eventhandler, commented out the where Controls['Connect'].Boolean is set to false/true.
+
+### 13th June 2024 - Glen Gorton (v1.1)
+-- Added additional error code response (err == "Timed out waiting server reply") to ws.Error = function(ws, err).
+
+]]--
+
+
+-- Services
+
+ws = WebSocket.New()
+local rapidjson = require("rapidjson")
+pollTimer = Timer.New()
+
+
+-- Constants
+
+Text_Indicators = {"OBS Version", "OBS Websocket Version", "OBS RPC Version", "OBS Platform", "OBS Platform Description", "CPU Usage", "Memory Usage", "Disk Space", "FPS", "Scenes", "Sources", "Log Entry", "Log Severity", }
+Boolean_Indicators = {"Virtual Camera Active", "Streaming Active", "Recording Active", "Recording Paused", "Replay Buffer Active", "Source Enabled", "Source Locked", "Audio Mixer Mute"}
+
+EventLogSeverity = {"Normal", "Warning", "Error"}
+Controls["Log Severity"].Choices = EventLogSeverity
+
+
+-- Functions
+
+function Initialize()
+  ResetTextIndicators()
+  ResetBooleanIndicators()
+  if Controls["IP Address"].String == "" then
+    SetStatus(3, "No IP Address")
+    Controls["IP Address"].Color = 'Red'
+    ip = ""
+  return end
+  ip = Controls['IP Address'].String:match('(%d?%d?%d%.%d?%d?%d%.%d?%d?%d%.%d?%d?%d)')
+  Controls["IP Address"].Color = ip and 'Green' or 'Red'
+  --SetStatus(ip and 3 or 2, ip and "" or "IP Address Invalid")
+  SetStatus(ip and 5 or 2, ip and "Script Restarted" or "IP Address Invalid")
+  if not ip then return print("User.Error: IP Address Invalid") end
+  Connect()
+end
+
+
+function Connect()
+  if not Controls["Connect"].Boolean then
+    --pollDelayTimer:Stop()
+    ResetTextIndicators()
+    ResetBooleanIndicators()
+    SetStatus(3, "Component Manually Disconnected")
+    Disconnect()
+  elseif ip == Controls['IP Address'].String:match('(%d?%d?%d%.%d?%d?%d%.%d?%d?%d%.%d?%d?%d)') then
+    ws:Connect("ws", ""..Controls["IP Address"].String.."", "", 4455)
+  elseif ip ~= Controls['IP Address'].String:match('(%d?%d?%d%.%d?%d?%d%.%d?%d?%d%.%d?%d?%d)') then
+    SetStatus(2, "IP Address Invalid")
+  end
+end
+
+
+function Disconnect()
+  ws:Close()
+end
+
+
+function ResetTextIndicators()
+  for i, control_name in ipairs(Text_Indicators) do
+    Controls[control_name].String = ""
+  end
+  Controls["Scenes"].Choices = {}
+  Controls["Sources"].Choices = {}
+  Controls["Audio Mixer"].Choices = {}
+  Controls["Audio Mixer Volume"].Value = 0
+  Controls["Transition Type"].Choices = {}
+end
+
+
+function ResetBooleanIndicators()
+  for i, control_name in ipairs(Boolean_Indicators) do
+    Controls[control_name].Boolean = false
+  end
+end
+
+
+function SetStatus(code, message, lookup)
+
+  -- if there's a lookup key, fetch the code and message
+  if lookup then
+    code = status_tbl[lookup].code
+    message = status_tbl[lookup].message
+  end
+  
+  Controls["Status"].Value = code
+  Controls["Status"].String = string.format("%s%s%s", message, (message == "") and "" or ": ", ip and ip or "None")
+  
+  if (code ~= 0) then return print(string.format("User.Info: Settings Status with Code: '%d', Message: '%s'", code, message)) end
+  if (code == 2) then end
+end
+
+
+function EventLog(log, severity)
+  Controls["Log Entry"].String = string.format("%s: %s", Controls["Event Log Prefix"].String, log)
+  Controls["Log Severity"].String = severity
+  Controls["Log Trigger"]:Trigger()
+end
+
+
+ws.Connected = function(ws)
+  print("Websocket Connected")
+  iswebsock = true
+  
+  -- SetStatus to OK as websocket is connected. -> Moved to the ws.Data function post-authentication (OpCpde2).
+  -- SetStatus(0, string.format("", code))
+end
+
+
+ws.Error = function(ws, err)
+  print("Error", err)
+
+  -- Stop the pollTimer
+  pollTimer:Stop()
+
+  if Controls['Connect'].Boolean == false then
+    -- SetStatus to Not Present as connect button toggled off.
+    SetStatus(3, "Websocket Closed - Component has been Manually Disconnected")
+  return end
+
+  -- If Websocket Server has not been enabled in OBS software, SetStatus to Fault, then attempt a reconnect after 5mins
+  if err == "conn fail: errno 10014" then 
+    print("'Enable WebSocket server' has not been enabled in OBS software, connection attempted while OBS is still starting up, or OBS has been closed. Attempting reconnect...")
+    -- SetStatus to Fault as websocket was disconnected.
+    SetStatus(2, "'Enable WebSocket server' has not been enabled in OBS software, connection attempted while OBS is still starting up, or OBS has been closed. Attempting reconnect...")
+
+    Timer.CallAfter(function()
+      Connect()
+      end, 60
+    )
+  return end
+
+  -- If an invalid IP address has been entered, SetStatus to Fault.
+  if err == "closed before established" then 
+    print("IP Address may be invalid: "..Controls["IP Address"].String..". Attempting Reconnect...")
+    -- SetStatus to Fault as websocket was disconnected.
+    SetStatus(2, "IP Address may be invalid.")
+
+    Timer.CallAfter(function()
+      Connect()
+      end, 30
+    )
+  return end
+
+  -- If OBS is unreachable (eg. PC off), SetStatus to Fault, then attempt a reconnect after 30secs
+  if err == "Unable to connect" or err == "Timed out waiting server reply" then 
+    print("OBS unreachable. PC may be off, network issue, OBS crashed, etc.")
+    -- SetStatus to Fault as websocket was disconnected and cannot reconnect.
+    SetStatus(2, "OBS unreachable. Attempting Reconnect...")
+
+    Timer.CallAfter(function()
+      Connect()
+      end, 30
+    )
+  return end
+
+
+  Disconnect()
+  Connect()
+end 
+
+
+ws.Closed = function(ws)
+  print("Websocket Closed")
+
+  -- Stop the pollTimer
+  pollTimer:Stop()
+
+  if Controls['Connect'].Boolean == false then
+    -- SetStatus to Not Present as connect button toggled off.
+    SetStatus(3, "Websocket Closed - Component has been Manually Disconnected")
+  return end
+
+  if ip ~= Controls["IP Address"].String then
+    -- SetStatus to Initializing as IP Address has been changed. Update ip variable and reconnect after 5 seconds.
+    SetStatus(5, "Websocket Closed - IP Address has been changed.")
+    Timer.CallAfter(function()
+      --Controls['Connect'].Boolean = true
+      ip = Controls['IP Address'].String:match('(%d?%d?%d%.%d?%d?%d%.%d?%d?%d%.%d?%d?%d)')
+      Connect()
+    end, 5
+  )
+  return end
+
+  -- SetStatus to Fault as websocket was disconnected.
+  SetStatus(2, "Websocket Closed - OBS unreachable or authentication password may be incorrect. Attempting Reconnect...")
+
+  --Controls['Connect'].Boolean = false
+  Timer.CallAfter(function()
+    --Controls['Connect'].Boolean = true
+    Connect()
+    end, 5
+  )
+end 
+
+
+ws.Data = function(ws, data)
+  print("Data:", data)
+
+  local dataTable = rapidjson.decode(data)
+  -- Custom function to print each table item on a new line
+  local function printTable(tbl, indent)
+      if not indent then
+          indent = 0
+      end
+
+      for k, v in pairs(tbl) do
+          if type(v) == "table" then
+              print(string.rep("  ", indent) .. k .. ":")
+              printTable(v, indent + 1)
+          else
+              print(string.rep("  ", indent) .. k .. ": " .. tostring(v))
+          end
+      end
+  end
+  printTable(dataTable)
+  
+  if dataTable.op == 0 then 
+    print("OpCode0 = First message sent from the server immediately on client connection. Contains authentication information if auth is required. Also contains RPC version for version negotiation.")
+
+    -- Check OpCode0 for OBS authentication, and generate authentication string if required.
+    if dataTable.d.authentication then
+      
+      -- To generate the authentication string, follow these steps:
+      local challenge = dataTable.d.authentication.challenge
+      --print(challenge)
+      local salt = dataTable.d.authentication.salt
+      --print(salt)
+      -- 1. Concatenate the websocket password with the salt provided by the server (password + salt)
+      local secret_string = Controls["Password"].String..salt
+      -- 2. Generate an SHA256 binary hash of the result and base64 encode it, known as a base64 secret.
+      local secret_hash = Crypto.Digest("sha256", secret_string)
+      local secret = Crypto.Base64Encode(secret_hash)
+      --salthash = Crypto.Base64Encode(Crypto.Digest("sha256", password..dataTable.d.authentication.salt))
+      -- 3. Concatenate the base64 secret with the challenge sent by the server (base64_secret + challenge)
+      local auth_response_string = secret .. challenge
+      --secretchallenge = salthash..dataTable.d.authentication.challenge
+      -- 4. Generate a binary SHA256 hash of that result and base64 encode it. You now have your authentication string.
+      local auth_response_hash = Crypto.Digest("sha256", auth_response_string)
+      local auth_response = Crypto.Base64Encode(auth_response_hash)
+      --authstring = Crypto.Base64Encode(Crypto.Digest("sha256", secretchallenge))
+      
+      -- Send Authentication
+      sendIdentify(auth_response)
+
+    -- If no authentication is required
+    elseif dataTable.d.authentication == nil then 
+      sendIdentify()
+    end
+
+  elseif dataTable.op == 1 then
+    print("OpCode1 = Response to Hello message, should contain authentication string if authentication is required, along with PubSub subscriptions and other session parameters.")
+  
+  elseif dataTable.op == 2 then
+    print("OpCpde2 = The identify request was received and validated, and the connection is now ready for normal operation.")
+
+    if dataTable.d.negotiatedRpcVersion ~= nil then
+      print("RPC version negotiation successful. RPC Version: "..dataTable.d.negotiatedRpcVersion)
+      
+      -- SetStatus to OK as websocket is connected.
+      SetStatus(0, string.format("", code))
+
+      -- Start PollTimer
+      pollTimer:Start(5)
+    end
+
+  elseif dataTable.op == 3 then
+    print("OpCpde3 = Sent at any time after initial identification to update the provided session parameters.")
+  elseif dataTable.op == 5 then
+    print("OpCpde5 = An event coming from OBS has occured. Eg. scene switched, source muted.")
+  elseif dataTable.op == 6 then
+    print("OpCpde6 = Client is making a request to obs-websocket. Eg. get current scene, create source.")
+  elseif dataTable.op == 7 then
+    print("OpCode 7 = obs-websocket is responding to a request coming from a client.")
+
+    -- Responses to Polling.
+    if dataTable.d.requestId == "GetVersion" then
+      -- Current OBS Studio version
+      Controls["OBS Version"].String = dataTable.d.responseData.obsVersion
+      -- Current obs-websocket version
+      Controls["OBS Websocket Version"].String = dataTable.d.responseData.obsWebSocketVersion
+      -- Current latest obs-websocket RPC version
+      Controls["OBS RPC Version"].String = dataTable.d.responseData.rpcVersion
+      -- Name of the platform. Usually windows, macos, or ubuntu (linux flavor). Not guaranteed to be any of those.
+      Controls["OBS Platform"].String = (dataTable.d.responseData.platform:gsub("^%l", string.upper))
+      -- Description of the platform, like Windows 10 (10.0)
+      Controls["OBS Platform Description"].String = dataTable.d.responseData.platformDescription
+    
+    elseif dataTable.d.requestId == "GetStats" then
+      -- Current CPU usage in percent
+      Controls["CPU Usage"].String = math.floor(dataTable.d.responseData.cpuUsage).."%"
+      -- Amount of memory in MB currently being used by OBS
+      Controls["Memory Usage"].String = math.floor(dataTable.d.responseData.memoryUsage).."MB"
+      -- Available disk space on the device being used for recording storage
+      Controls["Disk Space"].String = math.floor(dataTable.d.responseData.availableDiskSpace).."MB"
+      -- Current FPS being rendered
+      Controls["FPS"].String = math.floor(dataTable.d.responseData.activeFps)
+    
+    elseif dataTable.d.requestId == "GetSceneList" then
+      -- Array of scenes available. Clear table and rebuild at each Poll.
+      scene_list = {}
+      
+      for i, scene in ipairs(dataTable.d.responseData.scenes) do
+        table.insert(scene_list, scene.sceneName)
+      end
+
+      Controls["Scenes"].Choices = scene_list
+
+      -- Current program scene name. Then, request Sources that make up this active scene.
+      Controls["Scenes"].String = dataTable.d.responseData.currentProgramSceneName
+
+      ws:Write('{"op": 6,"d": {"requestType": "GetSceneItemList", "requestId": "GetSceneItemList", "requestData": {"sceneName": "'..dataTable.d.responseData.currentProgramSceneName..'"} }}')
+    
+    elseif dataTable.d.requestId == "SetCurrentProgramScene" then
+      -- A different Scene has been selected, so the Sources that make up this scene need to be populated.
+      ws:Write('{"op": 6,"d": {"requestType": "GetSceneItemList", "requestId": "GetSceneItemList", "requestData": {"sceneName": "'..Controls["Scenes"].String..'"} }}')
+
+    elseif dataTable.d.requestId == "GetSceneItemList" then
+      -- Total number of sources, and arrays of sources and source properties within the active scene.
+      sourceCount = 0
+      source_list = {}
+      source_properties = {}
+
+      -- In order to populate the Sources list in the same order seen in OBS, count the total sources, then minus the sceneItemIndex.
+      for i, sources in ipairs(dataTable.d.responseData.sceneItems) do
+        sourceCount = sourceCount + 1
+      end
+      for i, sources in ipairs(dataTable.d.responseData.sceneItems) do
+        -- Add Source names to table.
+        --table.insert(source_list, sources.sourceName)
+        source_list[(sourceCount - sources.sceneItemIndex)] = sources.sourceName
+
+        -- Add properties of each source to table.
+        source_properties[sources.sourceName] = {}
+        source_properties[sources.sourceName]["sourceEnabled"] = sources.sceneItemEnabled
+        source_properties[sources.sourceName]["sourceLocked"] = sources.sceneItemLocked
+        source_properties[sources.sourceName]["sourceItemID"] = sources.sceneItemId
+        source_properties[sources.sourceName]["sourceItemIndex"] = sources.sceneItemIndex
+        source_properties[sources.sourceName]["sourceInputKind"] = sources.inputKind
+        source_properties[sources.sourceName]["sourceUuid"] = sources.sourceUuid
+      end
+
+      --printTable(source_list)
+      --printTable(source_properties)
+      Controls["Sources"].Choices = source_list
+
+      -- Update controls of the selected Source
+      if Controls["Sources"].String ~= "" then
+        print("Source: "..Controls["Sources"].String)
+        Controls["Source Enabled"].Boolean = source_properties[Controls["Sources"].String].sourceEnabled
+        Controls["Source Locked"].Boolean = source_properties[Controls["Sources"].String].sourceLocked
+      -- if no Source item is selected, set Enabled and Locked booleans to false.
+      elseif Controls["Sources"].String == "" then
+        Controls["Source Enabled"].Boolean = false
+        Controls["Source Locked"].Boolean = false
+      end
+
+    elseif dataTable.d.requestId == "GetInputList" then
+      -- Gets an array of all inputs in OBS.
+      audio_list = {}
+      audio_properties = {}
+      
+      for i, audio in ipairs(dataTable.d.responseData.inputs) do
+        -- Add audio source names to table.
+        if audio.inputKind == "wasapi_output_capture" or audio.inputKind == "wasapi_input_capture" then
+          table.insert(audio_list, audio.inputName)
+
+          -- Add properties of each audio mixer item to a audio_properties table.
+          audio_properties[audio.inputName] = {}
+          audio_properties[audio.inputName]["audioUuid"] = audio.inputUuid
+        end
+      end
+
+      --printTable(audio_list)
+      --printTable(audio_properties)
+
+      Controls["Audio Mixer"].Choices = audio_list
+
+    elseif dataTable.d.requestId == "GetInputMute" then
+      -- Gets the audio mute state of an input
+      Controls["Audio Mixer Mute"].Boolean = dataTable.d.responseData.inputMuted
+
+    elseif dataTable.d.requestId == "GetInputVolume" then
+      -- Gets the audio mute state of an input
+      Controls["Audio Mixer Volume"].Value = dataTable.d.responseData.inputVolumeDb
+
+    elseif dataTable.d.requestId == "GetSceneTransitionList" then
+      -- Gets an array of all scene transitions in OBS.
+      transition_list = {}
+      transition_properties = {}
+      
+      for i, transitions in ipairs(dataTable.d.responseData.transitions) do
+        -- Add transition names to table.
+          table.insert(transition_list, transitions.transitionName)
+      end
+
+      printTable(transition_list)
+
+      Controls["Transition Type"].Choices = transition_list
+
+    elseif dataTable.d.requestId == "GetCurrentSceneTransition" then
+      -- Gets information about the current scene transition.
+      Controls["Transition Type"].String = dataTable.d.responseData.transitionName
+      -- Configured transition duration in milliseconds. null if transition is fixed.
+      Controls["Transition Duration"].Value = dataTable.d.responseData.transitionDuration
+
+    elseif dataTable.d.requestId == "GetVirtualCamStatus" then
+      -- Whether the virtual camera output is active
+      Controls["Virtual Camera Active"].Boolean = dataTable.d.responseData.outputActive
+
+    elseif dataTable.d.requestId == "GetStreamStatus" then
+      -- Whether the streaming output is active
+      Controls["Streaming Active"].Boolean = dataTable.d.responseData.outputActive
+
+    elseif dataTable.d.requestId == "GetRecordStatus" then
+      -- Whether the recording output is active
+      Controls["Recording Active"].Boolean = dataTable.d.responseData.outputActive
+      -- Whether the recording output is paused
+      Controls["Recording Paused"].Boolean = dataTable.d.responseData.outputPaused
+
+    elseif dataTable.d.requestId == "GetReplayBufferStatus" then
+      -- Whether the streaming output is active
+      if dataTable.d.requestStatus.result ~= false then
+        Controls["Replay Buffer Active"].Boolean = dataTable.d.responseData.outputActive
+      end
+
+    end
+
+  elseif dataTable.op == 8 then
+    print("OpCpde8 = obs-websocket is responding to a request batch coming from the client.")
+  end
+
+end
+
+
+-- Sends authentication (if required) to OBS following initial connection to websocket.
+function sendIdentify(auth_response)
+  print('Sending Identify OpCode1')
+  if auth_response ~= nil then 
+    print("Authorisation Required")
+    local auth = '{"op": 1,"d": {"rpcVersion": 1,"authentication": "'..auth_response..'","eventSubscriptions": 33}}'
+    ws:Write(auth)
+  elseif auth_response == nil then 
+    print("Authorisation Not Required")
+    local auth = '{"op": 1, "d": {"rpcVersion": 1,"eventSubscriptions": 33}}'
+    ws:Write(auth)
+  end
+end
+
+
+function Poll()
+  ws:Write('{"op": 6,"d": {"requestType": "GetStats", "requestId": "GetStats" }}')
+  ws:Write('{"op": 6,"d": {"requestType": "GetVersion", "requestId": "GetVersion" }}')
+  ws:Write('{"op": 6,"d": {"requestType": "GetSceneList", "requestId": "GetSceneList" }}')
+  ws:Write('{"op": 6,"d": {"requestType": "GetInputList", "requestId": "GetInputList"}}')
+  ws:Write('{"op": 6,"d": {"requestType": "GetVirtualCamStatus", "requestId": "GetVirtualCamStatus" }}')
+  ws:Write('{"op": 6,"d": {"requestType": "GetRecordStatus", "requestId": "GetRecordStatus" }}')
+  ws:Write('{"op": 6,"d": {"requestType": "GetReplayBufferStatus", "requestId": "GetReplayBufferStatus" }}')
+  ws:Write('{"op": 6,"d": {"requestType": "GetSceneTransitionList", "requestId": "GetSceneTransitionList" }}')
+  ws:Write('{"op": 6,"d": {"requestType": "GetCurrentSceneTransition", "requestId": "GetCurrentSceneTransition" }}')
+end
+
+
+
+------ EVENTHANDLERS ------
+
+-- Start Virtual Camera, then immediately check virtual camera status rather than waiting for polling.
+Controls["Start Virtual Camera"].EventHandler = function()
+  ws:Write('{"op": 6,"d": {"requestType": "StartVirtualCam", "requestId": "StartVirtualCam" }}')
+  Timer.CallAfter(function()
+    ws:Write('{"op": 6,"d": {"requestType": "GetVirtualCamStatus", "requestId": "GetVirtualCamStatus" }}')
+  end, 0.3
+)
+end
+
+-- Stop Virtual Camera, then immediately check virtual camera status rather than waiting for polling.
+Controls["Stop Virtual Camera"].EventHandler = function()
+  ws:Write('{"op": 6,"d": {"requestType": "StopVirtualCam", "requestId": "StopVirtualCam" }}')
+  Timer.CallAfter(function()
+    ws:Write('{"op": 6,"d": {"requestType": "GetVirtualCamStatus", "requestId": "GetVirtualCamStatus" }}')
+  end, 0.3
+)
+end
+
+-- Start Streaming, then immediately check streaming status rather than waiting for polling.
+Controls["Start Streaming"].EventHandler = function()
+  ws:Write('{"op": 6,"d": {"requestType": "StartStream", "requestId": "StartStream" }}')
+  Timer.CallAfter(function()
+    ws:Write('{"op": 6,"d": {"requestType": "GetStreamStatus", "requestId": "GetStreamStatus" }}')
+  end, 0.3
+)
+end
+
+-- Stop Streaming, then immediately check streaming status rather than waiting for polling.
+Controls["Stop Streaming"].EventHandler = function()
+  ws:Write('{"op": 6,"d": {"requestType": "StopStream", "requestId": "StopStream" }}')
+  Timer.CallAfter(function()
+    ws:Write('{"op": 6,"d": {"requestType": "GetStreamStatus", "requestId": "GetStreamStatus" }}')
+  end, 0.3
+)
+end
+
+-- Start Recording, then immediately check recording status rather than waiting for polling.
+Controls["Start Recording"].EventHandler = function()
+  ws:Write('{"op": 6,"d": {"requestType": "StartRecord", "requestId": "StartRecord" }}')
+  Timer.CallAfter(function()
+    ws:Write('{"op": 6,"d": {"requestType": "GetRecordStatus", "requestId": "GetRecordStatus" }}')
+  end, 0.3
+)
+end
+
+-- Pause Recording, then immediately check recording status rather than waiting for polling.
+-- NOTE: recording cannot be paused if the recording quality is set to "Same as stream"
+Controls["Pause Recording"].EventHandler = function()
+  ws:Write('{"op": 6,"d": {"requestType": "PauseRecord", "requestId": "PauseRecord" }}')
+  Timer.CallAfter(function()
+    ws:Write('{"op": 6,"d": {"requestType": "GetRecordStatus", "requestId": "GetRecordStatus" }}')
+  end, 0.3
+)
+end
+
+-- Resume Recording, then immediately check recording status rather than waiting for polling.
+Controls["Resume Recording"].EventHandler = function()
+  ws:Write('{"op": 6,"d": {"requestType": "ResumeRecord", "requestId": "ResumeRecord" }}')
+  Timer.CallAfter(function()
+    ws:Write('{"op": 6,"d": {"requestType": "GetRecordStatus", "requestId": "GetRecordStatus" }}')
+  end, 0.3
+)
+end
+
+-- Stop Recording, then immediately check recording status rather than waiting for polling.
+Controls["Stop Recording"].EventHandler = function()
+  ws:Write('{"op": 6,"d": {"requestType": "StopRecord", "requestId": "StopRecord" }}')
+  Timer.CallAfter(function()
+    ws:Write('{"op": 6,"d": {"requestType": "GetRecordStatus", "requestId": "GetRecordStatus" }}')
+  end, 0.3
+)
+end
+
+-- Start Replay Buffer, then immediately check replay buffer status rather than waiting for polling.
+-- NOTE: Reply Buffer needs to be enabled in OBS (Settings->Output->Reply Buffer) and a recording needs to be active.
+Controls["Start Replay Buffer"].EventHandler = function()
+  ws:Write('{"op": 6,"d": {"requestType": "StartReplayBuffer", "requestId": "StartReplayBuffer" }}')
+  Timer.CallAfter(function()
+    ws:Write('{"op": 6,"d": {"requestType": "GetReplayBufferStatus", "requestId": "GetReplayBufferStatus" }}')
+  end, 0.3
+)
+end
+
+-- Stop Replay Buffer, then immediately check replay buffer status rather than waiting for polling.
+-- NOTE: Reply Buffer needs to be enabled in OBS (Settings->Output->Reply Buffer) and a recording needs to be active.
+Controls["Stop Replay Buffer"].EventHandler = function()
+  ws:Write('{"op": 6,"d": {"requestType": "StopReplayBuffer", "requestId": "StopReplayBuffer" }}')
+  Timer.CallAfter(function()
+    ws:Write('{"op": 6,"d": {"requestType": "GetReplayBufferStatus", "requestId": "GetReplayBufferStatus" }}')
+  end, 0.3
+)
+end
+
+-- Set the current scene. Follow up command is sent within the SetCurrentProgramScene response data to get the Sources that make up the selected Scene.
+Controls["Scenes"].EventHandler = function()
+  ws:Write('{"op": 6,"d": {"requestType": "SetCurrentProgramScene", "requestId": "SetCurrentProgramScene", "requestData": {"sceneName": "'..Controls["Scenes"].String..'"} }}')
+end
+
+-- Update the interface with the properties of the selected Source when it's selected (eg. source locked, source enabled)
+Controls["Sources"].EventHandler = function()
+  ws:Write('{"op": 6,"d": {"requestType": "GetSceneList", "requestId": "GetSceneList" }}')
+end
+
+-- Source Enabled
+Controls["Source Enabled"].EventHandler = function(c)
+  ws:Write('{"op": 6,"d": {"requestType": "SetSceneItemEnabled", "requestId": "SetSceneItemEnabled", "requestData": {"sceneName": "'..Controls["Scenes"].String..'", "sceneUuid": "'..source_properties[Controls["Sources"].String].sourceUuid..'", "sceneItemId": '..source_properties[Controls["Sources"].String].sourceItemID..', "sceneItemEnabled": '..tostring(Controls["Source Enabled"].Boolean)..' } }}')
+end
+
+-- Source Locked
+Controls["Source Locked"].EventHandler = function(c)
+  ws:Write('{"op": 6,"d": {"requestType": "SetSceneItemLocked", "requestId": "SetSceneItemLocked", "requestData": {"sceneName": "'..Controls["Scenes"].String..'", "sceneUuid": "'..source_properties[Controls["Sources"].String].sourceUuid..'", "sceneItemId": '..source_properties[Controls["Sources"].String].sourceItemID..', "sceneItemLocked": '..tostring(Controls["Source Locked"].Boolean)..' } }}')
+end
+
+-- Update the interface with the properties of the selected Audio Mixer device when it's selected (eg. mute state, volume)
+Controls["Audio Mixer"].EventHandler = function()
+  ws:Write('{"op": 6,"d": {"requestType": "GetInputMute", "requestId": "GetInputMute", "requestData": {"inputName": "'..Controls["Audio Mixer"].String..'", "inputUuid": "'..audio_properties[Controls["Audio Mixer"].String].audioUuid..'" } }}')
+  ws:Write('{"op": 6,"d": {"requestType": "GetInputVolume", "requestId": "GetInputVolume", "requestData": {"inputName": "'..Controls["Audio Mixer"].String..'", "inputUuid": "'..audio_properties[Controls["Audio Mixer"].String].audioUuid..'" } }}')
+end
+
+-- Set Audio Mixer Mute State
+Controls["Audio Mixer Mute"].EventHandler = function(c)
+  ws:Write('{"op": 6,"d": {"requestType": "SetInputMute", "requestId": "SetInputMute", "requestData": {"inputName": "'..Controls["Audio Mixer"].String..'", "inputUuid": "'..audio_properties[Controls["Audio Mixer"].String].audioUuid..'", "inputMuted": '..tostring(Controls["Audio Mixer Mute"].Boolean)..' } }}')
+end
+
+-- Set Audio Mixer Volume
+Controls["Audio Mixer Volume"].EventHandler = function(c)
+  ws:Write('{"op": 6,"d": {"requestType": "SetInputVolume", "requestId": "SetInputVolume", "requestData": {"inputName": "'..Controls["Audio Mixer"].String..'", "inputUuid": "'..audio_properties[Controls["Audio Mixer"].String].audioUuid..'", "inputVolumeDb": '..Controls["Audio Mixer Volume"].Value..' } }}')
+end
+
+-- Set current Transition
+Controls["Transition Type"].EventHandler = function(c)
+  ws:Write('{"op": 6,"d": {"requestType": "SetCurrentSceneTransition", "requestId": "SetCurrentSceneTransition", "requestData": {"transitionName": "'..Controls["Transition Type"].String..'"} }}')
+end
+
+-- Set Transition Duration
+Controls["Transition Duration"].EventHandler = function(c)
+  ws:Write('{"op": 6,"d": {"requestType": "SetCurrentSceneTransitionDuration", "requestId": "SetCurrentSceneTransitionDuration", "requestData": {"transitionDuration": '..Controls["Transition Duration"].Value..'} }}')
+end
+
+-- Run Connect() function when the Connect button is toggled.
+Controls["Connect"].EventHandler = function(c)
+  Connect()
+end
+
+-- Run Connect() function when the Password is is changed.
+Controls["Password"].EventHandler = function(c)
+  Connect()
+end
+
+-- Re-initializes the script if the IP Address changes.
+Controls["IP Address"].EventHandler = function(c)
+  Disconnect()
+  Initialize()
+end
+
+
+pollTimer.EventHandler = Poll
+
+Initialize()
+
+end

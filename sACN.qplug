@@ -1,0 +1,843 @@
+PluginInfo =
+  {
+    Name = "sACN Transmit",
+    Version = "1.0",
+    Id = "3013f7f6-d308-4442-9a06-15708570734c",
+    Author = "K. Rhodus // Q-SYS",
+    Description = "sACN Transmitter for Q-SYS",
+    ShowDebug = false,
+    BuildVersion = "5"
+  };
+
+function GetColor(props)
+  return { 255,255,255}
+end
+  
+function GetPrettyName(props)
+  return PluginInfo.Name
+end
+
+function GetProperties()
+  props = {}
+
+  table.insert(props, {
+    Name = "Number of Channels",
+    Type = "integer",
+    Value = 10,
+    Min = 2,
+    Max = 512,
+    })
+
+  table.insert(props, {
+    Name = "Debug Print",
+    Type = "enum",
+    Choices = {"None", "Tx", "Function Calls", "All"},
+    Value = "None"
+  })
+
+
+
+  return props
+end
+
+function RectifyProperties(props)
+  return props
+end
+
+function GetControls(props)
+  local ctrl = {};
+	
+  table.insert(ctrl,{
+    Name = "DMX_In",
+    ControlType = "Knob",
+    ControlUnit = "Integer",
+    Max = 255,
+    Min = 0,
+    UserPin = false,
+    PinStyle = "Both",
+    Count = props["Number of Channels"].Value,
+  })
+
+  table.insert(ctrl,{
+    Name = "Unicast",
+    ControlType = "Button",
+    ButtonType = "Toggle",
+    UserPin = true,
+    PinStyle = "Both",
+  })
+
+  table.insert(ctrl,{
+    Name = "IP_Address",
+    ControlType = "Text",
+    UserPin = true,
+    PinStyle = "Both",
+  })
+
+  table.insert(ctrl,{
+    Name = "Universe",
+    ControlType = "Knob",
+    ControlUnit = "Integer",
+    Max = 63999,
+    Min = 1,
+    UserPin = true,
+    PinStyle = "Both",
+  })
+
+  table.insert(ctrl,{
+    Name = "Status",
+    ControlType = "Indicator",
+    IndicatorType = "Status",
+    UserPin = true,
+    PinStyle = "Output",
+  })
+
+  table.insert(ctrl,{
+    Name = "Priority",
+    ControlType = "Knob",
+    ControlUnit = "Integer",
+    Max = 200,
+    Min = 1,
+    UserPin = true,
+    PinStyle = "Both",
+  })
+
+  table.insert(ctrl,{
+    Name = "Transmit",
+    ControlType = "Button",
+    ButtonType = "Toggle",
+    UserPin = true,
+    PinStyle = "Both",
+  })
+
+  table.insert(ctrl,{
+    Name = "Interface",
+    ControlType = "Text",
+    UserPin = true,
+    PinStyle = "Both",
+  })
+
+  return ctrl;
+end
+
+function GetControlLayout(props)
+  layout = {};
+  graphics = {};
+
+  --Constants 
+    --Background
+      table.insert(graphics,{
+        Type="GroupBox",
+        Position={0,0},
+        Size={265,328},
+        Fill={255,255,255},
+        CornerRadius=0,
+        StrokeColor={0,0,0},
+        StrokeWidth=0,
+      })
+
+    --Header
+    table.insert(graphics,{
+      Type="Label",
+      Text= "sACN Transmit",
+      Position={0,0},
+      Size={265,40},
+      Color={255,255,255},
+      CornerRadius=0,
+      FontSize=16,
+      Font="Poppins",
+      FontStyle = "Bold",
+      Fill={0,118,191},
+      HTextAlign="Center",
+    })
+
+    ----------------
+    -- Interface   --
+    ----------------
+    -- GroupBox
+    table.insert(graphics,{
+        Type="GroupBox",
+        Position={11,49},
+        Size={244,30},
+        Fill={255,255,255,0},
+        CornerRadius=8,
+        StrokeColor={0,0,0},
+        StrokeWidth=1,
+      })
+
+    --Label
+      table.insert(graphics,{
+        Type="Label",
+        Text="Interface:",
+        Position={11,49},
+        Size={79,30},
+        Color={0,0,0},
+        CornerRadius=0,
+        FontSize=12,
+        Font="Poppins",
+        FontStyle = "Medium",
+        HTextAlign="Right",
+      })
+
+    --Control
+        layout["Interface"]={
+          Style="ComboBox",
+          CornerRadius = 8,
+          Color={255,255,255,0},
+          Size={155,30},
+          StrokeWidth = 1,
+          Position={100,49},
+          FontSize=12,
+          Font="Poppins",
+          FontStyle = "Medium",
+          HTextAlign="Center",
+        }
+
+
+
+    ---------------
+    -- Unicast    --
+    ---------------
+    -- GroupBox
+    table.insert(graphics,{
+        Type="GroupBox",
+        Position={11,79},
+        Size={244,30},
+        Fill={255,255,255,0},
+        CornerRadius=8,
+        StrokeColor={0,0,0},
+        StrokeWidth=1,
+      })
+
+    --Label
+      table.insert(graphics,{
+        Type="Label",
+        Text="Method:",
+        Position={11,79},
+        Size={79,30},
+        Color={0,0,0},
+        CornerRadius=0,
+        FontSize=12,
+        Font="Poppins",
+        FontStyle = "Medium",
+        HTextAlign="Right",
+      })
+
+    --Control
+        layout["Unicast"]={
+          Style="Button",
+          ButtonStyle = "Toggle",
+          ButtonVisualStyle = "Flat",
+          Color = {255,255,255,0},
+          UnlinkOffColor = true,
+          OffColor = {255,255,255,0},
+          CornerRadius = 8,
+          Size={155,30},
+          StrokeWidth = 1,
+          StrokeColor = {0,0,0},
+          Position={100,79},
+          Margin = 0,
+          Padding = 0,
+          FontSize=12,
+          Font="Poppins",
+          FontStyle = "Medium",
+          HTextAlign="Center",
+          TextColor = {0,128,255}
+        }
+
+    ----------------
+    -- IP Address --
+    ----------------
+    -- GroupBox
+    table.insert(graphics,{
+        Type="GroupBox",
+        Position={11,109},
+        Size={244,30},
+        Fill={255,255,255,0},
+        CornerRadius=8,
+        StrokeColor={0,0,0},
+        StrokeWidth=1,
+      })
+
+    --Label
+      table.insert(graphics,{
+        Type="Label",
+        Text="Destination:",
+        Position={11,109},
+        Size={79,30},
+        Color={0,0,0},
+        CornerRadius=0,
+        FontSize=12,
+        Font="Poppins",
+        FontStyle = "Medium",
+        HTextAlign="Right",
+      })
+
+    --Control
+        layout["IP_Address"]={
+          Style="Text",
+          CornerRadius = 8,
+          Color={255,255,255,0},
+          Size={155,30},
+          StrokeWidth = 1,
+          Position={100,109},
+          FontSize=12,
+          Font="Poppins",
+          FontStyle = "Medium",
+          HTextAlign="Center",
+        }
+
+    ----------------
+    -- Universe   --
+    ----------------
+    -- GroupBox
+    table.insert(graphics,{
+        Type="GroupBox",
+        Position={11,139},
+        Size={244,30},
+        Fill={255,255,255,0},
+        CornerRadius=8,
+        StrokeColor={0,0,0},
+        StrokeWidth=1,
+      })
+
+    --Label
+      table.insert(graphics,{
+        Type="Label",
+        Text="Universe:",
+        Position={11,139},
+        Size={79,30},
+        Color={0,0,0},
+        CornerRadius=0,
+        FontSize=12,
+        Font="Poppins",
+        FontStyle = "Medium",
+        HTextAlign="Right",
+        
+      })
+
+    --Control
+        layout["Universe"]={
+          Style="Text",
+          CornerRadius = 8,
+          Color={255,255,255,0},
+          Size={155,30},
+          StrokeWidth = 1,
+          Position={100,139},
+          FontSize=12,
+          Font="Poppins",
+          FontStyle = "Medium",
+          HTextAlign="Center",
+        }
+
+    ----------------
+    -- Priotiy   --
+    ----------------
+    -- GroupBox
+    table.insert(graphics,{
+        Type="GroupBox",
+        Position={11,169},
+        Size={244,30},
+        Fill={255,255,255,0},
+        CornerRadius=8,
+        StrokeColor={0,0,0},
+        StrokeWidth=1,
+      })
+
+    --Label
+      table.insert(graphics,{
+        Type="Label",
+        Text="Priority:",
+        Position={11,169},
+        Size={79,30},
+        Color={0,0,0},
+        CornerRadius=0,
+        FontSize=12,
+        Font="Poppins",
+        FontStyle = "Medium",
+        HTextAlign="Right",
+      })
+
+    --Control
+        layout["Priority"]={
+          Style="Text",
+          CornerRadius = 8,
+          Color={255,255,255,0},
+          Size={155,30},
+          StrokeWidth = 1,
+          Position={100,169},
+          FontSize=12,
+          Font="Poppins",
+          FontStyle = "Medium",
+          HTextAlign="Center",
+        }
+
+    ---------------
+    -- Transmit    --
+    ---------------
+    -- GroupBox
+    table.insert(graphics,{
+        Type="GroupBox",
+        Position={11,224},
+        Size={244,30},
+        Fill={255,255,255,0},
+        CornerRadius=8,
+        StrokeColor={0,0,0},
+        StrokeWidth=1,
+      })
+
+    --Label
+      table.insert(graphics,{
+        Type="Label",
+        Text="Transmit:",
+        Position={11,224},
+        Size={79,30},
+        Color={0,0,0},
+        CornerRadius=0,
+        FontSize=12,
+        Font="Poppins",
+        FontStyle = "Medium",
+        HTextAlign="Right",
+      })
+
+    --Control
+        layout["Transmit"]={
+          Style="Button",
+          ButtonStyle = "Toggle",
+          ButtonVisualStyle = "Flat",
+          TextColor={0,0,0},
+          Color = {0,255,0},
+          UnlinkOffColor = true,
+          OffColor = {0,128,255},
+          CornerRadius = 8,
+          Size={155,30},
+          StrokeWidth = 1,
+          StrokeColor = {0,0,0},
+          Position={100,224},
+          Margin = 0,
+          Padding = 0,
+          FontSize=12,
+          Font="Poppins",
+          FontStyle = "Medium",
+          HTextAlign="Center",
+        }
+
+
+    ----------------
+    -- Status   --
+    ----------------
+    -- GroupBox
+    table.insert(graphics,{
+        Type="GroupBox",
+        Position={11,254},
+        Size={244,30},
+        Fill={255,255,255,0},
+        CornerRadius=8,
+        StrokeColor={0,0,0},
+        StrokeWidth=1,
+      })
+
+    --Label
+      table.insert(graphics,{
+        Type="Label",
+        Text="Status:",
+        Position={11,254},
+        Size={79,30},
+        Color={0,0,0},
+        CornerRadius=0,
+        FontSize=12,
+        Font="Poppins",
+        FontStyle = "Medium",
+        HTextAlign="Right",
+      })
+
+    --Control
+        layout["Status"]={
+          Style="Text",
+          CornerRadius = 8,
+          Color={224,255,255,0},
+          Size={155,30},
+          StrokeWidth = 1,
+          Position={100,254},
+          FontSize=10,
+          Font="Poppins",
+          FontStyle = "Medium",
+          HTextAlign="Center",
+        }
+
+
+  --DMX Values
+  for i = 1, props["Number of Channels"].Value do
+    layout["DMX_In "..i]={
+      Style="None",
+      PrettyName = tostring(i)
+      }
+  end
+
+
+  --Version
+      --Label
+      table.insert(graphics,{
+        Type="Label",
+        Text="Version: "..PluginInfo["Version"],
+        Position={194,311},
+        Size={71,17},
+        Color={0,0,0},
+        CornerRadius=0,
+        FontSize=8,
+        Font="Poppins",
+        FontStyle = "Light",
+        HTextAlign="Center",
+      })
+
+
+  return layout,graphics;
+end
+
+if Controls then
+  print(PluginInfo["Name"])
+  print("-GUID: " .. PluginInfo["Id"])
+  print("-BuildVersion: " .. PluginInfo["BuildVersion"])
+  print("-Version: " .. PluginInfo["Version"])
+  print("-Author: " .. PluginInfo["Author"])  
+  print("------   STARTING QPLUG   -----")
+ 
+  --[[
+  sACN Plugin
+  Created by K. Rhodus // Q-SYS
+  kevin.rhodus@qsc.com
+
+  Based on Q-Sys sACN Control Script by Michael Goodyear
+
+  Version History:
+  1.0 - Initial Build
+
+  ]]--
+
+  -----------------------------------------------------------------------------------------------------------------------------------------
+  --      Script Setup      --
+  ----------------------------------------------------------------------------------------------------------------------------------------
+  -- Debugging level
+  DebugTx,DebugFunction = false, false
+  --DebugPrint = Properties["Debug Print"].Value
+
+  if DebugPrint == "Tx" then
+    DebugTx = true
+  elseif DebugPrint == "Function Calls" then
+    DebugFunction = true
+  elseif DebugPrint == "All" then
+    DebugTx, DebugFunction = true, true
+  end
+
+  json = require("rapidjson")
+  -----------------------------------------------------------------------------------------------------------------------------------------
+  --      IP Address Functions      --
+  ----------------------------------------------------------------------------------------------------------------------------------------
+  --Calculate Multicast IP Address
+  function CalcMulticast()
+    if DebugFunction then print("CalcMulticast() called") end
+    local highUniverseByte = math.floor(Controls.Universe.Value / 256)
+    local lowUniverseByte = math.floor(Controls.Universe.Value % 256)
+    MULTICAST_IP = ('239.255.' .. highUniverseByte .. '.' .. lowUniverseByte);
+    if not Controls.Unicast.Boolean then 
+      Controls.IP_Address.String = MULTICAST_IP
+    end
+  end
+
+  CalcMulticast()   --Run at Startup
+  Controls.Universe.EventHandler = CalcMulticast    --Run when Universe Changes
+
+  --Disable IP Address Field
+  Controls.Unicast.EventHandler = function(ctl)
+    Controls.IP_Address.IsDisabled = not ctl.Boolean
+
+    SendTimer:Stop()
+    Controls.Transmit.Boolean = false
+    Controls.Transmit.Legend = "Stopped"
+    
+    if ctl.Boolean then 
+      ctl.Legend = "Unicast"
+      if prevIPAddress ~= nil then
+        Controls.IP_Address.String = prevIPAddress
+      else
+        Controls.IP_Address.String = ""
+        IP_Flag = false
+      end
+    else
+      ctl.Legend = "Multicast"
+      prevIPAddress = Controls.IP_Address.String
+      Controls.IP_Address.String = MULTICAST_IP
+    end 
+  end
+
+  Controls.IP_Address.IsDisabled = not Controls.Unicast.Boolean
+  Controls.Unicast.Legend = Controls.Unicast.Boolean and "Unicast" or "Multicast"
+
+  --IP Address Check
+  function isValidIP(ip)
+      if DebugFunction then print("isValidIP() called") end
+      -- Check if the IP matches the IPv4 pattern
+      if not ip:match("^%d+%.%d+%.%d+%.%d+$") then
+            Controls.Status.Value = 1
+            Controls.Status.String = "Not Valid IP Address"
+
+          return false
+      end
+
+      -- Split the IP into its four octets
+      local octets = {ip:match("(%d+)%.(%d+)%.(%d+)%.(%d+)")}
+      if #octets ~= 4 then
+            Controls.Status.Value = 1
+            Controls.Status.String = "Not Valid IP Address"
+          return false
+      end
+
+      -- Check if each octet is within the valid range (0-255)
+      for _, octet in ipairs(octets) do
+          local num = tonumber(octet)
+          if not num or num < 0 or num > 255 then
+              Controls.Status.Value = 1
+              Controls.Status.String = "Not Valid IP Address"
+              return false
+          end
+      end
+
+      Controls.Status.Value = 0
+      Controls.Status.String = "Valid IP Address"
+      return true
+
+  end
+
+  Controls.IP_Address.EventHandler = function(ctl)
+    IP_Flag = isValidIP(ctl.String)
+
+  end
+    
+  IP_Flag = isValidIP(Controls.IP_Address.String)
+
+
+ -----------------------------------------------------------------------------------------------------------------------------------------
+  --      UDP Functions      --
+  ----------------------------------------------------------------------------------------------------------------------------------------
+  UDP_SOCKET = UdpSocket.New()
+  
+  function OpenSocket()
+    if interfaces[Controls.Interface.String] ~= nil then
+      UDP_SOCKET:Open(interfaces[Controls.Interface.String])
+      Controls.Status.Value = 0
+      Controls.Status.String = "Opening Socket on ".. interfaces[Controls.Interface.String]
+    else
+      Controls.Status.Value = 2
+      Controls.Status.String = Controls.Interface.String .. " does not exist"
+    end
+  end 
+  
+  --Build table of UDP Interfaces
+  function getInterfaces()
+    if DebugFunction then print("getInterfaces() called") end
+    local temp = Network.Interfaces()
+    interfaces = {}
+    for _,ctl in ipairs(temp) do
+      print(ctl.Interface)
+      interfaces[ctl.Interface] = ctl.Address
+      table.insert(interfaces, ctl.Interface)
+    end
+    Controls.Interface.Choices = interfaces
+  end
+
+  getInterfaces()
+
+
+  Controls.Interface.EventHandler = function()
+    SendTimer:Stop()
+    Controls.Transmit.Legend = "Stopped"
+    Controls.Transmit.Boolean = false
+    Controls.Status.Value = 0
+    Controls.Status.String = "Stopped"
+    UDP_SOCKET:Close()
+    OpenSocket()
+  end
+
+  OpenSocket()
+
+  -- [[ ORIGIONAL CODE FROM Locimation with modifications ]] --
+  --[[
+
+    Q-Sys sACN Control Script
+    Author: Michael Goodyear
+    Email: michael@locimation.com
+    Version: 1.3
+
+    Copyright 2020 Locimation Pty Ltd
+
+    Permission is hereby granted, free of charge,
+    to any person obtaining a copy of this software
+    and associated documentation files (the "Software"),
+    to deal in the Software without restriction, including
+    without limitation the rights to use, copy, modify,
+    merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom
+    the Software is furnished to do so, subject to the
+    following conditions:
+
+    The above copyright notice and this permission
+    notice shall be included in all copies or substantial
+    portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY
+    OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT
+    LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+    FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO
+    EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE
+    FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN
+    AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+    OTHER DEALINGS IN THE SOFTWARE.
+
+  ]]
+
+
+
+
+  -- [[ DO NOT MODIFY BELOW THIS POINT ]] --Sorry I did. 
+
+  SACN_FORMAT = bitstring.compile(''
+
+  --[[ Root Layer ]] --
+  .. '16:int, '  -- Preamble Size
+  .. '16:int, '  -- Postamble Size
+  .. '12:bin, '  -- ACN Packet identifier
+  .. '4:int,  '  -- Flags
+  .. '12:int, '  -- Length
+  .. '16:int, 16:int, '  -- RLP Data 1.31 PDU Identifier
+  .. '16:bin, '  -- Sender CID
+  
+  --[[ E1.31 Framing Layer ]]--
+  .. '4:int,  '  -- Flags
+  .. '12:int, '  -- Length
+  .. '16:int, 16:int, '  -- DMP PDU Identifier
+  .. '64:bin, '  -- Source name
+  .. '8:int,  '  -- Priority
+  .. '16:int, '  -- Reserved
+  .. '8:int,  '  -- Sequence number
+  .. '1:int,  '  -- Preview_Data
+  .. '1:int,  '  -- Stream_Terminated
+  .. '6:int,  '  -- Misc flags
+  .. '16:int, '  -- DMX Universe number
+  
+  --[[ DMP Layer ]]--
+  .. '4:int,  '  -- Flags
+  .. '12:int, '  -- PDU length
+  .. '8:int,  '  -- DMP Set Property Message PDU Identifier
+  .. '8:int,  '  -- Address and data type
+  .. '16:int, '  -- First property address
+  .. '16:int, '  -- Address increment
+  .. '16:int, '  -- Property value count
+  
+  );
+
+  NUM_CHANNELS = Properties["Number of Channels"].Value;
+  SEQ_NUMBER = 1;
+  DESIGN_CODE = Design.GetStatus().DesignCode;
+  DESIGN_NAME = Design.GetStatus().DesignName;
+
+
+
+
+  -- sACN Packet Formatter
+  function sendPacket()
+    if DebugFunction then print("sendPacket() called") end
+    local dmx_ch_blob = '';
+    for i=1,NUM_CHANNELS do
+      local inputValue = Controls.DMX_In[i].Value;
+      if(inputValue < 0) then inputValue = 0; end;
+      if(inputValue > 255) then inputValue = 255; end;
+      dmx_ch_blob = dmx_ch_blob .. string.char(inputValue);
+    end;
+    local sACNpacket = bitstring.pack(SACN_FORMAT,
+
+    --[[ Root Layer ]] --
+      0x0010,            -- Preamble Size
+      0x0000,            -- Postamble Size
+      'ASC-E1.17\0\0\0', -- ACN Packet identifier
+      0x07,              -- Flags
+      NUM_CHANNELS + 0x6E ,    -- Length
+      0x00, 0x04,              -- RLP PDU Identifier
+      DESIGN_CODE .. string.rep('\0', 16-#DESIGN_CODE), -- Sender CID
+    
+    --[[ E1.31 Framing Layer ]]--
+      0x07  ,                -- Flags
+      NUM_CHANNELS + 0x58 ,  -- Length
+      0x00, 0x02,                 -- DMP PDU Identifier
+      'Q-SYS sACN Plugin in "' .. DESIGN_NAME .. '"' .. string.rep('\0', 41-#DESIGN_NAME) , -- Source name
+      string.format("0x%X", Controls.Priority.Value) ,                 -- Priority
+      0x00,                  -- Reserved
+      SEQ_NUMBER ,           -- Sequence number
+      0x00 ,                 -- Preview_Data
+      0x00 ,                 -- Stream_Terminated
+      0x00 ,                 -- Misc flags
+      Controls.Universe.Value ,         -- DMX Universe number
+    
+    --[[ DMP Layer ]]--
+      0x07  ,                -- Flags
+      NUM_CHANNELS + 0x0B ,  -- PDU length
+      0x02  ,                -- DMP Set Property Message PDU Identifier
+      0xA1  ,                -- Address and data type
+      0x0000,               -- First property address
+      0x0001 ,               -- Address increment
+      NUM_CHANNELS + 0x01    -- Property value count
+    
+    ) .. '\0' .. dmx_ch_blob;
+
+    if IP_Flag == true or not Controls.Unicast.Boolean then 
+      UDP_SOCKET:Send(Controls.Unicast.Boolean and Controls.IP_Address.String or MULTICAST_IP, 5568, sACNpacket);
+      if DebugTx then print("[TX]:"..bitstring.hexstream(sACNpacket)) end
+    else
+      Controls.Status.Value = 2
+      Controls.Status.String = "No IP Set - Transmit Stopped"
+      Controls.Transmit.Boolean = false
+      Controls.Transmit.Legend = "Stopped"
+      SendTimer:Stop()
+    end
+    SEQ_NUMBER = (SEQ_NUMBER + 1) % 0xFF;
+    
+  end;
+
+  SendTimer = Timer.New();
+  SendTimer.EventHandler = sendPacket;
+
+
+  -----------------------------------------------------------------------------------------------------------------------------------------
+  --      Transmit Functions      --
+  ----------------------------------------------------------------------------------------------------------------------------------------
+
+  Controls.Transmit.EventHandler = function(ctl)
+    if ctl.Boolean then 
+      if Controls.Interface.String ~= "" and Controls.IP_Address.String ~= "" then 
+        SendTimer:Start(0.03)
+        ctl.Legend = "Transmitting"
+        Controls.Status.Value = 0
+        Controls.Status.String = "Transmitting sACN"
+      else
+        ctl.Boolean = false
+        Controls.Status.Value = 2
+        Controls.Status.String = "Interface / Destination Not Set"
+      end
+    else 
+      SendTimer:Stop()
+      ctl.Legend = "Stopped"
+      Controls.Status.Value = 0
+      Controls.Status.String = "Stopped"
+    end
+  end
+
+  if Controls.Transmit.Boolean then 
+    SendTimer:Start(0.03)
+    Controls.Transmit.Legend = "Transmitting"
+    Controls.Status.Value = 0
+    Controls.Status.String = "Transmitting sACN"
+  else
+    Controls.Transmit.Legend = "Stopped"
+    Controls.Status.Value = 0
+    Controls.Status.String = "Stopped"
+  end
+end
