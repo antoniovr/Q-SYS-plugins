@@ -1,0 +1,1642 @@
+-- Plugin: INOGENI IP2USB
+-- initial release IP2USB V.1.3.3
+
+PluginInfo =
+{
+  Name = "INOGENI~IP2USB v1",
+  Version = "1.0",
+  BuildVersion = "1.0.0.0",
+  Id = "b2e6e2e2-4c7a-4e2e-8b7a-2e8e2e2e2e2e",
+  Author = "Daniel",
+  Description = "Plugin for INOGENI IP2USB",
+  Manufacturer = "INOGENI",
+  Model = "IP2USB"
+}
+
+function GetColor(props)
+  return {215, 80, 45}
+end
+
+function GetPrettyName(props)
+  return "INOGENI\x0d\x0aIP2USB\x0d\x0av" .. PluginInfo.Version
+end
+
+function GetProperties()
+  local props = {}
+  table.insert(props,
+  {
+    Name = "Debug Print",
+    Type = "enum",
+    Choices = {"None", "Tx/Rx", "Tx", "Rx", "Function Calls", "Comm", "All"},
+    Value = "None"
+  })
+  table.insert(props,
+  {
+    Name = "Control Mode",
+    Type = "enum",
+    Choices = {"Ethernet", "Serial"},
+    Value = "Ethernet"
+  })
+  table.insert(props,
+  {
+    Name = "API Token",
+    Type = "enum",
+    Choices = {"Inactive", "Active"},
+    Value = "Inactive"
+  })
+  table.insert(props,
+  {
+    Name = "Polling Interval (s)",
+    Type = "enum",
+    Choices = {"0.5", "1", "2", "3", "5", "10"},
+    Value = "2"
+  })
+  return props
+end
+
+function GetPins(props)
+  local pins = {}
+  if props["Control Mode"].Value == "Serial" then
+    table.insert(pins,
+    {
+      Name = "input",
+      Direction = "input",
+      Domain = "serial"
+    })
+  end
+  return pins
+end
+
+function RectifyProperties(props)
+  if props["Control Mode"].Value == "Serial" then
+    props["API Token"].IsHidden = true
+  end
+  return props
+end
+
+function GetPageNames(props)
+  return {"Connection", "Cameras", "PTZ", "Status", "Settings", "About"}
+end
+
+function GetPages(props)
+  local pages = {}
+  for _, pgeName in ipairs(GetPageNames(props)) do
+    table.insert(pages, {name = pgeName})
+  end
+  return pages
+end
+
+--- *** Define here the Control Part (Controls, Buttons, Pins...) *** ---
+----------------------------------------------------------------------------------------------    
+LogoInogeni  = "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"
+
+
+function GetControls(props)
+  local ctrls = {}
+
+  if props["Control Mode"].Value == "Ethernet" then
+    table.insert(ctrls, {Name = "IPAddress", ControlType = "Text", Count = 1, UserPin = true, PinStyle = "Both"})
+    table.insert(ctrls, {Name = "APIToken", ControlType = "Text", Count = 1, UserPin = true, PinStyle = "Both"})
+  else
+    table.insert(ctrls, {Name = "SerialBaud", ControlType = "Text", ControlUnit = "ComboBox", Count = 1, UserPin = true, PinStyle = "Both"})
+  end
+
+  table.insert(ctrls, {Name = "Status", ControlType = "Indicator", IndicatorType = "Status", Count = 1, UserPin = true, PinStyle = "Output"})
+  table.insert(ctrls, {Name = "Firmware", ControlType = "Text", Count = 1, UserPin = true, PinStyle = "Output"})
+  table.insert(ctrls, {Name = "MACAddress", ControlType = "Text", Count = 1, UserPin = true, PinStyle = "Output"})
+  table.insert(ctrls, {Name = "StatIPAddress", ControlType = "Text", Count = 1, UserPin = true, PinStyle = "Output"})
+  table.insert(ctrls, {Name = "StatSubnet", ControlType = "Text", Count = 1, UserPin = true, PinStyle = "Output"})
+  table.insert(ctrls, {Name = "StatGateway", ControlType = "Text", Count = 1, UserPin = true, PinStyle = "Output"})
+  table.insert(ctrls, {Name = "StatSerial", ControlType = "Text", Count = 1, UserPin = true, PinStyle = "Output"})
+  table.insert(ctrls, {Name = "StatTemperature", ControlType = "Text", Count = 1, UserPin = true, PinStyle = "Output"})
+  table.insert(ctrls, {Name = "StatDhcp", ControlType = "Text", Count = 1, UserPin = true, PinStyle = "Output"})
+  table.insert(ctrls, {Name = "StatCdcNcmIp", ControlType = "Text", Count = 1, UserPin = true, PinStyle = "Output"})
+  table.insert(ctrls, {Name = "StatUsbVideo", ControlType = "Text", Count = 1, UserPin = true, PinStyle = "Output"})
+  table.insert(ctrls, {Name = "StatNdiServer", ControlType = "Text", Count = 1, UserPin = true, PinStyle = "Output"})
+  
+  table.insert(ctrls, {Name = "CameraSelect", ControlType = "Text", ControlUnit = "ComboBox", Count = 1, UserPin = true, PinStyle = "Both"})
+  table.insert(ctrls, {Name = "CameraSelectButton", ControlType = "Button", ButtonType = "StateTrigger", Min = 0, Max = 1, Count = 10, UserPin = true, PinStyle = "Both"})
+  table.insert(ctrls, {Name = "PtzUp", ControlType = "Button", ButtonType = "Momentary", Min = 0, Max = 1, Count = 1, UserPin = true, PinStyle = "Both"})
+  table.insert(ctrls, {Name = "PtzDown", ControlType = "Button", ButtonType = "Momentary", Min = 0, Max = 1, Count = 1, UserPin = true, PinStyle = "Both"})
+  table.insert(ctrls, {Name = "PtzLeft", ControlType = "Button", ButtonType = "Momentary", Min = 0, Max = 1, Count = 1, UserPin = true, PinStyle = "Both"})
+  table.insert(ctrls, {Name = "PtzRight", ControlType = "Button", ButtonType = "Momentary", Min = 0, Max = 1, Count = 1, UserPin = true, PinStyle = "Both"})
+  table.insert(ctrls, {Name = "PtzZoomIn", ControlType = "Button", ButtonType = "Momentary", Min = 0, Max = 1, Count = 1, UserPin = true, PinStyle = "Both"})
+  table.insert(ctrls, {Name = "PtzZoomOut", ControlType = "Button", ButtonType = "Momentary", Min = 0, Max = 1, Count = 1, UserPin = true, PinStyle = "Both"})
+  
+  table.insert(ctrls, {Name = "PtzPresetNumber", ControlType = "Text", Count = 1, UserPin = true, PinStyle = "Both"})
+  table.insert(ctrls, {Name = "PtzSetPreset", ControlType = "Button", ButtonType = "Trigger", Min = 0, Max = 1, Count = 1, UserPin = true, PinStyle = "Both"})
+  table.insert(ctrls, {Name = "PtzRecallPreset", ControlType = "Button", ButtonType = "Trigger", Min = 0, Max = 1, Count = 1, UserPin = true, PinStyle = "Both"})
+  table.insert(ctrls, {Name = "HdmiResolution", ControlType = "Text", ControlUnit = "ComboBox", Count = 1, UserPin = true, PinStyle = "Both"})
+  table.insert(ctrls, {Name = "StandByMode", ControlType = "Text", ControlUnit = "ComboBox", Count = 1, UserPin = true, PinStyle = "Both"})
+  table.insert(ctrls, {Name = "UsbInputAudio", ControlType = "Text", ControlUnit = "ComboBox", Count = 1, UserPin = true, PinStyle = "Both"})
+  table.insert(ctrls, {Name = "UsbOutputAudio", ControlType = "Text", ControlUnit = "ComboBox", Count = 1, UserPin = true, PinStyle = "Both"})
+  table.insert(ctrls, {Name = "AecAudio", ControlType = "Text", ControlUnit = "ComboBox", Count = 1, UserPin = true, PinStyle = "Both"})
+  table.insert(ctrls, {Name = "AudioSwitchMode", ControlType = "Text", ControlUnit = "ComboBox", Count = 1, UserPin = true, PinStyle = "Both"})
+  table.insert(ctrls, {Name = "NdiServer", ControlType = "Text", Count = 1, UserPin = true, PinStyle = "Both"})
+  table.insert(ctrls, {Name = "FriendlyName", ControlType = "Text", Count = 1, UserPin = true, PinStyle = "Both"})
+  table.insert(ctrls, {Name = "BaudRateSetting", ControlType = "Text", ControlUnit = "ComboBox", Count = 1, UserPin = true, PinStyle = "Both"})
+  table.insert(ctrls, {Name = "CdcNcm", ControlType = "Text", ControlUnit = "ComboBox", Count = 1, UserPin = true, PinStyle = "Both"})
+
+  table.insert(ctrls, {Name = "Reboot", ControlType = "Button", ButtonType = "Trigger", Min = 0, Max = 1, Count = 1, UserPin = true, PinStyle = "Input"})
+  table.insert(ctrls, {Name = "FactoryReset", ControlType = "Button", ButtonType = "Trigger", Min = 0, Max = 1, Count = 1, UserPin = true, PinStyle = "Input"})
+  
+  return ctrls
+end
+
+function GetControlLayout(props)
+  local layout = {}
+  local graphics = {}
+  local currentPage = GetPageNames(props)[props["page_index"].Value]
+  local sizeFontTextTitle = 18
+
+  if currentPage == "Connection" then
+    table.insert(graphics, {Type = "GroupBox", Fill = {255, 255, 255}, StrokeWidth = 0, Position = {1, 1}, Size = {430, 80}})
+    table.insert(graphics, {Type = "Image", Image = LogoInogeni, Position = {106, 21}, Size = {218, 38}})
+    table.insert(graphics, {Type = "GroupBox", Fill = {218, 218, 218}, StrokeWidth = 0, Position = {1, 106}, Size = {430, 320}})
+    local sizeTitle = {150, 22}
+    local posLeftTitle = 1
+    local sizeTxtHeader = {396, 20}
+    local posLeftHeader = 17
+    local sizeFontTextHeader = 16
+    table.insert(graphics, {Type = "Label", Text = "Connection", Position = {posLeftTitle, 83}, Size = sizeTitle, Color = "Black", FontSize = sizeFontTextTitle, Font = "Roboto", FontStyle = "Bold", HTextAlign = "Left"})
+    table.insert(graphics, {Type = "Header", Text = "Connection Setup", Position = {posLeftHeader, 118}, Size = sizeTxtHeader, FontSize = sizeFontTextHeader})
+    table.insert(graphics, {Type = "Header", Text = "Connection Status", Position = {posLeftHeader, 226}, Size = sizeTxtHeader, FontSize = sizeFontTextHeader})
+    table.insert(graphics, {Type = "Header", Text = "Device Information", Position = {posLeftHeader, 286}, Size = sizeTxtHeader, FontSize = sizeFontTextHeader})
+    table.insert(graphics, {Type = "Header", Text = "Control", Position = {posLeftHeader, 366}, Size = sizeTxtHeader, FontSize = sizeFontTextHeader})
+
+    table.insert(graphics, {Type = "Text", Text = "Control mode:", Position = {20, 146}, Size = {120, 20}, FontSize = 12, HTextAlign = "Right"})
+    table.insert(graphics, {Type = "Text", Text = props["Control Mode"].Value, Position = {150, 146}, Size = {240, 20}, FontSize = 12, HTextAlign = "Left"})
+
+    if props["Control Mode"].Value == "Ethernet" then
+      table.insert(graphics, {Type = "Text", Text = "IP Address:", Position = {20, 176}, Size = {120, 20}, FontSize = 12, HTextAlign = "Right"})
+      layout["IPAddress"] = {Style = "Text", PrettyName = "Connection~IP Address", Position = {150, 176}, Size = {240, 20}}
+      if props["API Token"].Value == "Active" then
+        table.insert(graphics, {Type = "Text", Text = "API Token:", Position = {20, 206}, Size = {120, 20}, FontSize = 12, HTextAlign = "Right"})
+        layout["APIToken"] = {Style = "Text", PrettyName = "Connection~API Token", Position = {150, 206}, Size = {240, 20}}
+      end
+    else
+      table.insert(graphics, {Type = "Text", Text = "Serial Baud:", Position = {20, 176}, Size = {120, 20}, FontSize = 12, HTextAlign = "Right"})
+      layout["SerialBaud"] = {Style = "ComboBox", PrettyName = "Connection~Serial Baud", Position = {150, 176}, Size = {240, 20}}
+    end
+
+    table.insert(graphics, {Type = "Text", Text = "Connection Status:", Position = {20, 254}, Size = {120, 20}, FontSize = 12, HTextAlign = "Right"})
+    layout["Status"] = {PrettyName = "Connection~Status", Position = {150, 248}, Size = {240, 32}}
+
+    table.insert(graphics, {Type = "Text", Text = "Firmware:", Position = {20, 314}, Size = {120, 20}, FontSize = 12, HTextAlign = "Right"})
+    layout["Firmware"] = {Style = "Text", PrettyName = "Connection~Firmware", Position = {150, 314}, Size = {240, 20}, IsReadOnly = true, Color = {200, 200, 200}}
+
+    table.insert(graphics, {Type = "Text", Text = "MAC Address:", Position = {20, 344}, Size = {120, 20}, FontSize = 12, HTextAlign = "Right"})
+    layout["MACAddress"] = {Style = "Text", PrettyName = "Connection~MAC Address", Position = {150, 344}, Size = {240, 20}, IsReadOnly = true, Color = {200, 200, 200}}
+
+    layout["Reboot"] = {Style = "Button", PrettyName = "Connection~Reboot", Legend = "REBOOT", Position = {88, 394}, Size = {120, 30}}
+    layout["FactoryReset"] = {Style = "Button", PrettyName = "Connection~Factory Reset", Legend = "FACTORY RESET", Position = {223, 394}, Size = {120, 30}}
+
+  elseif currentPage == "Status" then
+    table.insert(graphics, {Type = "GroupBox", Fill = {255, 255, 255}, StrokeWidth = 0, Position = {1, 1}, Size = {430, 80}})
+    table.insert(graphics, {Type = "Image", Image = LogoInogeni, Position = {106, 21}, Size = {218, 38}})
+    table.insert(graphics, {Type = "GroupBox", Fill = {218, 218, 218}, StrokeWidth = 0, Position = {1, 106}, Size = {430, 460}})
+    local sizeTitle = {150, 22}
+    local posLeftTitle = 1
+    local sizeTxtHeader = {396, 20}
+    local posLeftHeader = 17
+    local sizeFontTextHeader = 16
+    table.insert(graphics, {Type = "Label", Text = "Status", Position = {posLeftTitle, 83}, Size = sizeTitle, Color = "Black", FontSize = sizeFontTextTitle, Font = "Roboto", FontStyle = "Bold", HTextAlign = "Left"})
+    table.insert(graphics, {Type = "Header", Text = "Device Status", Position = {posLeftHeader, 118}, Size = sizeTxtHeader, FontSize = sizeFontTextHeader})
+
+    local y = 146
+    function section(title)
+      table.insert(graphics, {Type = "Header", Text = title, Position = {posLeftHeader, y}, Size = sizeTxtHeader, FontSize = 14})
+      y = y + 24
+    end
+
+    function field(label, name)
+      table.insert(graphics, {Type = "Text", Text = label .." :", Position = {20, y}, Size = {150, 20}, FontSize = 12, HTextAlign = "Right"})
+      layout[name] = {Style = "Text", PrettyName = "Status~" .. label, Position = {180, y}, Size = {165, 20}, IsReadOnly = true, Color = {200, 200, 200}}
+      y = y + 24
+    end
+
+    field("Friendly Name", "FriendlyName")
+
+    section("Camera configuration")
+    field("Camera Selected ID", "CameraSelect")
+    field("NDI Server", "StatNdiServer")
+
+    section("Audio configuration")
+    field("Audio Switch Mode", "AudioSwitchMode")
+
+    section("USB output")
+    field("Standby", "StandByMode")
+    field("USB Input Audio", "UsbInputAudio")
+    field("USB Output Audio", "UsbOutputAudio")
+    field("Enable AEC", "AecAudio")
+    field("Enable CDC-NCM", "CdcNcm")
+    field("CDC-NCM IP", "StatCdcNcmIp")
+
+    section("HDMI output")
+    field("Output Resolution", "HdmiResolution")
+
+    section("Serial configuration")
+    field("Baud Rate", "BaudRateSetting")
+
+    
+  elseif currentPage == "Cameras" then
+    table.insert(graphics, {Type = "GroupBox", Fill = {255, 255, 255}, StrokeWidth = 0, Position = {1, 1}, Size = {430, 80}})
+    table.insert(graphics, {Type = "Image", Image = LogoInogeni, Position = {106, 21}, Size = {218, 38}})
+    table.insert(graphics, {Type = "GroupBox", Fill = {218, 218, 218}, StrokeWidth = 0, Position = {1, 106}, Size = {430, 320}})
+    local sizeTitle = {150, 22}
+    local posLeftTitle = 1
+    local sizeTxtHeader = {396, 20}
+    local posLeftHeader = 17
+    local sizeFontTextHeader = 16
+    table.insert(graphics, {Type = "Label", Text = "Cameras", Position = {posLeftTitle, 83}, Size = sizeTitle, Color = "Black", FontSize = sizeFontTextTitle, Font = "Roboto", FontStyle = "Bold", HTextAlign = "Left"})
+    table.insert(graphics, {Type = "Header", Text = "Select Camera ID", Position = {posLeftHeader, 118}, Size = sizeTxtHeader, FontSize = sizeFontTextHeader})
+
+    local startX = 55
+    local startY = 160
+    local w = 140
+    local h = 40
+    local gapX = 180
+    local gapY = 50
+
+    for i = 1, 10 do
+      local col = (i - 1) % 2
+      local row = math.floor((i - 1) / 2)
+      local x = startX + (col * gapX)
+      local y = startY + (row * gapY)
+      layout["CameraSelectButton " .. i] =
+      {
+        Style = "Button",
+        PrettyName = "Cameras~Camera ID " .. i,
+        Legend = "CAM " .. i,
+        Position = {x, y},
+        Size = {w, h}
+      }
+    end
+
+
+  elseif currentPage == "PTZ" then
+    table.insert(graphics, {Type = "GroupBox", Fill = {255, 255, 255}, StrokeWidth = 0, Position = {1, 1}, Size = {430, 80}})
+    table.insert(graphics, {Type = "Image", Image = LogoInogeni, Position = {106, 21}, Size = {218, 38}})
+    table.insert(graphics, {Type = "GroupBox", Fill = {218, 218, 218}, StrokeWidth = 0, Position = {1, 106}, Size = {430, 430}})
+    local sizeTitle = {150, 22}
+    local posLeftTitle = 1
+    local sizeTxtHeader = {396, 20}
+    local posLeftHeader = 17
+    local sizeFontTextHeader = 16
+    table.insert(graphics, {Type = "Label", Text = "PTZ", Position = {posLeftTitle, 83}, Size = sizeTitle, Color = "Black", FontSize = sizeFontTextHeader, Font = "Roboto", FontStyle = "Bold", HTextAlign = "Left"})
+    table.insert(graphics, {Type = "Header", Text = "PTZ Controls", Position = {posLeftHeader, 118}, Size = sizeTxtHeader, FontSize = sizeFontTextHeader})
+
+    layout["PtzUp"] = {Style = "Button", PrettyName = "PTZ~Up", Legend = "UP", Position = {170, 156}, Size = {90, 36}}
+    layout["PtzLeft"] = {Style = "Button", PrettyName = "PTZ~Left", Legend = "LEFT", Position = {70, 200}, Size = {90, 36}}
+    layout["PtzRight"] = {Style = "Button", PrettyName = "PTZ~Right", Legend = "RIGHT", Position = {270, 200}, Size = {90, 36}}
+    layout["PtzDown"] = {Style = "Button", PrettyName = "PTZ~Down", Legend = "DOWN", Position = {170, 244}, Size = {90, 36}}
+
+    layout["PtzZoomIn"] = {Style = "Button", PrettyName = "PTZ~Zoom In", Legend = "ZOOM +", Position = {95, 300}, Size = {90, 36}}
+    layout["PtzZoomOut"] = {Style = "Button", PrettyName = "PTZ~Zoom Out", Legend = "ZOOM -", Position = {245, 300}, Size = {90, 36}}
+
+    table.insert(graphics, {Type = "Text", Text = "Preset Number:", Position = {20, 396}, Size = {140, 20}, FontSize = 12, HTextAlign = "Right"})
+    layout["PtzPresetNumber"] = {Style = "Text", PrettyName = "PTZ~Preset Number", Position = {170, 396}, Size = {90, 20}}
+    layout["PtzSetPreset"] = {Style = "Button", PrettyName = "PTZ~Preset Save", Legend = "SET", Position = {270, 390}, Size = {90, 30}}
+    layout["PtzRecallPreset"] = {Style = "Button", PrettyName = "PTZ~Preset Recall", Legend = "RECALL", Position = {270, 426}, Size = {90, 30}}
+    
+  elseif currentPage == "Settings" then
+    table.insert(graphics, {Type = "GroupBox", Fill = {255, 255, 255}, StrokeWidth = 0, Position = {1, 1}, Size = {430, 80}})
+    table.insert(graphics, {Type = "Image", Image = LogoInogeni, Position = {106, 21}, Size = {218, 38}})
+    table.insert(graphics, {Type = "GroupBox", Fill = {218, 218, 218}, StrokeWidth = 0, Position = {1, 106}, Size = {430, 430}})
+    local sizeTitle = {150, 22}
+    local posLeftTitle = 1
+    local sizeTxtHeader = {396, 20}
+    local posLeftHeader = 17
+    local sizeFontTextHeader = 16
+    table.insert(graphics, {Type = "Label", Text = "Settings", Position = {posLeftTitle, 83}, Size = sizeTitle, Color = "Black", FontSize = sizeFontTextTitle, Font = "Roboto", FontStyle = "Bold", HTextAlign = "Left"})
+    table.insert(graphics, {Type = "Header", Text = "Device Settings", Position = {posLeftHeader, 118}, Size = sizeTxtHeader, FontSize = sizeFontTextHeader})
+
+    local y = 146
+    function section(title)
+      table.insert(graphics, {Type = "Header", Text = title, Position = {posLeftHeader, y}, Size = sizeTxtHeader, FontSize = 14})
+      y = y + 24
+    end
+
+    function combo(label, name)
+      table.insert(graphics, {Type = "Text", Text = label .." :", Position = {20, y}, Size = {150, 20}, FontSize = 12, HTextAlign = "Right"})
+      layout[name] = {Style = "ComboBox", PrettyName = "Settings~" .. label, Position = {180, y}, Size = {165, 20}}
+      y = y + 24
+    end
+
+    function text(label, name)
+      table.insert(graphics, {Type = "Text", Text = label .. " :", Position = {20, y}, Size = {150, 20}, FontSize = 12, HTextAlign = "Right"})
+      layout[name] = {Style = "Text", PrettyName = "Settings~" .. label, Position = {180, y}, Size = {165, 20}}
+      y = y + 24
+    end
+
+    text("Friendly Name", "FriendlyName")
+
+    section("Camera configuration")
+    combo("Camera Selected ID", "CameraSelect")
+    text("NDI Server", "NdiServer")
+
+    section("Audio configuration")
+    combo("Audio Switch Mode", "AudioSwitchMode")
+
+    section("USB output")
+    combo("Standby", "StandByMode")
+    combo("USB Input Audio", "UsbInputAudio")
+    combo("USB Output Audio", "UsbOutputAudio")
+    combo("Enable AEC", "AecAudio")
+    combo("Enable CDC-NCM", "CdcNcm")
+
+    section("HDMI output")
+    combo("Output Resolution", "HdmiResolution")
+
+    section("Serial configuration")
+    combo("Baud Rate", "BaudRateSetting")
+
+    
+
+  elseif currentPage == "About" then
+    table.insert(graphics, {Type = "GroupBox", Fill = {255, 255, 255}, StrokeWidth = 0, Position = {1, 1}, Size = {430, 80}})
+    table.insert(graphics, {Type = "Image", Image = LogoInogeni, Position = {106, 21}, Size = {218, 38}})
+    table.insert(graphics, {Type = "GroupBox", Fill = {218, 218, 218}, StrokeWidth = 0, Position = {1, 86}, Size = {430, 120}})
+    table.insert(graphics, {Type = "Label", Text = "INOGENI IP2USB", Position = {1, 85}, Size = {430, 24}, FontSize = 18, FontStyle = "Bold", HTextAlign = "Center"})
+    table.insert(graphics, {Type = "Label", Text = "Plugin ver: " .. PluginInfo.Version .. " build: " .. PluginInfo.BuildVersion, Position = {1, 113}, Size = {430, 22}, FontSize = 14, HTextAlign = "Center"})
+    table.insert(graphics, {Type = "Label", Text = "REST API + RS232 control", Position = {1, 139}, Size = {430, 22}, FontSize = 14, HTextAlign = "Center"})
+    table.insert(graphics, {Type = "Label", Text = "Support: www.inogeni.com", Position = {1, 165}, Size = {430, 22}, FontSize = 14, HTextAlign = "Center"})
+  end
+
+  return layout, graphics
+end
+
+if Controls then
+  rapidjson = require("rapidjson")
+  StatusBreakdown =
+  {
+    OK = 0,
+    COMPROMISED = 1,
+    FAULT = 2,
+    NOTPRESENT = 3,
+    MISSING = 4,
+    INITIALIZING = 5
+  }
+
+  ConnectionMode = Properties["Control Mode"].Value
+  SecureConnection = Properties["API Token"].Value
+
+  Status = Controls.Status
+  Firmware = Controls.Firmware
+  MACAddress = Controls.MACAddress
+  StatIPAddress = Controls.StatIPAddress
+  StatSubnet = Controls.StatSubnet
+  StatGateway = Controls.StatGateway
+  StatSerial = Controls.StatSerial
+  StatTemperature = Controls.StatTemperature
+  StatDhcp = Controls.StatDhcp
+  StatCdcNcmIp = Controls.StatCdcNcmIp
+  StatUsbVideo = Controls.StatUsbVideo
+  StatNdiServer = Controls.StatNdiServer
+
+  Reboot = Controls.Reboot
+  FactoryReset = Controls.FactoryReset
+
+  CameraSelect = Controls.CameraSelect
+  CameraSelectButton = Controls.CameraSelectButton
+  HdmiResolution = Controls.HdmiResolution
+  StandByMode = Controls.StandByMode
+  UsbInputAudio = Controls.UsbInputAudio
+  UsbOutputAudio = Controls.UsbOutputAudio
+  AecAudio = Controls.AecAudio
+  AudioSwitchMode = Controls.AudioSwitchMode
+  NdiServer = Controls.NdiServer
+  FriendlyName = Controls.FriendlyName
+  BaudRateSetting = Controls.BaudRateSetting
+  CdcNcm = Controls.CdcNcm
+  PtzUp = Controls.PtzUp
+  PtzDown = Controls.PtzDown
+  PtzLeft = Controls.PtzLeft
+  PtzRight = Controls.PtzRight
+  PtzZoomIn = Controls.PtzZoomIn
+  PtzZoomOut = Controls.PtzZoomOut
+  PtzPresetNumber = Controls.PtzPresetNumber
+  PtzSetPreset = Controls.PtzSetPreset
+  PtzRecallPreset = Controls.PtzRecallPreset
+
+
+  if ConnectionMode == "Ethernet" then
+    IPAddress = Controls.IPAddress
+    APIToken = Controls.APIToken
+  else
+    SerialBaud = Controls.SerialBaud
+  end
+
+  SerialPort = SerialPorts[1]
+  Databits = 8
+  Parity = "N"
+  Stopbit = 1
+  EOL = "\r\n"
+  EOLCharacter = SerialPorts.EOL.CrLf
+  Baud = 9600
+  iNextStore = 1
+  iNextSend = 1
+  ReadytoSend = 1
+  SendQueue = {"","","","","","","","","",""}
+  StockLastserialCmd = nil
+  StockLasthttpCmd = nil
+  StockFirmware = nil
+
+  HttpProtocol = "https://"
+  HttpDir = "/api/v1/"
+  HttpTimeout = 9
+
+  InFeedback = false
+  Token = ""
+  CameraIdAvailable = {}
+  TimeToPoll = tonumber(Properties["Polling Interval (s)"].Value) or 2.0
+  TimeWatchDog = TimeToPoll * 4
+  NbrMaxErrorBeforeNoRout = 2
+  NbrMaxErrorComm = 3
+  NoReplyWatchDog = 0
+  NotAliveWatchDog = 0
+  ReadyToTestIfAlive = true
+
+  BaudChoices = {"9600", "19200", "38400", "115200"}
+  BinaryChoices = {"Disable", "Enable"}
+  HdmiChoices =
+  {
+    "1080p60",
+    "1080p50",
+    "720p60",
+    "720p50",
+    "2160p24",
+    "2160p25",
+    "2160p30",
+    "2160p50",
+    "2160p60"
+  }
+  AudioSwitchChoices =
+  {
+    "Automatic",
+    "Dante",
+    "Camera",
+    "USB DSP",
+    "OFF"
+  }
+  SerialCamerasActive = false
+  SerialCameraIds = {}
+  RequiredSerialPrefix = "UP"
+  IsSerialNumberValid = false
+
+  StockHTTPResponse = nil
+
+  TimerPoll = Timer.New()
+  TimerAreUAlive = Timer.New()
+
+   -- *** Print level for troubleshooting Function ***
+  ------------------------------------------------------
+  DebugTx, DebugRx, DebugFunction, DebugComm = false, false, false, false
+  DebugPrint = Properties["Debug Print"].Value
+  if DebugPrint == "Tx/Rx" then
+    DebugTx, DebugRx = true, true
+  elseif DebugPrint == "Tx" then
+    DebugTx = true
+  elseif DebugPrint == "Rx" then
+    DebugRx = true
+  elseif DebugPrint == "Function Calls" then
+    DebugFunction = true
+  elseif DebugPrint == "Comm" then
+    DebugComm = true
+  elseif DebugPrint == "All" then
+    DebugTx, DebugRx, DebugFunction, DebugComm = true, true, true, true
+  end
+
+
+  function FnReportStatus(state, msg)
+    if DebugFunction then
+      if (msg == "") or (msg == nil) then
+        print("FnReportStatus called")
+      else
+        print("FnReportStatus called: "..msg)
+      end
+    end
+    local message = msg or "NONE" or ''
+    Status.Value = StatusBreakdown[state]
+    if (#message > 64) then
+      Status.String = string.sub(message, 1, 64)
+    else
+      Status.String = message
+    end
+    if Status.Value > 0 then
+      StatusIsOK = false
+    end
+  end
+
+  function FnUrlEncode(value)
+    local s = tostring(value or "")
+    s = string.gsub(s, " ", "%%20")
+    s = string.gsub(s, '"', "%%22")
+    return s
+  end
+
+  function FnNdiDisplay(value)
+    local s = tostring(value or "")
+    if s == "" then
+      return "Off"
+    end
+    return s
+  end
+
+  function FnValidateSerialNumber(value)
+    local serial = tostring(value or "")
+    serial = string.match(serial, "^%s*(.-)%s*$") or ""
+    return string.find(string.upper(serial), "^" .. RequiredSerialPrefix) ~= nil
+  end
+
+  function FnSetSerialNumber(value)
+    local serial = tostring(value or "")
+    serial = string.match(serial, "^%s*(.-)%s*$") or ""
+    StatSerial.String = serial
+    IsSerialNumberValid = FnValidateSerialNumber(serial)
+  end
+
+  function FnFindIndex(list, val)
+    for i, v in ipairs(list) do
+      if v == val then
+        return i
+      end
+    end
+    return nil
+  end
+
+  function FnCmdGetIdx(ctrlString)
+    local idx = string.match(ctrlString or "", "^(%d+)")
+    if idx == nil then
+      return nil
+    end
+    return tonumber(idx)
+  end
+
+  function FnResetFlagsComIp()
+    NoReplyWatchDog = 0
+    NotAliveWatchDog = 0
+    ReadyToTestIfAlive = true
+  end
+
+  function FnSetSelectedCameraButton(id)
+    if CameraSelectButton == nil then
+      return
+    end
+    if id == nil then
+      return
+    end
+
+    InFeedback = true
+    for i, btn in ipairs(CameraSelectButton) do
+      btn.Value = (i == id) and (btn.IsDisabled ~= true)
+    end
+    InFeedback = false
+  end
+
+  function FnUpdateCameraButtons(cameras, selectedId)
+    if CameraSelectButton == nil then
+      return
+    end
+
+    -- Only apply enable/disable logic when status feedback provides a camera list.
+    if type(cameras) ~= "table" then
+      FnSetSelectedCameraButton(selectedId)
+      return
+    end
+
+    for i = 1, #CameraSelectButton do
+      CameraIdAvailable[i] = false
+    end
+
+    for _, cam in ipairs(cameras) do
+      local sid = tonumber(cam.sourceId)
+      if sid ~= nil and sid >= 1 and sid <= #CameraSelectButton then
+        CameraIdAvailable[sid] = true
+      end
+    end
+
+    InFeedback = true
+    for i, btn in ipairs(CameraSelectButton) do
+      btn.IsDisabled = not CameraIdAvailable[i]
+      btn.Value = false
+    end
+    InFeedback = false
+
+    FnSetSelectedCameraButton(selectedId)
+  end
+
+  function FnSetCameraButtonsDefaultState()
+    if CameraSelectButton == nil then
+      return
+    end
+    InFeedback = true
+    for _, btn in ipairs(CameraSelectButton) do
+      btn.IsDisabled = false
+      btn.Value = false
+    end
+    InFeedback = false
+  end
+
+  function FnResetValues()
+    if DebugFunction then print("FnResetValues called") end
+
+    InFeedback = true
+    Firmware.String = ""
+    MACAddress.String = ""
+    StatIPAddress.String = ""
+    StatSubnet.String = ""
+    StatGateway.String = ""
+    StatSerial.String = ""
+    StatTemperature.String = ""
+    StatDhcp.String = ""
+    StatCdcNcmIp.String = ""
+    StatUsbVideo.String = ""
+    FriendlyName.String = ""
+    NdiServer.String = ""
+    StatNdiServer.String = ""
+    CameraSelect.String = ""
+    HdmiResolution.String = ""
+    StandByMode.String = ""
+    UsbInputAudio.String = ""
+    UsbOutputAudio.String = ""
+    AecAudio.String = ""
+    AudioSwitchMode.String = ""
+    BaudRateSetting.String = ""
+    CdcNcm.String = ""
+    --PtzSpeed.String = ""
+    InFeedback = false
+    IsSerialNumberValid = false
+
+    for i = 1, #CameraSelect.Choices do
+      CameraIdAvailable[i] = false
+    end
+    FnSetCameraButtonsDefaultState()
+    if CameraSelectButton ~= nil then
+      InFeedback = true
+      for _, btn in ipairs(CameraSelectButton) do
+        btn.IsDisabled = true
+        btn.Value = false
+      end
+      InFeedback = false
+    end
+  end
+
+  function FnSetDefaults()
+    CameraSelect.Choices = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10"}
+    HdmiResolution.Choices = HdmiChoices
+    StandByMode.Choices = BinaryChoices
+    UsbInputAudio.Choices = BinaryChoices
+    UsbOutputAudio.Choices = BinaryChoices
+    AecAudio.Choices = BinaryChoices
+    AudioSwitchMode.Choices = AudioSwitchChoices
+    BaudRateSetting.Choices = BaudChoices
+    CdcNcm.Choices = BinaryChoices
+
+    StandByMode.String = BinaryChoices[1]
+    UsbInputAudio.String = BinaryChoices[1]
+    UsbOutputAudio.String = BinaryChoices[1]
+    AecAudio.String = BinaryChoices[1]
+    CdcNcm.String = BinaryChoices[1]
+    AudioSwitchMode.String = AudioSwitchChoices[1]
+    HdmiResolution.String = HdmiChoices[1]
+    BaudRateSetting.String = "9600"
+    NdiServer.String = ""
+    StatNdiServer.String = FnNdiDisplay(nil)
+
+    if ConnectionMode == "Serial" then
+      SerialBaud = Controls.SerialBaud
+      SerialBaud.Choices = BaudChoices
+      if SerialBaud.String == "" then
+          SerialBaud.String = "9600"
+      end
+    else
+      IPAddress = Controls.IPAddress
+      APIToken = Controls.APIToken
+    end
+
+    FnSetCameraButtonsDefaultState()
+  end
+
+  function FnApplyNumericSetting(key, val)
+    if val == nil then
+      return
+    end
+    local n = tonumber(val)
+    if n == nil then
+      return
+    end
+
+    InFeedback = true
+    if key == "cameraSelect" then
+      CameraSelect.String = tostring(n)
+      FnSetSelectedCameraButton(n)
+    elseif key == "hdmiResolution" then
+      HdmiResolution.String = HdmiChoices[n + 1] or tostring(n)
+    elseif key == "standByMode" then
+      StandByMode.String = BinaryChoices[n + 1] or tostring(n)
+    elseif key == "usbInputAudio" then
+      UsbInputAudio.String = BinaryChoices[n + 1] or tostring(n)
+    elseif key == "usbOutputAudio" then
+      UsbOutputAudio.String = BinaryChoices[n + 1] or tostring(n)
+    elseif key == "aecAudio" then
+      AecAudio.String = BinaryChoices[n + 1] or tostring(n)
+    elseif key == "audioSwitchMode" then
+      AudioSwitchMode.String = AudioSwitchChoices[n + 1] or tostring(n)
+    elseif key == "baudrate" then
+      local bmap = {"9600", "19200", "38400", "115200"}
+      BaudRateSetting.String = bmap[n + 1] or tostring(n)
+    elseif key == "cdcNcm" then
+      CdcNcm.String = BinaryChoices[n + 1] or tostring(n)
+    end
+    InFeedback = false
+  end
+
+  function FnReadStatus()
+      if ConnectionMode == "Ethernet" then
+        FnSendHttp("status")
+        if ReadyToTestIfAlive == true then
+          ReadyToTestIfAlive = false
+          TimerAreUAlive:Start(TimeWatchDog)
+        end
+      else
+        FnSendStoreData("STATUS")
+        if ReadyToTestIfAlive == true then
+          ReadyToTestIfAlive = false
+          TimerAreUAlive:Start(TimeWatchDog)
+        end
+      end
+  end
+
+
+
+
+  ---Timers ----------
+
+  function FnStartInitPoll()
+    TimerPoll:Stop()
+    TimerPoll:Start(TimeToPoll)
+  end
+
+  TimerPoll.EventHandler = function(timer)
+    FnReadStatus()
+  end
+
+  TimerAreUAlive.EventHandler = function(timer)
+    if DebugComm then print("No reply from device since ", tostring(TimeWatchDog), " s.\x0dRestart communication process") end
+    if NotAliveWatchDog < NbrMaxErrorComm then
+      NotAliveWatchDog = NotAliveWatchDog + 1
+      FnResetValues()
+
+      if ConnectionMode == "Ethernet" then
+        if NoReplyWatchDog < NbrMaxErrorBeforeNoRout then
+          NoReplyWatchDog = NoReplyWatchDog + 1
+          FnReportStatus("MISSING", "No reply from the device")
+        else
+          FnReportStatus("MISSING", "No route to host")
+        end
+      else
+        FnReportStatus("MISSING", "Check the Baud rate or your RS232 cable")
+        
+      end
+    end
+    ReadytoSend = 1
+    ReadyToTestIfAlive = true
+    FnStartInitPoll()
+
+  end
+
+   ----------- Connexion mode specific functions --------------
+  if ConnectionMode == "Ethernet" then
+
+
+    function FnResetFlagsComIp()
+      if DebugFunction then print("FnResetFlagsComIp() called") end
+      ReconnectWatchDog = 0
+      NoReplyWatchDog = 0
+      NotAliveWatchDog = 0
+      SocketInErrorMsg = 0
+      ReadyToTestIfAlive = true
+    end
+
+    function FnHttpStatusReporting(returnCode, returnErr)
+      if DebugFunction then print("FnHttpStatusReporting() called") end  
+      if(returnErr == nil)then
+        returnErr = "None"
+      end
+      if(returnCode == 200) then
+        NotAliveWatchDog = 0               
+        TimerAreUAlive:Stop()
+
+        if not IsSerialNumberValid then
+          StatusIsOK = false
+          FnReportStatus("FAULT", "Wrong device type, check settings")
+          return
+        end
+
+        StatusIsOK = true
+        
+        --Show message other than success
+        
+        if not(StockHTTPResponse == "success") and not(StockHTTPResponse == nil) then
+          FnReportStatus("COMPROMISED", "Command Error : "..StockHTTPResponse)
+          ReadyToTestIfAlive = true
+          FnStartInitPoll()
+          StockHTTPResponse = nil
+        else
+          if (string.find(StockLasthttpCmd, "pan=")) or 
+            (string.find(StockLasthttpCmd, "tilt=")) or
+            (string.find(StockLasthttpCmd, "zoom=")) then
+           print("PTZ command sent, waiting for stop command...")
+              if string.find(StockLasthttpCmd, "=0") then
+                print("PTZ stop command sent, resuming normal polling.")  
+                ReadyToTestIfAlive = true
+                FnReportStatus("OK", "")
+                FnStartInitPoll()
+              end
+          else
+            ReadyToTestIfAlive = true
+            FnReportStatus("OK", "")
+            FnStartInitPoll()
+          end
+        end
+        
+        
+      elseif(returnCode == 400)then   --Client Error Commande
+        local msg = "Error 400 Bad Request - Invalid Command"
+        StatusIsOK = true
+        FnReportStatus("COMPROMISED", "Error 400: " .. msg)
+        FnStartInitPoll()
+      elseif (returnCode == 401)then   --API Token required or invalid
+        local msg = "Error 401 Unauthorized - Not authorized"
+        StatusIsOK = false
+        FnReportStatus("MISSING", "API Token is required or invalid")
+        FnResetValues()
+      else
+        local msg = returnErr
+        if(string.find(msg, "Connection timed out")) or
+          (string.find(msg, "Connection refused")) or
+          (string.find(msg, "Operation timed out")) or
+          (string.find(msg, "Failed to connect")) then
+          StatusIsOK = false
+          FnReportStatus("MISSING", "No route to host")
+          
+        else
+          FnReportStatus("MISSING", "Server http: " .. msg)
+        end
+        TimerAreUAlive:Start(TimeWatchDog)
+        FnResetValues()
+      end
+    end
+  
+    function FnHandleStatusJson(tbl)
+      if tbl == nil then
+        return
+      end
+
+      if tbl.message ~= nil then
+        StockHTTPResponse = tostring(tbl.message)
+        --print("Message from device: " .. StockHTTPResponse)
+      else
+        StockHTTPResponse = nil
+      end
+
+      local general = tbl.General or tbl.general or {}
+      local conf = tbl.Configuration or tbl.configuration or tbl
+      local video = tbl.Video or tbl.video or {}
+      local hdmi = video.hdmi or {}
+      local usbVideo = video.usb or {}
+
+      if general.major ~= nil and general.minor ~= nil then
+        if general.build ~= nil then
+          Firmware.String = tostring(general.major) .. "." .. tostring(general.minor) .. "." .. tostring(general.build)
+        else
+          Firmware.String = tostring(general.major) .. "." .. tostring(general.minor)
+        end
+      elseif general.firmware ~= nil then
+        Firmware.String = tostring(general.firmware)
+      elseif conf.firmware ~= nil then
+        Firmware.String = tostring(conf.firmware)
+      end
+
+      if general.mac ~= nil then
+        MACAddress.String = tostring(general.mac)
+      elseif conf.mac ~= nil then
+        MACAddress.String = tostring(conf.mac)
+      end
+
+      InFeedback = true
+      if general.ip ~= nil then
+        StatIPAddress.String = tostring(general.ip)
+      end
+      if general.subnet ~= nil then
+        StatSubnet.String = tostring(general.subnet)
+      end
+      if general.gateway ~= nil then
+        StatGateway.String = tostring(general.gateway)
+      end
+      if general.serial ~= nil then
+        FnSetSerialNumber(general.serial)
+      elseif conf.serial ~= nil then
+        FnSetSerialNumber(conf.serial)
+      end
+      if general.temperature ~= nil then
+        StatTemperature.String = tostring(general.temperature) .. " C"
+      end
+      if general.dhcp ~= nil then
+        if tonumber(general.dhcp) == 1 then
+          StatDhcp.String = "Enabled"
+        else
+          StatDhcp.String = "Disabled"
+        end
+      end
+      if general.cdcNcmIp ~= nil then
+        StatCdcNcmIp.String = tostring(general.cdcNcmIp)
+      end
+      if usbVideo.width ~= nil and usbVideo.height ~= nil and usbVideo.framerate ~= nil then
+        local fmt = tostring(usbVideo.format or "")
+        StatUsbVideo.String = tostring(usbVideo.width) .. "x" .. tostring(usbVideo.height) .. "@" .. tostring(usbVideo.framerate) .. " " .. fmt
+      end
+      FnUpdateCameraButtons(video.cameras, tonumber(video.selectedSourceId))
+      InFeedback = false
+
+      InFeedback = true
+      if general.friendlyName ~= nil then
+        FriendlyName.String = tostring(general.friendlyName)
+      elseif conf.friendlyName ~= nil then
+        FriendlyName.String = tostring(conf.friendlyName)
+      end
+      InFeedback = false
+
+      FnApplyNumericSetting("cameraSelect", video.selectedSourceId or conf.cameraSelect or conf.cameraselect)
+      FnApplyNumericSetting("hdmiResolution", hdmi.resolution or conf.hdmiResolution or conf.hdmiresolution)
+      FnApplyNumericSetting("standByMode", conf.allowStandbyMode or conf.standByMode or conf.standbymode)
+      FnApplyNumericSetting("usbInputAudio", conf.enableUacIn or conf.usbInputAudio or conf.usbinputaudio)
+      FnApplyNumericSetting("usbOutputAudio", conf.enableUacOut or conf.usbOutputAudio or conf.usboutputaudio)
+      FnApplyNumericSetting("aecAudio", conf.enableAecInterface or conf.aecAudio or conf.aecaudio)
+      FnApplyNumericSetting("audioSwitchMode", conf.audioSwitchingMode or conf.audioSwitchMode or conf.audioswitchmode)
+      FnApplyNumericSetting("baudrate", conf.uartBaudRate or conf.baudrate)
+      FnApplyNumericSetting("cdcNcm", conf.enableCdcNcm or conf.cdcNcm or conf.cdcncm)
+
+      InFeedback = true
+      if conf.ndiServerAddress ~= nil then
+        NdiServer.String = tostring(conf.ndiServerAddress)
+        StatNdiServer.String = FnNdiDisplay(conf.ndiServerAddress)
+      elseif conf.ndiServer ~= nil then
+        NdiServer.String = tostring(conf.ndiServer)
+        StatNdiServer.String = FnNdiDisplay(conf.ndiServer)
+      else
+        NdiServer.String = ""
+        StatNdiServer.String = FnNdiDisplay(nil)
+      end
+      InFeedback = false
+    end
+
+    function FnHttpResponse(tbl, code, data, err)
+      if DebugRx and data ~= nil then print("String RX: " .. data) end
+
+      ReadyToTestIfAlive = true
+      NoReplyWatchDog = 0
+      NotAliveWatchDog = 0
+      TimerAreUAlive:Stop()
+
+      if code == 200 and data ~= nil and data ~= "" then
+        local ok, decoded = pcall(rapidjson.decode, data)
+        if ok and decoded ~= nil then
+          FnHandleStatusJson(decoded)
+        end
+      end
+
+      FnHttpStatusReporting(math.ceil(code or 0), err)
+    end
+
+    function FnSendHttp(path)
+      if IPAddress == nil or IPAddress.String == "" then
+        TimerPoll:Stop()
+        TimerAreUAlive:Stop()
+        FnResetValues()
+        FnReportStatus("MISSING", "No IP Address")
+        return
+      end
+
+      StockLasthttpCmd = path
+
+      TimerPoll:Stop()
+
+      if SecureConnection == "Active" and APIToken ~= nil and APIToken.String ~= "" then
+        Token = APIToken.String
+      else
+        Token = ""
+      end
+
+      baseURL = string.format(HttpProtocol .. IPAddress.String .. HttpDir .. path)
+      if DebugTx then print("String TX: " .. path) end
+
+      HttpClient.Get
+      {
+        Url = baseURL,
+        Headers = { ["Host"] = "q-sys-module", ["Authorization"] = "Bearer " .. Token  },
+        Timeout = HttpTimeout,
+        EventHandler = FnHttpResponse
+      }
+    end
+
+    
+
+    function FnRestartEthernetConnection()
+      if ConnectionMode ~= "Ethernet" then
+        return
+      end
+      TimerPoll:Stop()
+      TimerAreUAlive:Stop()
+      FnResetFlagsComIp()
+      FnResetValues()
+      FnReportStatus("INITIALIZING", "Restarting connection")
+      FnStartInitPoll()
+    end
+
+
+    if APIToken ~= nil then
+      APIToken.EventHandler = function()
+        if InFeedback then return end
+        FnRestartEthernetConnection()
+      end
+    end
+
+    if IPAddress ~= nil then
+      IPAddress.EventHandler = function()
+        if InFeedback then return end
+        FnRestartEthernetConnection()
+      end
+    end
+
+
+  elseif  ConnectionMode == "Serial" then
+
+    function FnParseSerialLine(data)
+      local line = tostring(data or "")
+      if line == "" then
+        return
+      end
+      
+      if DebugRx then print("String RX: " .. line) end
+
+      if string.match(line, "^ACK$") then
+        ReadytoSend = 1
+        Firmware.String = StockFirmware
+        
+        local isPTZ  = string.find(StockLastserialCmd, "PAN")  or
+                       string.find(StockLastserialCmd, "TILT") or
+                       string.find(StockLastserialCmd, "ZOOM")
+        local isStop = string.find(StockLastserialCmd, " 0")
+
+        if isPTZ and not isStop then
+          -- PTZ move in progress; wait for the matching stop command (PAN 0 / TILT 0 / ZOOM 0)
+          -- print("PTZ command sent, waiting for stop command...")
+            TimerAreUAlive:Stop()
+            if iNextStore ~= iNextSend then
+              FnSendStoreData(SendQueue[iNextSend])
+            end
+          
+        else
+          -- Non-PTZ command, or PTZ stop command: safe to resume polling
+          ReadyToTestIfAlive = true
+          NotAliveWatchDog = 0
+          TimerAreUAlive:Stop()
+          if IsSerialNumberValid then
+            StatusIsOK = true
+            FnReportStatus("OK", "")
+          else
+            StatusIsOK = false
+            FnReportStatus("FAULT", "Wrong device type, check settings")
+          end
+
+          
+            if iNextStore ~= iNextSend then
+              FnSendStoreData(SendQueue[iNextSend])
+            else
+              FnStartInitPoll()
+            end
+          
+        end
+        return
+      end
+      if string.match(line, "^NACK$") then
+        FnReportStatus("COMPROMISED", "Command rejected")
+        ReadytoSend = 1
+            if iNextStore ~= iNextSend then
+              FnSendStoreData(SendQueue[iNextSend])
+            else
+              FnStartInitPoll()
+            end
+        return
+      end
+
+      -- Multi-line CAMERAS=[...] block continuation
+      if SerialCamerasActive then
+        if CameraSelectButton ~= nil then
+          for idx in string.gmatch(line, "%[index=(%d+),") do
+            local n = tonumber(idx)
+            if n ~= nil and n >= 1 and n <= #CameraSelectButton then
+              CameraIdAvailable[n] = true
+            end
+          end
+        end
+        -- Closing bracket ends the block
+        if string.find(line, "%]%s*$") then
+          SerialCamerasActive = false
+          if CameraSelectButton ~= nil then
+            InFeedback = true
+            for i, btn in ipairs(CameraSelectButton) do
+              btn.IsDisabled = not CameraIdAvailable[i]
+            end
+            InFeedback = false
+          end
+        end
+        return
+      end
+
+      local key, value = string.match(line, "^([%w_]+)=(.+)$")
+      if key ~= nil then
+        local ukey = string.upper(key)
+
+        if ukey == "MAJOR" then
+          StockFirmware = value
+          --Firmware.String = value
+        elseif ukey == "MINOR" then
+          local maj = StockFirmware or ""
+          if string.find(maj, "^%d+$") then
+            StockFirmware = maj .. "." .. value
+          end
+        elseif ukey == "BUILD" then
+          local cur = StockFirmware or ""
+          if string.find(cur, "^%d+%.%d+$") then
+            StockFirmware = cur .. "." .. value
+          end
+        elseif ukey == "MAC" then
+          MACAddress.String = value
+        elseif ukey == "SERIALNUMBER" then
+          FnSetSerialNumber(value)
+        elseif ukey == "FRIENDLYNAME" then
+          InFeedback = true
+          FriendlyName.String = value
+          InFeedback = false
+        elseif ukey == "DHCP" then
+          StatDhcp.String = (tonumber(value) == 1) and "Enabled" or "Disabled"
+        elseif ukey == "IP" then
+          StatIPAddress.String = value
+        elseif ukey == "GATEWAY" then
+          StatGateway.String = value
+        elseif ukey == "NETMASK" then
+          StatSubnet.String = value
+        elseif ukey == "CDCNCMIP" then
+          StatCdcNcmIp.String = value
+        elseif ukey == "TEMPERATURE" then
+          StatTemperature.String = value .. " C"
+        elseif ukey == "ALLOWSTANDBYMODE" then
+          FnApplyNumericSetting("standByMode", value)
+        elseif ukey == "ENABLECDCNCM" then
+          FnApplyNumericSetting("cdcNcm", value)
+        elseif ukey == "ENABLEUACOUT" then
+          FnApplyNumericSetting("usbOutputAudio", value)
+        elseif ukey == "ENABLEUACIN" then
+          FnApplyNumericSetting("usbInputAudio", value)
+        elseif ukey == "ENABLEAECINTERFACE" then
+          FnApplyNumericSetting("aecAudio", value)
+        elseif ukey == "NDISERVERADDRESS" then
+          local addr = (value == "{}" ) and "" or value
+          InFeedback = true
+          NdiServer.String = addr
+          StatNdiServer.String = FnNdiDisplay(addr)
+          InFeedback = false
+        elseif ukey == "UARTBAUDRATE" then
+          FnApplyNumericSetting("baudrate", value)
+        elseif ukey == "CAMERAS" then
+          -- Reset availability flags and start accumulating camera entries
+          if CameraSelectButton ~= nil then
+            for i = 1, #CameraSelectButton do
+              CameraIdAvailable[i] = false
+            end
+            -- Check if entire list is on this line (single-line format)
+            if string.find(value, "%]%s*$") then
+              for idx in string.gmatch(value, "%[index=(%d+),") do
+                local n = tonumber(idx)
+                if n ~= nil and n >= 1 and n <= #CameraSelectButton then
+                  CameraIdAvailable[n] = true
+                end
+              end
+              InFeedback = true
+              for i, btn in ipairs(CameraSelectButton) do
+                btn.IsDisabled = not CameraIdAvailable[i]
+              end
+              InFeedback = false
+            else
+              SerialCamerasActive = true
+            end
+          end
+        elseif ukey == "SELECTEDSOURCEID" then
+          FnApplyNumericSetting("cameraSelect", value)
+        elseif ukey == "USBOUTPUT" then
+          StatUsbVideo.String = value
+        elseif ukey == "HDMIOUTPUT" then
+          InFeedback = true
+          HdmiResolution.String = value
+          InFeedback = false
+        elseif ukey == "AUDIOSWITCHMODE" then
+          InFeedback = true
+          AudioSwitchMode.String = value
+          InFeedback = false
+        end
+        return
+      end
+
+    end
+
+    function FnOpenSerialPort()  	
+         if DebugComm then print("FnOpenSerialPort: OPEN") end
+         if SerialPort.IsOpen then
+           Disconnect()
+         end
+         SerialPort:Open(Baud, Databits, Parity)
+    end
+   
+    function Disconnect()
+      if DebugComm then print("Disconnect[RS] called") end
+      TimerPoll:Stop()
+      SerialPort:Close()
+    end
+    
+    function Connected()
+      if DebugComm then print("Connected[RS] called") end
+      FnReadStatus()
+    end
+    
+    function ConnectionError(port, message)
+      local msg = message or "Timeout"
+      if DebugComm then print("ConnectionError[RS] called: " .. msg) end
+      TimerPoll:Stop() 
+      FnResetValues()
+      FnReportStatus("MISSING", "Serial Port error: " .. msg)
+    end
+    
+    SerialPort.Connected = Connected
+    SerialPort.Error = ConnectionError
+    SerialPort.Closed = ConnectionError
+    SerialPort.Timeout = ConnectionError
+
+    SerialPort.Reconnect = function()
+      if DebugComm then print("SerialPort Reconnect event handler called") end
+    end
+    
+    ---Serialport may be slow, need to store cmd ---
+    function FnSendStoreData(cmd)
+      if SerialPort.IsOpen then
+         if DebugFunction then print("FnSendStoreData Called") end
+         TimerPoll:Stop()
+         if(ReadytoSend == 1) and iNextStore == iNextSend then
+           if DebugTx then print("String TX: "..cmd) end
+           ReadytoSend = 0
+           StockLastserialCmd = cmd
+           SerialPort:Write(cmd..EOL)
+
+           TimerAreUAlive:Start(TimeWatchDog)
+        
+         elseif(ReadytoSend == 1) and iNextStore ~= iNextSend then 
+           local tempCmd = SendQueue[iNextSend]
+           if DebugTx then print("String TX: from memory "..tempCmd) end
+           StockLastserialCmd = tempCmd
+           ReadytoSend = 0
+           SerialPort:Write(tempCmd..EOL)
+           SendQueue[iNextSend] = ""
+           iNextSend = iNextSend + 1
+           if iNextSend > 10 then 
+             iNextSend = 1
+           end
+
+           TimerAreUAlive:Start(TimeWatchDog)
+          
+         else
+           if DebugTx then print("Busy TX : "..cmd.." Saved to memory: "..iNextStore) end
+           SendQueue[iNextStore] = cmd
+           iNextStore = iNextStore + 1
+           if iNextStore > 10 then 
+             iNextStore = 1
+           end
+         end
+      else
+        FnReportStatus("MISSING", "Serial Port not connected")
+      end 
+    end
+
+    SerialPort.Data = function()
+      repeat
+        local buffer = SerialPort:ReadLine(EOLCharacter)
+        if buffer ~= nil then
+          FnParseSerialLine(buffer)
+        else
+          break
+        end
+      until SerialPort.BufferLength == 0
+    end
+
+    SerialBaud.EventHandler = function()
+        if InFeedback then return end
+        if SerialBaud.String == tostring(BaudChoices[1]) or SerialBaud.String == tostring(BaudChoices[2]) or SerialBaud.String == tostring(BaudChoices[3]) or SerialBaud.String == tostring(BaudChoices[4]) then
+          Baud = tonumber(SerialBaud.String)
+        else
+          Baud = BaudChoices[1]
+          InFeedback = true
+          SerialBaud.String = "9600"
+          InFeedback = false
+        end
+        FnOpenSerialPort()
+    end
+  end
+
+  function FnSendCameraSelect()
+    local id = tonumber(CameraSelect.String) or 0
+    if ConnectionMode == "Ethernet" then
+      FnSendHttp("cameraSelect?id=" .. id)
+    else
+      FnSendStoreData("CAMERASELECT " .. id)
+    end
+  end
+
+  function FnSendHdmiResolution()
+    local choiceIdx = FnFindIndex(HdmiChoices, HdmiResolution.String)
+    local idx = 0
+    if choiceIdx ~= nil then
+      idx = choiceIdx - 1
+    else
+      idx = FnCmdGetIdx(HdmiResolution.String) or 0
+    end
+    if ConnectionMode == "Ethernet" then
+      FnSendHttp("hdmiResolution?resolution=" .. idx)
+    else
+      FnSendStoreData("HDMIRESOLUTION " .. idx)
+    end
+  end
+
+  function FnSendBinary(ctrl, apiCmd, rsCmd)
+    local idx = FnFindIndex(BinaryChoices, ctrl.String)
+    if idx == nil then return end
+    local val = idx - 1
+    if ConnectionMode == "Ethernet" then
+      FnSendHttp(apiCmd .. "?enable=" .. val)
+    else
+      FnSendStoreData(rsCmd .. " " .. val)
+    end
+  end
+
+  function FnSendAudioSwitch()
+    local choiceIdx = FnFindIndex(AudioSwitchChoices, AudioSwitchMode.String)
+    local idx = 0
+    if choiceIdx ~= nil then
+      idx = choiceIdx - 1
+    else
+      idx = FnCmdGetIdx(AudioSwitchMode.String) or 0
+    end
+    if ConnectionMode == "Ethernet" then
+      FnSendHttp("audioSwitchMode?mode=" .. idx)
+    else
+      FnSendStoreData("AUDIOSWITCHMODE " .. idx)
+    end
+  end
+
+  function FnSendBaudRateSetting()
+    local choiceIdx = FnFindIndex(BaudRateSetting.Choices, BaudRateSetting.String)
+    local idx = 0
+    if choiceIdx ~= nil then
+      idx = choiceIdx - 1
+    else
+      idx = FnCmdGetIdx(BaudRateSetting.String) or 0
+    end
+    if ConnectionMode == "Ethernet" then
+      FnSendHttp("baudrate?baudrate=" .. idx)
+    else
+      FnSendStoreData("BAUDRATE " .. idx)
+    end
+  end
+
+  function FnSendNdiServer()
+    local ip = NdiServer.String or ""
+    if ip == "Off" then
+      ip = ""
+    end
+    if ConnectionMode == "Ethernet" then
+      FnSendHttp("ndiServer?ip=" .. FnUrlEncode(ip))
+    else
+      FnSendStoreData("NDISERVER " .. ip)
+    end
+  end
+
+  function FnSendFriendlyName()
+    local name = FriendlyName.String or ""
+    if ConnectionMode == "Ethernet" then
+      FnSendHttp("friendlyName?name=" .. FnUrlEncode(name))
+    else
+      FnSendStoreData("FRIENDLYNAME \"" .. name .. "\"")
+    end
+  end
+
+  function FnGetPtzPresetNumber()
+    local n = tonumber(PtzPresetNumber.String)
+    if n == nil then
+      n = 0
+    end
+    n = math.floor(n)
+    if n < 0 then
+      n = 0
+    elseif n > 255 then
+      n = 255
+    end
+    InFeedback = true
+    PtzPresetNumber.String = ""
+    InFeedback = false
+    return n
+  end
+
+
+  function FnSendPtzAxis(axis, speed)
+    local s = tonumber(speed) or 0
+    if ConnectionMode == "Ethernet" then
+      FnSendHttp(axis.."?".. axis .."=" .. tostring(s))
+    else
+      FnSendStoreData(string.upper(axis) .. " " .. tostring(s))
+    end
+  end
+
+  function FnSendPtzPreset(action)
+    local presetNumber = FnGetPtzPresetNumber()
+    if ConnectionMode == "Ethernet" then
+      FnSendHttp(action.. "?preset=" .. tostring(presetNumber))
+    else
+      if action == "preset" then
+        FnSendStoreData("PRESETSET " .. tostring(presetNumber))
+      elseif action == "recallPreset" then
+        FnSendStoreData("PRESETRECALL " .. tostring(presetNumber))
+      end
+    end
+  end
+
+  CameraSelect.EventHandler = function()
+    if InFeedback then return end
+    FnSetSelectedCameraButton(tonumber(CameraSelect.String))
+    FnSendCameraSelect()
+  end
+
+  for i, btn in ipairs(CameraSelectButton) do
+    btn.EventHandler = function()
+      if InFeedback then return end
+      if btn.IsDisabled then return end
+      InFeedback = true
+      CameraSelect.String = tostring(i)
+      InFeedback = false
+      FnSetSelectedCameraButton(i)
+      FnSendCameraSelect()
+    end
+  end
+
+  HdmiResolution.EventHandler = function()
+    if InFeedback then return end
+    FnSendHdmiResolution()
+  end
+
+  StandByMode.EventHandler = function()
+    if InFeedback then return end
+    FnSendBinary(StandByMode, "standByMode", "STANDBYMODE")
+  end
+
+  UsbInputAudio.EventHandler = function()
+    if InFeedback then return end
+    FnSendBinary(UsbInputAudio, "usbInputAudio", "USBINPUTAUDIO")
+  end
+
+  UsbOutputAudio.EventHandler = function()
+    if InFeedback then return end
+    FnSendBinary(UsbOutputAudio, "usbOutputAudio", "USBOUTPUTAUDIO")
+  end
+
+  AecAudio.EventHandler = function()
+    if InFeedback then return end
+    FnSendBinary(AecAudio, "aecAudio", "AECAUDIO")
+  end
+
+  AudioSwitchMode.EventHandler = function()
+    if InFeedback then return end
+    FnSendAudioSwitch()
+  end
+
+  CdcNcm.EventHandler = function()
+    if InFeedback then return end
+    FnSendBinary(CdcNcm, "cdcNcm", "CDCNCM")
+  end
+
+  BaudRateSetting.EventHandler = function()
+    if InFeedback then return end
+    FnSendBaudRateSetting()
+  end
+
+  NdiServer.EventHandler = function()
+    if InFeedback then return end
+    FnSendNdiServer()
+  end
+
+  FriendlyName.EventHandler = function()
+    if InFeedback then return end
+    FnSendFriendlyName()
+  end
+
+  PtzRight.EventHandler = function()
+    if PtzRight.Value == 0 then
+      FnSendPtzAxis("pan", 0)
+    else
+      FnSendPtzAxis("pan", 1)
+    end
+  end
+
+  PtzLeft.EventHandler = function()
+    if PtzLeft.Value == 0 then
+      FnSendPtzAxis("pan", 0)
+    else
+      FnSendPtzAxis("pan", -1)
+    end
+  end
+
+  PtzUp.EventHandler = function()
+    if PtzUp.Value == 0 then
+      FnSendPtzAxis("tilt", 0)
+    else
+      FnSendPtzAxis("tilt", 1)
+    end
+  end
+
+  PtzDown.EventHandler = function()
+    if PtzDown.Value == 0 then
+      FnSendPtzAxis("tilt", 0)
+    else
+      FnSendPtzAxis("tilt", -1)
+    end
+  end
+
+  PtzZoomIn.EventHandler = function()
+    if PtzZoomIn.Value == 0 then
+      FnSendPtzAxis("zoom", 0)
+    else
+      FnSendPtzAxis("zoom", 1)
+    end
+  end
+
+  PtzZoomOut.EventHandler = function()
+    if PtzZoomOut.Value == 0 then
+      FnSendPtzAxis("zoom", 0)
+    else
+      FnSendPtzAxis("zoom", -1)
+    end
+  end
+
+
+
+  PtzSetPreset.EventHandler = function()
+    FnSendPtzPreset("preset")
+  end
+
+  PtzRecallPreset.EventHandler = function()
+    FnSendPtzPreset("recallPreset")
+  end
+
+
+  Reboot.EventHandler = function()
+    if ConnectionMode == "Ethernet" then
+      FnSendHttp("reboot")
+    else
+      FnSendStoreData("REBOOT")
+    end
+  end
+
+  FactoryReset.EventHandler = function()
+    if ConnectionMode == "Ethernet" then
+      FnSendHttp("rstr")
+    else
+      FnSendStoreData("RSTR")
+    end
+  end
+
+
+
+  function FnInitialization()
+    FnSetDefaults()
+    FnReportStatus("INITIALIZING", "Starting")
+
+    if ConnectionMode == "Serial" then
+      FnOpenSerialPort()
+    else
+      FnReadStatus()
+    end
+
+    FnStartInitPoll()
+  end
+
+  FnInitialization()
+
+end
